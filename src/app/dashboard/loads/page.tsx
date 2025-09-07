@@ -11,11 +11,11 @@ export default function LoadsPage() {
           <CardHeader>
             <CardTitle className="font-headline">Available Loads</CardTitle>
             <CardDescription>
-              Browse, add, assign, and manage available loads.
+              Browse and search available loads.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <LoadsDataTable />
+            <LoadsDataTable isEditable={false} />
           </CardContent>
         </Card>
       </main>

@@ -66,14 +66,15 @@ type Load = {
   assignedTo?: string;
   carrier?: string;
   scac?: string;
+  dispatcher?: string;
 }
 
 const initialData: Load[] = [
     { id: "LD001", origin: "Los Angeles, CA", destination: "Phoenix, AZ", pickupDate: "2024-08-01", deliveryDate: "2024-08-02", rate: 1200, status: "Available" },
     { id: "LD002", origin: "Chicago, IL", destination: "New York, NY", pickupDate: "2024-08-03", deliveryDate: "2024-08-05", rate: 2500, status: "Available" },
-    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Pending", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT" },
-    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith", carrier: "Knight-Swift", scac: "KNX" },
-    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT" },
+    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Pending", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT", dispatcher: "Dispatcher Name" },
+    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith", carrier: "Knight-Swift", scac: "KNX", dispatcher: "Dispatcher Name" },
+    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT", dispatcher: "Dispatcher Name" },
     { id: "LD006", origin: "Boston, MA", destination: "Washington, DC", pickupDate: "2024-08-10", deliveryDate: "2024-08-11", rate: 900, status: "Deleted" },
 ]
 
@@ -84,8 +85,11 @@ const drivers = [
     { id: "USR004", name: "Emily Jones" },
 ]
 
+type LoadsDataTableProps = {
+    isEditable?: boolean;
+};
 
-export function LoadsDataTable() {
+export function LoadsDataTable({ isEditable = false }: LoadsDataTableProps) {
     const [data, setData] = React.useState<Load[]>(initialData);
     const [isAddLoadOpen, setAddLoadOpen] = React.useState(false);
     const [isAssignLoadOpen, setAssignLoadOpen] = React.useState(false);
@@ -111,10 +115,13 @@ export function LoadsDataTable() {
     const handleAssignLoad = () => {
         if (!selectedLoad || !selectedDriver) return;
         
+        // In a real app, you'd get the dispatcher's name from the authenticated user session.
+        const dispatcherName = "Dispatcher Name";
+
         setData(currentData =>
           currentData.map(load =>
             load.id === selectedLoad.id
-              ? { ...load, status: 'Pending', assignedTo: drivers.find(d => d.id === selectedDriver)?.name }
+              ? { ...load, status: 'Pending', assignedTo: drivers.find(d => d.id === selectedDriver)?.name, dispatcher: dispatcherName }
               : load
           )
         );
@@ -124,7 +131,7 @@ export function LoadsDataTable() {
             title: "Load Assigned!",
             description: (
               <div>
-                <p>Load <strong>{selectedLoad.id}</strong> assigned to <strong>{assignedDriverName}</strong>.</p>
+                <p>Load <strong>{selectedLoad.id}</strong> assigned to <strong>{assignedDriverName}</strong> by {dispatcherName}.</p>
                 <p className="text-xs mt-2">
                   Carrier: {selectedLoad.carrier || 'N/A'}, SCAC: {selectedLoad.scac || 'N/A'}<br/>
                   {selectedLoad.origin} to {selectedLoad.destination}<br />
@@ -221,10 +228,17 @@ export function LoadsDataTable() {
         cell: ({ row }) => row.getValue("assignedTo") || "N/A"
       },
       {
+        accessorKey: "dispatcher",
+        header: "Dispatcher",
+        cell: ({ row }) => row.getValue("dispatcher") || "N/A"
+      },
+      {
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
           const load = row.original
+
+          if (!isEditable) return null;
     
           return (
             <DropdownMenu>
@@ -258,7 +272,9 @@ export function LoadsDataTable() {
     []
   )
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
+    React.useState<VisibilityState>({
+      dispatcher: false, // Hidden by default
+    })
   const [rowSelection, setRowSelection] = React.useState({})
 
   const filteredData = React.useMemo(() => {
@@ -317,68 +333,70 @@ export function LoadsDataTable() {
           className="max-w-sm"
         />
         <div className="flex gap-2">
-            <Dialog open={isAddLoadOpen} onOpenChange={setAddLoadOpen}>
-                <DialogTrigger asChild>
-                    <Button>Add Load</Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                    <DialogTitle>Add New Load</DialogTitle>
-                    <DialogDescription>
-                        Enter the details of the new load.
-                    </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={(e) => {
-                         e.preventDefault();
-                         const formData = new FormData(e.currentTarget);
-                         const newLoad = {
-                           origin: formData.get("origin") as string,
-                           destination: formData.get("destination") as string,
-                           pickupDate: formData.get("pickupDate") as string,
-                           deliveryDate: formData.get("deliveryDate") as string,
-                           rate: Number(formData.get("rate")),
-                           carrier: formData.get("carrier") as string,
-                           scac: formData.get("scac") as string,
-                         };
-                         addLoad(newLoad);
-                    }}>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="origin" className="text-right">Origin</Label>
-                                <Input id="origin" name="origin" className="col-span-3" required />
+            {isEditable && (
+                <Dialog open={isAddLoadOpen} onOpenChange={setAddLoadOpen}>
+                    <DialogTrigger asChild>
+                        <Button>Add Load</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                        <DialogTitle>Add New Load</DialogTitle>
+                        <DialogDescription>
+                            Enter the details of the new load.
+                        </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            const newLoad = {
+                            origin: formData.get("origin") as string,
+                            destination: formData.get("destination") as string,
+                            pickupDate: formData.get("pickupDate") as string,
+                            deliveryDate: formData.get("deliveryDate") as string,
+                            rate: Number(formData.get("rate")),
+                            carrier: formData.get("carrier") as string,
+                            scac: formData.get("scac") as string,
+                            };
+                            addLoad(newLoad);
+                        }}>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="origin" className="text-right">Origin</Label>
+                                    <Input id="origin" name="origin" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="destination" className="text-right">Destination</Label>
+                                    <Input id="destination" name="destination" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="pickupDate" className="text-right">Pickup Date</Label>
+                                    <Input id="pickupDate" name="pickupDate" type="date" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="deliveryDate" className="text-right">Delivery Date</Label>
+                                    <Input id="deliveryDate" name="deliveryDate" type="date" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="rate" className="text-right">Rate ($)</Label>
+                                    <Input id="rate" name="rate" type="number" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="carrier" className="text-right">Carrier</Label>
+                                    <Input id="carrier" name="carrier" className="col-span-3" />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="scac" className="text-right">SCAC</Label>
+                                    <Input id="scac" name="scac" className="col-span-3" />
+                                </div>
                             </div>
-                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="destination" className="text-right">Destination</Label>
-                                <Input id="destination" name="destination" className="col-span-3" required />
-                            </div>
-                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="pickupDate" className="text-right">Pickup Date</Label>
-                                <Input id="pickupDate" name="pickupDate" type="date" className="col-span-3" required />
-                            </div>
-                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="deliveryDate" className="text-right">Delivery Date</Label>
-                                <Input id="deliveryDate" name="deliveryDate" type="date" className="col-span-3" required />
-                            </div>
-                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="rate" className="text-right">Rate ($)</Label>
-                                <Input id="rate" name="rate" type="number" className="col-span-3" required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="carrier" className="text-right">Carrier</Label>
-                                <Input id="carrier" name="carrier" className="col-span-3" />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="scac" className="text-right">SCAC</Label>
-                                <Input id="scac" name="scac" className="col-span-3" />
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="ghost" onClick={() => setAddLoadOpen(false)}>Cancel</Button>
-                            <Button type="submit">Add Load</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+                            <DialogFooter>
+                                <Button type="button" variant="ghost" onClick={() => setAddLoadOpen(false)}>Cancel</Button>
+                                <Button type="submit">Add Load</Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            )}
 
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -521,5 +539,3 @@ export function LoadsDataTable() {
     </div>
   )
 }
-
-    
