@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowRight, CalendarCheck, CalendarCog, Printer, UserPlus } from "lucide-react";
 import { useSchedule } from "@/hooks/use-schedule";
 import Link from "next/link";
+import Image from "next/image";
+import { Logo } from "@/components/icons/logo";
 
 export function AdminHomepage() {
     const { timeOffRequests, registrations } = useSchedule();
@@ -21,12 +23,27 @@ export function AdminHomepage() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Administrator Dashboard</CardTitle>
-                <CardDescription>
-                    Welcome, Admin. Here you can manage schedules, approve requests, and print reports.
-                </CardDescription>
+                <div className="flex items-start justify-between">
+                    <div>
+                        <CardTitle className="font-headline">Administrator Dashboard</CardTitle>
+                        <CardDescription>
+                            Welcome, Admin. Here you can manage schedules, approve requests, and print reports.
+                        </CardDescription>
+                    </div>
+                    <Logo className="h-10 w-10 text-primary" />
+                </div>
             </CardHeader>
             <CardContent className="grid gap-6">
+                 <div className="relative w-full h-48 rounded-lg overflow-hidden">
+                    <Image 
+                        src="https://picsum.photos/800/200"
+                        alt="Abstract dashboard background"
+                        layout="fill"
+                        objectFit="cover"
+                        data-ai-hint="office productivity"
+                    />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                </div>
                 <div className="grid md:grid-cols-2 gap-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
