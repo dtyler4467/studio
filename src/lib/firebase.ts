@@ -8,10 +8,11 @@ const firebaseConfig = {
   apiKey: "AIzaSyDxS__aq2vbL6mSV4xsaLWnWCh7oyFu8EE",
   authDomain: "logiflow-8oju4.firebaseapp.com",
   messagingSenderId: "719952558782",
+  measurementId: "G-XXXXXXXXXX"
 };
 
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 export { app, auth };
