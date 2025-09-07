@@ -52,6 +52,7 @@ import {
     SelectTrigger,
     SelectValue,
   } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 
 type Load = {
@@ -61,7 +62,7 @@ type Load = {
   pickupDate: string
   deliveryDate: string
   rate: number
-  status: "Available" | "Assigned" | "In-Transit" | "Delivered"
+  status: "Available" | "Assigned" | "In-Transit" | "Delivered" | "Pending" | "Deleted"
   assignedTo?: string;
   carrier?: string;
   scac?: string;
@@ -70,9 +71,10 @@ type Load = {
 const initialData: Load[] = [
     { id: "LD001", origin: "Los Angeles, CA", destination: "Phoenix, AZ", pickupDate: "2024-08-01", deliveryDate: "2024-08-02", rate: 1200, status: "Available" },
     { id: "LD002", origin: "Chicago, IL", destination: "New York, NY", pickupDate: "2024-08-03", deliveryDate: "2024-08-05", rate: 2500, status: "Available" },
-    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Assigned", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT" },
+    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Pending", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT" },
     { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith", carrier: "Knight-Swift", scac: "KNX" },
     { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT" },
+    { id: "LD006", origin: "Boston, MA", destination: "Washington, DC", pickupDate: "2024-08-10", deliveryDate: "2024-08-11", rate: 900, status: "Deleted" },
 ]
 
 const drivers = [
@@ -89,14 +91,15 @@ export function LoadsDataTable() {
     const [isAssignLoadOpen, setAssignLoadOpen] = React.useState(false);
     const [selectedLoad, setSelectedLoad] = React.useState<Load | null>(null);
     const [selectedDriver, setSelectedDriver] = React.useState<string>("");
+    const [statusFilter, setStatusFilter] = React.useState<string>("all")
     const { toast } = useToast();
 
     const deleteLoad = (id: string) => {
-        setData(currentData => currentData.filter(load => load.id !== id));
+        setData(currentData => currentData.map(load => load.id === id ? { ...load, status: 'Deleted' } : load));
         toast({
-            title: "Load Deleted",
-            description: `Load ${id} has been removed.`,
-          });
+            title: "Load Marked as Deleted",
+            description: `Load ${id} has been marked as deleted.`,
+        });
     };
 
     const handleOpenAssignDialog = (load: Load) => {
@@ -111,7 +114,7 @@ export function LoadsDataTable() {
         setData(currentData =>
           currentData.map(load =>
             load.id === selectedLoad.id
-              ? { ...load, status: 'Assigned', assignedTo: drivers.find(d => d.id === selectedDriver)?.name }
+              ? { ...load, status: 'Pending', assignedTo: drivers.find(d => d.id === selectedDriver)?.name }
               : load
           )
         );
@@ -138,7 +141,7 @@ export function LoadsDataTable() {
 
     const addLoad = (newLoad: Omit<Load, 'id' | 'status'>) => {
         const id = `LD${(data.length + 101).toString()}`;
-        setData(currentData => [...currentData, { ...newLoad, id, status: 'Available' }]);
+        setData(currentData => [{ ...newLoad, id, status: 'Available' }, ...currentData]);
         setAddLoadOpen(false);
         toast({
             title: "Load Added",
@@ -240,7 +243,7 @@ export function LoadsDataTable() {
                 <DropdownMenuItem onClick={() => handleOpenAssignDialog(load)} disabled={load.status !== 'Available'}>
                     Assign Load
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => deleteLoad(load.id)}>
+                <DropdownMenuItem className="text-destructive" onClick={() => deleteLoad(load.id)} disabled={load.status === 'Deleted'}>
                     Delete Load
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -258,8 +261,22 @@ export function LoadsDataTable() {
     React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
 
+  const filteredData = React.useMemo(() => {
+    if (statusFilter === 'all') {
+        return data;
+    }
+    const statusMap = {
+        available: ['Available'],
+        pending: ['Assigned', 'In-Transit', 'Pending'],
+        completed: ['Delivered'],
+        deleted: ['Deleted'],
+    };
+    const targetStatuses = statusMap[statusFilter as keyof typeof statusMap] || [];
+    return data.filter(load => targetStatuses.includes(load.status));
+  }, [data, statusFilter]);
+
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -279,6 +296,17 @@ export function LoadsDataTable() {
 
   return (
     <div className="w-full">
+         <div className="flex items-center justify-between pb-4">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="overflow-x-auto">
+                <TabsList>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="available">Available</TabsTrigger>
+                    <TabsTrigger value="pending">Pending</TabsTrigger>
+                    <TabsTrigger value="completed">Completed</TabsTrigger>
+                    <TabsTrigger value="deleted">Deleted</TabsTrigger>
+                </TabsList>
+            </Tabs>
+        </div>
       <div className="flex items-center justify-between py-4">
         <Input
           placeholder="Filter by origin..."
@@ -493,3 +521,5 @@ export function LoadsDataTable() {
     </div>
   )
 }
+
+    
