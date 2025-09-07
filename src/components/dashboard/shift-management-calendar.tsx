@@ -1,17 +1,19 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import { format, formatISO, isSameDay } from 'date-fns';
 import { useSchedule } from '@/hooks/use-schedule';
-import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, X } from 'lucide-react';
+import { PlusCircle, PartyPopper } from 'lucide-react';
 import { DayProps, DayPicker } from 'react-day-picker';
 import { ScrollArea } from '../ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 type Shift = {
     id: string;
@@ -23,7 +25,7 @@ type Shift = {
 };
 
 export function ShiftManagementCalendar() {
-    const { shifts, employees, addShift, updateShift, deleteShift } = useSchedule();
+    const { shifts, employees, holidays, addShift, updateShift, deleteShift } = useSchedule();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [editingShift, setEditingShift] = useState<Shift | Omit<Shift, 'id'> | null>(null);
@@ -76,18 +78,30 @@ export function ShiftManagementCalendar() {
     const DayCell = ({ date, displayMonth }: DayProps) => {
         const dateKey = formatISO(date, { representation: 'date' });
         const dateShifts = shiftsByDate[dateKey] || [];
+        const holiday = holidays.find(h => isSameDay(h.date, date));
 
         if (displayMonth.getMonth() !== date.getMonth()) {
             return <div className="h-28 w-full"></div>;
         }
 
         return (
-            <div className="relative flex flex-col h-32 w-full p-1 border-t border-r">
+            <div className={cn("relative flex flex-col h-32 w-full p-1 border-t border-r", holiday && "bg-accent/10")}>
                 <div className="flex items-center justify-between text-sm font-medium">
-                    <span>{format(date, 'd')}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleOpenDialogForNew(date)}>
-                        <PlusCircle className="h-4 w-4" />
-                    </Button>
+                    <span className={cn(holiday && "text-accent-foreground font-bold")}>{format(date, 'd')}</span>
+                     {holiday ? (
+                        <Tooltip delayDuration={0}>
+                            <TooltipTrigger>
+                                <PartyPopper className="h-5 w-5 text-accent" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{holiday.name}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : (
+                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleOpenDialogForNew(date)}>
+                            <PlusCircle className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
                 <ScrollArea className="flex-1 mt-1">
                     <div className="space-y-1 pr-2">
@@ -108,7 +122,7 @@ export function ShiftManagementCalendar() {
     };
 
     return (
-        <>
+        <TooltipProvider>
             <DayPicker
                 showOutsideDays
                 month={currentMonth}
@@ -196,6 +210,6 @@ export function ShiftManagementCalendar() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </>
+        </TooltipProvider>
     );
 }

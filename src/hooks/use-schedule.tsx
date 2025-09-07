@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -17,9 +18,15 @@ type Employee = {
     name: string;
 }
 
+type Holiday = {
+    date: Date;
+    name: string;
+}
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
+  holidays: Holiday[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
@@ -39,6 +46,20 @@ const mockEmployees: Employee[] = [
     { id: "USR003", name: "Mike Smith" },
     { id: "USR004", name: "Emily Jones" },
 ];
+
+const holidays: Holiday[] = [
+    { date: new Date(2024, 0, 1), name: "New Year's Day" },
+    { date: new Date(2024, 0, 15), name: "Martin Luther King, Jr. Day" },
+    { date: new Date(2024, 1, 19), name: "Presidents' Day" },
+    { date: new Date(2024, 2, 29), name: "Good Friday" },
+    { date: new Date(2024, 4, 27), name: "Memorial Day" },
+    { date: new Date(2024, 5, 19), name: "Juneteenth" },
+    { date: new Date(2024, 6, 4), name: "Independence Day" },
+    { date: new Date(2024, 8, 2), name: "Labor Day" },
+    { date: new Date(2024, 10, 28), name: "Thanksgiving Day" },
+    { date: new Date(2024, 11, 25), name: "Christmas Day" },
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -60,7 +81,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, addShift, updateShift, deleteShift }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, addShift, updateShift, deleteShift }}>
       {children}
     </ScheduleContext.Provider>
   );
