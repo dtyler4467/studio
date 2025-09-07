@@ -152,21 +152,23 @@ export function ShiftManagementCalendar() {
 
     return (
         <TooltipProvider>
-            <DayPicker
-                showOutsideDays
-                month={currentMonth}
-                onMonthChange={setCurrentMonth}
-                components={{ Day: DayCell }}
-                className="p-0 border rounded-md w-full"
-                classNames={{
-                    table: 'w-full border-collapse',
-                    head_row: 'flex w-full',
-                    head_cell: 'w-full text-muted-foreground text-sm font-normal',
-                    row: 'flex w-full',
-                    cell: 'w-full',
-                    day: 'w-full h-auto',
-                }}
-            />
+            <div id="shift-calendar-printable">
+                <DayPicker
+                    showOutsideDays
+                    month={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                    components={{ Day: DayCell }}
+                    className="p-0 border rounded-md w-full"
+                    classNames={{
+                        table: 'w-full border-collapse',
+                        head_row: 'flex w-full',
+                        head_cell: 'w-full text-muted-foreground text-sm font-normal',
+                        row: 'flex w-full',
+                        cell: 'w-full',
+                        day: 'w-full h-auto',
+                    }}
+                />
+            </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent>
