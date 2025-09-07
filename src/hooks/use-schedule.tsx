@@ -16,6 +16,7 @@ type Shift = {
 type Employee = {
     id: string;
     name: string;
+    email?: string;
 }
 
 type Holiday = {
@@ -32,17 +33,28 @@ type TimeOffRequest = {
     status: 'Pending' | 'Approved' | 'Denied';
 }
 
+type Registration = {
+    id: string;
+    name: string;
+    email: string;
+    status: 'Pending' | 'Approved' | 'Denied';
+}
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
   holidays: Holiday[];
   timeOffRequests: TimeOffRequest[];
+  registrations: Registration[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
   addTimeOffRequest: (request: Omit<TimeOffRequest, 'id' | 'status' | 'employeeId'>) => void;
   approveTimeOffRequest: (requestId: string) => void;
   denyTimeOffRequest: (requestId: string) => void;
+  registerUser: (user: Omit<Registration, 'id' | 'status'>) => void;
+  approveRegistration: (registrationId: string) => void;
+  denyRegistration: (registrationId: string) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -54,10 +66,10 @@ const initialShifts: Shift[] = [
 
 
 const mockEmployees: Employee[] = [
-    { id: "USR001", name: "John Doe" },
-    { id: "USR002", name: "Jane Doe" },
-    { id: "USR003", name: "Mike Smith" },
-    { id: "USR004", name: "Emily Jones" },
+    { id: "USR001", name: "John Doe", email: "john.doe@example.com" },
+    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com" },
+    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com" },
+    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com" },
 ];
 
 const holidays: Holiday[] = [
@@ -78,13 +90,19 @@ const initialTimeOffRequests: TimeOffRequest[] = [
     { id: 'PTO002', employeeId: 'USR003', startDate: addDays(new Date(), 10), endDate: addDays(new Date(), 10), reason: 'Doctor appointment', status: 'Approved' },
 ];
 
+const initialRegistrations: Registration[] = [
+    { id: 'REG001', name: 'New User 1', email: 'new.user1@example.com', status: 'Pending' },
+    { id: 'REG002', name: 'New User 2', email: 'new.user2@example.com', status: 'Pending' },
+]
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
+  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>(initialTimeOffRequests);
-  const employees = mockEmployees;
+  const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
     const newShift = { ...shift, id: `SH${Date.now()}` };
@@ -113,9 +131,31 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     setTimeOffRequests(prev => prev.map(req => req.id === requestId ? { ...req, status: 'Denied' as const } : req));
     }
 
+    const registerUser = (user: Omit<Registration, 'id' | 'status'>) => {
+        const newRegistration = { ...user, id: `REG${Date.now()}`, status: 'Pending' as const };
+        setRegistrations(prev => [...prev, newRegistration]);
+    }
+
+    const approveRegistration = (registrationId: string) => {
+        const registration = registrations.find(r => r.id === registrationId);
+        if (!registration) return;
+
+        setRegistrations(prev => prev.map(reg => reg.id === registrationId ? { ...reg, status: 'Approved' as const } : reg));
+        
+        const newEmployee = {
+            id: `USR${Date.now()}`,
+            name: registration.name,
+            email: registration.email,
+        };
+        setEmployees(prev => [...prev, newEmployee]);
+    }
+
+    const denyRegistration = (registrationId: string) => {
+        setRegistrations(prev => prev.map(reg => reg.id === registrationId ? { ...reg, status: 'Denied' as const } : reg));
+    }
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration }}>
       {children}
     </ScheduleContext.Provider>
   );

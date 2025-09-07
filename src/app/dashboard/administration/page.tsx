@@ -7,6 +7,7 @@ import { ShiftManagementCalendar } from '@/components/dashboard/shift-management
 import { TimeOffApprovalList } from '@/components/dashboard/time-off-approval-list';
 import { PrintSchedule } from '@/components/dashboard/print-schedule';
 import { AdminHomepage } from '@/components/dashboard/admin-homepage';
+import { RegistrationApprovalList } from '@/components/dashboard/registration-approval-list';
 
 export default function AdministrationPage() {
   return (
@@ -14,10 +15,11 @@ export default function AdministrationPage() {
       <Header pageTitle="Administration" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Tabs defaultValue="homepage">
-            <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+            <TabsList className="grid w-full grid-cols-5 max-w-3xl">
                 <TabsTrigger value="homepage">Homepage</TabsTrigger>
                 <TabsTrigger value="shifts">Shift Management</TabsTrigger>
                 <TabsTrigger value="pto">Time Off Requests</TabsTrigger>
+                <TabsTrigger value="registrations">Registrations</TabsTrigger>
                 <TabsTrigger value="print">Print/Email Schedule</TabsTrigger>
             </TabsList>
             <TabsContent value="homepage">
@@ -28,6 +30,9 @@ export default function AdministrationPage() {
             </TabsContent>
             <TabsContent value="pto">
                 <TimeOffApprovalList />
+            </TabsContent>
+            <TabsContent value="registrations">
+                <RegistrationApprovalList />
             </TabsContent>
             <TabsContent value="print">
                 <PrintSchedule />
