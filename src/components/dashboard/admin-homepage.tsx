@@ -34,7 +34,7 @@ export function AdminHomepage() {
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold font-headline">Quick Actions</h3>
                     <div className="grid sm:grid-cols-3 gap-4">
-                         <Card className="hover:bg-muted/50 transition-colors">
+                         <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                      <div className="bg-primary/10 p-3 rounded-md">
@@ -48,7 +48,7 @@ export function AdminHomepage() {
                                 <ArrowRight className="h-5 w-5 text-muted-foreground" />
                             </CardContent>
                          </Card>
-                         <Card className="hover:bg-muted/50 transition-colors">
+                         <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                      <div className="bg-primary/10 p-3 rounded-md">
@@ -62,7 +62,7 @@ export function AdminHomepage() {
                                 <ArrowRight className="h-5 w-5 text-muted-foreground" />
                             </CardContent>
                          </Card>
-                         <Card className="hover:bg-muted/50 transition-colors">
+                         <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                      <div className="bg-primary/10 p-3 rounded-md">
