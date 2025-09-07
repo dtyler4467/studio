@@ -1,6 +1,9 @@
+"use client";
+
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { TimeOffRequestForm } from '@/components/dashboard/time-off-request-form';
+import { TimeOffHistory } from '@/components/dashboard/time-off-history';
 
 export default function TimeOffPage() {
   return (
@@ -25,9 +28,7 @@ export default function TimeOffPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex items-center justify-center rounded-md border border-dashed h-48">
-                    <p className="text-muted-foreground">Time off request form coming soon.</p>
-                </div>
+                <TimeOffRequestForm />
             </CardContent>
           </Card>
         </div>
@@ -40,9 +41,7 @@ export default function TimeOffPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center rounded-md border border-dashed h-64">
-                <p className="text-muted-foreground">PTO request history coming soon.</p>
-            </div>
+            <TimeOffHistory />
           </CardContent>
         </Card>
       </main>

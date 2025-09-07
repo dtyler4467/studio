@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { format, isSameDay } from "date-fns"
+import { format, isSameDay, isWithinInterval } from "date-fns"
 import { DateRange } from "react-day-picker"
 import { useSchedule } from "@/hooks/use-schedule"
 import { cn } from "@/lib/utils"
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar as CalendarIcon, PartyPopper } from "lucide-react"
+import { Calendar as CalendarIcon, PartyPopper, Plane } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 
@@ -18,7 +18,7 @@ export function ScheduleCalendar() {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined)
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const [mode, setMode] = React.useState<"single" | "range">("single")
-  const { shifts, holidays } = useSchedule();
+  const { shifts, holidays, timeOffRequests } = useSchedule();
 
   React.useEffect(() => {
     setSelectedDate(new Date());
@@ -31,12 +31,33 @@ export function ScheduleCalendar() {
     if (!selectedDate) return [];
     return shifts.filter(shift => isSameDay(new Date(shift.date), selectedDate) && shift.employeeId === currentUserId);
   }, [shifts, selectedDate, currentUserId]);
+
+  const approvedTimeOff = timeOffRequests.filter(req => req.employeeId === currentUserId && req.status === 'Approved');
+
+  const selectedDayIsApprovedTimeOff = React.useMemo(() => {
+    if (!selectedDate) return false;
+    return approvedTimeOff.some(req => 
+        isWithinInterval(selectedDate, { start: req.startDate, end: req.endDate }) ||
+        isSameDay(selectedDate, req.startDate) ||
+        isSameDay(selectedDate, req.endDate)
+    );
+  }, [approvedTimeOff, selectedDate]);
   
   const holidayDates = holidays.map(h => h.date);
 
   const modifiers = {
     scheduled: shifts.filter(s => s.employeeId === currentUserId).map(shift => new Date(shift.date)),
     holiday: holidayDates,
+    approved_pto: approvedTimeOff.flatMap(req => {
+        const dates = [];
+        let currentDate = new Date(req.startDate);
+        const endDate = new Date(req.endDate);
+        while(currentDate <= endDate) {
+            dates.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        return dates;
+    }),
   }
   const modifiersStyles = {
     scheduled: {
@@ -48,17 +69,29 @@ export function ScheduleCalendar() {
       color: 'hsl(var(--accent-foreground))',
       fontWeight: 'bold',
     },
+    approved_pto: {
+        backgroundColor: 'hsl(var(--destructive) / 0.1)',
+        color: 'hsl(var(--destructive))',
+    }
   }
 
-  const HolidayFooter = () => {
+  const FooterContent = () => {
     const holiday = holidays.find(h => selectedDate && isSameDay(h.date, selectedDate));
-    if (!holiday) return null;
-    return (
+    if (holiday) return (
         <div className="text-center text-sm mt-2 p-2 bg-accent/20 rounded-md flex items-center justify-center gap-2">
             <PartyPopper className="w-4 h-4 text-accent-foreground" />
             <span className="font-semibold text-accent-foreground">{holiday.name} (Holiday)</span>
         </div>
-    )
+    );
+
+    if(selectedDayIsApprovedTimeOff) return (
+        <div className="text-center text-sm mt-2 p-2 bg-destructive/10 rounded-md flex items-center justify-center gap-2">
+            <Plane className="w-4 h-4 text-destructive" />
+            <span className="font-semibold text-destructive">Approved Time Off</span>
+        </div>
+    );
+    
+    return null;
   }
 
   return (
@@ -80,7 +113,7 @@ export function ScheduleCalendar() {
                         className="rounded-md border"
                         modifiers={modifiers}
                         modifiersStyles={modifiersStyles}
-                        footer={<HolidayFooter />}
+                        footer={<FooterContent />}
                         components={{
                             Day: ({ date, ...props }) => {
                                 const holiday = holidays.find(h => isSameDay(h.date, date));
@@ -95,7 +128,8 @@ export function ScheduleCalendar() {
                                                         dayModifiers.today && "bg-accent text-accent-foreground",
                                                         dayModifiers.selected && "bg-primary text-primary-foreground",
                                                         dayModifiers.scheduled && "border-2 border-primary rounded-md",
-                                                        dayModifiers.holiday && "bg-accent/20 text-accent-foreground font-bold"
+                                                        dayModifiers.holiday && "bg-accent/20 text-accent-foreground font-bold",
+                                                        dayModifiers.approved_pto && "bg-destructive/10 text-destructive"
                                                     )}
                                                 >
                                                     <span className="flex items-center justify-center h-full w-full">{format(date, 'd')}</span>
@@ -107,7 +141,7 @@ export function ScheduleCalendar() {
                                         </Tooltip>
                                     );
                                 }
-                                return <div className={cn("h-9 w-9 p-0 text-center text-sm", dayModifiers.today && "bg-accent text-accent-foreground", dayModifiers.selected && "bg-primary text-primary-foreground", dayModifiers.scheduled && "border-2 border-primary rounded-md")}>{format(date, 'd')}</div>;
+                                return <div className={cn("h-9 w-9 p-0 text-center text-sm", dayModifiers.today && "bg-accent text-accent-foreground", dayModifiers.selected && "bg-primary text-primary-foreground", dayModifiers.scheduled && "border-2 border-primary rounded-md", dayModifiers.approved_pto && "bg-destructive/10 text-destructive")}>{format(date, 'd')}</div>;
                             }
                         }}
                     />
@@ -167,6 +201,11 @@ export function ScheduleCalendar() {
                     {!selectedDate ? (
                         <div className="rounded-md border border-dashed h-48 w-full flex items-center justify-center">
                              <p className="text-muted-foreground">Loading schedule...</p>
+                        </div>
+                    ) : selectedDayIsApprovedTimeOff ? (
+                         <div className="rounded-md border border-dashed bg-destructive/10 h-48 w-full flex flex-col items-center justify-center text-destructive">
+                            <Plane className="w-8 h-8 mb-2" />
+                            <p className="font-semibold">Approved Time Off</p>
                         </div>
                     ) : selectedDayShifts.length > 0 ? (
                         <ul className="space-y-2">

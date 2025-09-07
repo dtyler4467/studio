@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShiftManagementCalendar } from '@/components/dashboard/shift-management-calendar';
+import { TimeOffApprovalList } from '@/components/dashboard/time-off-approval-list';
 
 export default function AdministrationPage() {
   return (
@@ -19,19 +20,7 @@ export default function AdministrationPage() {
                 <ShiftManagementCalendar />
             </TabsContent>
             <TabsContent value="pto">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Approve Time Off Requests</CardTitle>
-                        <CardDescription>
-                            Review and approve or deny paid time off requests from employees.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                            <p className="text-muted-foreground">PTO approval tools coming soon.</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                <TimeOffApprovalList />
             </TabsContent>
         </Tabs>
       </main>

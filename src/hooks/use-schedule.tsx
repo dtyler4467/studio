@@ -23,13 +23,26 @@ type Holiday = {
     name: string;
 }
 
+type TimeOffRequest = {
+    id: string;
+    employeeId: string;
+    startDate: Date;
+    endDate: Date;
+    reason: string;
+    status: 'Pending' | 'Approved' | 'Denied';
+}
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
   holidays: Holiday[];
+  timeOffRequests: TimeOffRequest[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
+  addTimeOffRequest: (request: Omit<TimeOffRequest, 'id' | 'status' | 'employeeId'>) => void;
+  approveTimeOffRequest: (requestId: string) => void;
+  denyTimeOffRequest: (requestId: string) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -60,11 +73,17 @@ const holidays: Holiday[] = [
     { date: new Date(2024, 11, 25), name: "Christmas Day" },
 ];
 
+const initialTimeOffRequests: TimeOffRequest[] = [
+    { id: 'PTO001', employeeId: 'USR002', startDate: addDays(new Date(), 5), endDate: addDays(new Date(), 7), reason: 'Family vacation', status: 'Pending' },
+    { id: 'PTO002', employeeId: 'USR003', startDate: addDays(new Date(), 10), endDate: addDays(new Date(), 10), reason: 'Doctor appointment', status: 'Approved' },
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
+  const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>(initialTimeOffRequests);
   const employees = mockEmployees;
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
@@ -80,8 +99,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     setShifts(prev => prev.filter(shift => shift.id !== shiftId));
   }
 
+  // Assuming the current user is USR001 for now
+  const addTimeOffRequest = (request: Omit<TimeOffRequest, 'id' | 'status' | 'employeeId'>) => {
+    const newRequest = { ...request, id: `PTO${Date.now()}`, status: 'Pending' as const, employeeId: 'USR001' };
+    setTimeOffRequests(prev => [...prev, newRequest]);
+  }
+
+  const approveTimeOffRequest = (requestId: string) => {
+    setTimeOffRequests(prev => prev.map(req => req.id === requestId ? { ...req, status: 'Approved' as const } : req));
+  }
+
+    const denyTimeOffRequest = (requestId: string) => {
+    setTimeOffRequests(prev => prev.map(req => req.id === requestId ? { ...req, status: 'Denied' as const } : req));
+    }
+
+
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, addShift, updateShift, deleteShift }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest }}>
       {children}
     </ScheduleContext.Provider>
   );

@@ -2,14 +2,14 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { format, formatISO, isSameDay } from 'date-fns';
+import { format, formatISO, isSameDay, isWithinInterval } from 'date-fns';
 import { useSchedule } from '@/hooks/use-schedule';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, PartyPopper } from 'lucide-react';
+import { PlusCircle, PartyPopper, Plane } from 'lucide-react';
 import { DayProps, DayPicker } from 'react-day-picker';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ type Shift = {
 };
 
 export function ShiftManagementCalendar() {
-    const { shifts, employees, holidays, addShift, updateShift, deleteShift } = useSchedule();
+    const { shifts, employees, holidays, addShift, updateShift, deleteShift, timeOffRequests } = useSchedule();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [editingShift, setEditingShift] = useState<Shift | Omit<Shift, 'id'> | null>(null);
@@ -40,6 +40,22 @@ export function ShiftManagementCalendar() {
             return acc;
         }, {} as Record<string, Shift[]>);
     }, [shifts]);
+
+    const approvedTimeOffByDate = useMemo(() => {
+        return timeOffRequests
+            .filter(req => req.status === 'Approved')
+            .reduce((acc, req) => {
+                let currentDate = new Date(req.startDate);
+                const endDate = new Date(req.endDate);
+                while(currentDate <= endDate) {
+                    const dateKey = formatISO(currentDate, { representation: 'date' });
+                    if (!acc[dateKey]) acc[dateKey] = [];
+                    acc[dateKey].push(req);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                return acc;
+        }, {} as Record<string, any[]>);
+    }, [timeOffRequests]);
 
     const handleOpenDialogForNew = (date: Date) => {
         setEditingShift({ 
@@ -77,15 +93,16 @@ export function ShiftManagementCalendar() {
     
     const DayCell = ({ date, displayMonth }: DayProps) => {
         const dateKey = formatISO(date, { representation: 'date' });
-        const dateShifts = shiftsByDate[dateKey] || [];
+        const dateShifts = shiftsBydateKey] || [];
         const holiday = holidays.find(h => isSameDay(h.date, date));
+        const dateApprovedTimeOff = approvedTimeOffByDate[dateKey] || [];
 
         if (displayMonth.getMonth() !== date.getMonth()) {
-            return <div className="h-28 w-full"></div>;
+            return <div className="h-32 w-full"></div>;
         }
 
         return (
-            <div className={cn("relative flex flex-col h-32 w-full p-1 border-t border-r", holiday && "bg-accent/10")}>
+            <div className={cn("relative flex flex-col h-32 w-full p-1 border-t border-r", holiday && "bg-accent/10", dateApprovedTimeOff.length > 0 && "bg-destructive/5")}>
                 <div className="flex items-center justify-between text-sm font-medium">
                     <span className={cn(holiday && "text-accent-foreground font-bold")}>{format(date, 'd')}</span>
                      {holiday ? (
@@ -105,6 +122,18 @@ export function ShiftManagementCalendar() {
                 </div>
                 <ScrollArea className="flex-1 mt-1">
                     <div className="space-y-1 pr-2">
+                         {dateApprovedTimeOff.map(req => (
+                            <Tooltip key={req.id} delayDuration={0}>
+                                <TooltipTrigger asChild>
+                                    <div className="w-full text-left p-1.5 rounded-md bg-destructive/10 text-xs">
+                                        <p className="font-semibold text-destructive truncate flex items-center gap-1.5"><Plane className="w-3 h-3" /> {employees.find(e => e.id === req.employeeId)?.name}</p>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Approved Time Off</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        ))}
                         {dateShifts.map(shift => (
                             <button 
                                 key={shift.id} 
