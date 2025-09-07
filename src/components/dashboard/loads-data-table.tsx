@@ -45,7 +45,14 @@ import {
     DialogDescription,
   } from "@/components/ui/dialog"
 import { Label } from "../ui/label"
-import { Textarea } from "../ui/textarea"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
 
 type Load = {
   id: string
@@ -55,33 +62,84 @@ type Load = {
   deliveryDate: string
   rate: number
   status: "Available" | "Assigned" | "In-Transit" | "Delivered"
+  assignedTo?: string;
 }
 
 const initialData: Load[] = [
     { id: "LD001", origin: "Los Angeles, CA", destination: "Phoenix, AZ", pickupDate: "2024-08-01", deliveryDate: "2024-08-02", rate: 1200, status: "Available" },
     { id: "LD002", origin: "Chicago, IL", destination: "New York, NY", pickupDate: "2024-08-03", deliveryDate: "2024-08-05", rate: 2500, status: "Available" },
-    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Assigned" },
-    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit" },
-    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered" },
+    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Assigned", assignedTo: "Jane Doe" },
+    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith" },
+    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe" },
+]
+
+const drivers = [
+    { id: "USR001", name: "John Doe" },
+    { id: "USR002", name: "Jane Doe" },
+    { id: "USR003", name: "Mike Smith" },
+    { id: "USR004", name: "Emily Jones" },
 ]
 
 
 export function LoadsDataTable() {
     const [data, setData] = React.useState<Load[]>(initialData);
     const [isAddLoadOpen, setAddLoadOpen] = React.useState(false);
+    const [isAssignLoadOpen, setAssignLoadOpen] = React.useState(false);
+    const [selectedLoad, setSelectedLoad] = React.useState<Load | null>(null);
+    const [selectedDriver, setSelectedDriver] = React.useState<string>("");
+    const { toast } = useToast();
 
     const deleteLoad = (id: string) => {
         setData(currentData => currentData.filter(load => load.id !== id));
+        toast({
+            title: "Load Deleted",
+            description: `Load ${id} has been removed.`,
+          });
     };
 
-    const assignLoad = (id: string) => {
-        setData(currentData => currentData.map(load => load.id === id ? { ...load, status: 'Assigned' } : load));
+    const handleOpenAssignDialog = (load: Load) => {
+        setSelectedLoad(load);
+        setSelectedDriver("");
+        setAssignLoadOpen(true);
+    };
+
+    const handleAssignLoad = () => {
+        if (!selectedLoad || !selectedDriver) return;
+        
+        setData(currentData =>
+          currentData.map(load =>
+            load.id === selectedLoad.id
+              ? { ...load, status: 'Assigned', assignedTo: drivers.find(d => d.id === selectedDriver)?.name }
+              : load
+          )
+        );
+        
+        toast({
+            title: "Load Assigned!",
+            description: (
+              <div>
+                <p>Load <strong>{selectedLoad.id}</strong> assigned to <strong>{drivers.find(d => d.id === selectedDriver)?.name}</strong>.</p>
+                <p className="text-xs mt-2">
+                  {selectedLoad.origin} to {selectedLoad.destination}<br />
+                  Pickup: {selectedLoad.pickupDate}
+                </p>
+              </div>
+            ),
+        });
+
+        setAssignLoadOpen(false);
+        setSelectedLoad(null);
+        setSelectedDriver("");
     };
 
     const addLoad = (newLoad: Omit<Load, 'id' | 'status'>) => {
-        const id = `LD${(data.length + 1).toString().padStart(3, '0')}`;
+        const id = `LD${(data.length + 101).toString()}`;
         setData(currentData => [...currentData, { ...newLoad, id, status: 'Available' }]);
         setAddLoadOpen(false);
+        toast({
+            title: "Load Added",
+            description: `New load ${id} has been created.`,
+        });
     };
 
     const columns: ColumnDef<Load>[] = [
@@ -120,24 +178,18 @@ export function LoadsDataTable() {
         header: "Destination",
       },
       {
-        accessorKey: "pickupDate",
-        header: "Pickup Date",
-      },
-      {
-        accessorKey: "deliveryDate",
-        header: "Delivery Date",
-      },
-      {
         accessorKey: "rate",
         header: ({ column }) => {
           return (
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-              Rate
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="text-right">
+                <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                Rate
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            </div>
           )
         },
         cell: ({ row }) => <div className="text-right">${row.getValue<number>("rate").toLocaleString()}</div>,
@@ -145,6 +197,11 @@ export function LoadsDataTable() {
       {
         accessorKey: "status",
         header: "Status",
+      },
+      {
+        accessorKey: "assignedTo",
+        header: "Assigned To",
+        cell: ({ row }) => row.getValue("assignedTo") || "N/A"
       },
       {
         id: "actions",
@@ -166,7 +223,7 @@ export function LoadsDataTable() {
                   Copy load ID
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => assignLoad(load.id)} disabled={load.status !== 'Available'}>
+                <DropdownMenuItem onClick={() => handleOpenAssignDialog(load)} disabled={load.status !== 'Available'}>
                     Assign Load
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive" onClick={() => deleteLoad(load.id)}>
@@ -291,7 +348,7 @@ export function LoadsDataTable() {
                         column.toggleVisibility(!!value)
                         }
                     >
-                        {column.id}
+                        {column.id.replace(/([A-Z])/g, ' $1')}
                     </DropdownMenuCheckboxItem>
                     )
                 })}
@@ -373,6 +430,44 @@ export function LoadsDataTable() {
           </Button>
         </div>
       </div>
+       {/* Assign Load Dialog */}
+       <Dialog open={isAssignLoadOpen} onOpenChange={setAssignLoadOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Load: {selectedLoad?.id}</DialogTitle>
+            <DialogDescription>
+              Select a driver to assign this load to. The driver will be notified.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="driver" className="text-right">
+                Driver
+              </Label>
+              <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a driver" />
+                </SelectTrigger>
+                <SelectContent>
+                  {drivers.map(driver => (
+                    <SelectItem key={driver.id} value={driver.id}>
+                      {driver.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setAssignLoadOpen(false)}>Cancel</Button>
+            <Button type="button" onClick={handleAssignLoad} disabled={!selectedDriver}>
+              Confirm Assignment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+
+    
