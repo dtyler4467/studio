@@ -102,8 +102,8 @@ export default function TrackingPage() {
             <div className="absolute bottom-4 left-4 right-4">
                 <Card>
                     <CardContent className="p-4">
-                        <p className="font-semibold text-center">Live Map Simulation</p>
-                        <p className="text-sm text-muted-foreground text-center">In a real application, this would be an interactive map showing live driver locations.</p>
+                        <p className="font-semibold text-center">Google Maps Live Tracking</p>
+                        <p className="text-sm text-muted-foreground text-center">In a real application, this would be an interactive Google Map showing the driver's live GPS location from their phone.</p>
                     </CardContent>
                 </Card>
             </div>
