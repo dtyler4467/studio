@@ -16,17 +16,7 @@ export default function AdministrationPage() {
                 <TabsTrigger value="pto">Time Off Requests</TabsTrigger>
             </TabsList>
             <TabsContent value="shifts">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Manage Employee Shifts</CardTitle>
-                        <CardDescription>
-                            Click a date to add or edit a shift. View all scheduled shifts on the calendar.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ShiftManagementCalendar />
-                    </CardContent>
-                </Card>
+                <ShiftManagementCalendar />
             </TabsContent>
             <TabsContent value="pto">
                 <Card>
