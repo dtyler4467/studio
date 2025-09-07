@@ -106,6 +106,22 @@ export function LoadsDataTable({ isEditable = false }: LoadsDataTableProps) {
         });
     };
 
+    const acceptLoad = (load: Load) => {
+        // In a real app, the driver name would come from the authenticated user.
+        const driverName = "John Doe"; 
+        setData(currentData =>
+          currentData.map(l =>
+            l.id === load.id
+              ? { ...l, status: 'Pending', assignedTo: driverName }
+              : l
+          )
+        );
+        toast({
+            title: "Load Accepted!",
+            description: `You have accepted Load ${load.id}. It is now in your pending loads.`,
+        });
+    };
+
     const handleOpenAssignDialog = (load: Load) => {
         setSelectedLoad(load);
         setSelectedDriver("");
@@ -236,33 +252,43 @@ export function LoadsDataTable({ isEditable = false }: LoadsDataTableProps) {
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-          const load = row.original
+            const load = row.original
+            
+            if (isEditable) {
+                return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(load.id)}>
+                          Copy load ID
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleOpenAssignDialog(load)} disabled={load.status !== 'Available'}>
+                            Assign Load
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => deleteLoad(load.id)} disabled={load.status === 'Deleted'}>
+                            Delete Load
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            }
 
-          if (!isEditable) return null;
-    
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
+            return (
+                <Button
+                    onClick={() => acceptLoad(load)}
+                    disabled={load.status !== 'Available'}
+                    size="sm"
+                >
+                    Accept Load
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(load.id)}>
-                  Copy load ID
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleOpenAssignDialog(load)} disabled={load.status !== 'Available'}>
-                    Assign Load
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => deleteLoad(load.id)} disabled={load.status === 'Deleted'}>
-                    Delete Load
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
+            )
         },
       },
     ]
@@ -273,13 +299,14 @@ export function LoadsDataTable({ isEditable = false }: LoadsDataTableProps) {
   )
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
-      dispatcher: false, // Hidden by default
+      dispatcher: isEditable, 
+      assignedTo: isEditable,
     })
   const [rowSelection, setRowSelection] = React.useState({})
 
   const filteredData = React.useMemo(() => {
     if (statusFilter === 'all') {
-        return data;
+        return data.filter(load => isEditable || (load.status !== 'Deleted'));
     }
     const statusMap = {
         available: ['Available'],
@@ -288,8 +315,8 @@ export function LoadsDataTable({ isEditable = false }: LoadsDataTableProps) {
         deleted: ['Deleted'],
     };
     const targetStatuses = statusMap[statusFilter as keyof typeof statusMap] || [];
-    return data.filter(load => targetStatuses.includes(load.status));
-  }, [data, statusFilter]);
+    return data.filter(load => targetStatuses.includes(load.status) && (isEditable || load.status !== 'Deleted'));
+  }, [data, statusFilter, isEditable]);
 
   const table = useReactTable({
     data: filteredData,
@@ -319,7 +346,7 @@ export function LoadsDataTable({ isEditable = false }: LoadsDataTableProps) {
                     <TabsTrigger value="available">Available</TabsTrigger>
                     <TabsTrigger value="pending">Pending</TabsTrigger>
                     <TabsTrigger value="completed">Completed</TabsTrigger>
-                    <TabsTrigger value="deleted">Deleted</TabsTrigger>
+                    {isEditable && <TabsTrigger value="deleted">Deleted</TabsTrigger>}
                 </TabsList>
             </Tabs>
         </div>
