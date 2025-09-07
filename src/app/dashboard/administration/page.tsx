@@ -1,6 +1,9 @@
+"use client";
+
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShiftManagementCalendar } from '@/components/dashboard/shift-management-calendar';
 
 export default function AdministrationPage() {
   return (
@@ -17,13 +20,11 @@ export default function AdministrationPage() {
                     <CardHeader>
                         <CardTitle className="font-headline">Manage Employee Shifts</CardTitle>
                         <CardDescription>
-                            Create, edit, and publish work schedules for all employees.
+                            Click a date to add or edit a shift. View all scheduled shifts on the calendar.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                            <p className="text-muted-foreground">Shift management tools coming soon.</p>
-                        </div>
+                        <ShiftManagementCalendar />
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -43,7 +44,6 @@ export default function AdministrationPage() {
                 </Card>
             </TabsContent>
         </Tabs>
-
       </main>
     </div>
   );
