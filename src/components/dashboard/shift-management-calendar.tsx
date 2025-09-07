@@ -93,7 +93,7 @@ export function ShiftManagementCalendar() {
     
     const DayCell = ({ date, displayMonth }: DayProps) => {
         const dateKey = formatISO(date, { representation: 'date' });
-        const dateShifts = shiftsBydateKey] || [];
+        const dateShifts = shiftsByDate[dateKey] || [];
         const holiday = holidays.find(h => isSameDay(h.date, date));
         const dateApprovedTimeOff = approvedTimeOffByDate[dateKey] || [];
 
