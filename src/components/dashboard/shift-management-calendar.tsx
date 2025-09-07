@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { DayProps } from 'react-day-picker';
 
 type Shift = {
     id: string;
@@ -78,12 +79,11 @@ export function ShiftManagementCalendar() {
     
     const selectedDayShifts = selectedDate ? shiftsByDate[formatISO(selectedDate, { representation: 'date' })] || [] : [];
     
-    const DayCell = ({ date, ...props }: { date: Date } & any) => {
+    const DayCell = ({ date }: DayProps) => {
         const dateShifts = shiftsByDate[formatISO(date, { representation: 'date' })] || [];
         const isSelected = selectedDate && isSameDay(date, selectedDate);
         return (
             <div 
-                {...props} 
                 className={`relative h-24 w-full p-1 border-t border-r ${isSelected ? 'bg-accent/50' : ''}`}
                 onClick={() => handleDateClick(date)}
             >
