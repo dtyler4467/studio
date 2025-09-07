@@ -80,6 +80,7 @@ export function ScheduleCalendar() {
                         components={{
                             Day: ({ date, ...props }) => {
                                 const holiday = holidays.find(h => isSameDay(h.date, date));
+                                const dayModifiers = props.modifiers || {};
                                 if (holiday) {
                                     return (
                                         <Tooltip delayDuration={0}>
@@ -87,10 +88,10 @@ export function ScheduleCalendar() {
                                                 <div 
                                                     className={cn(
                                                         "relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                                                        props.modifiers.today && "bg-accent text-accent-foreground",
-                                                        props.modifiers.selected && "bg-primary text-primary-foreground",
-                                                        props.modifiers.scheduled && "border-2 border-primary rounded-md",
-                                                        props.modifiers.holiday && "bg-accent/20 text-accent-foreground font-bold"
+                                                        dayModifiers.today && "bg-accent text-accent-foreground",
+                                                        dayModifiers.selected && "bg-primary text-primary-foreground",
+                                                        dayModifiers.scheduled && "border-2 border-primary rounded-md",
+                                                        dayModifiers.holiday && "bg-accent/20 text-accent-foreground font-bold"
                                                     )}
                                                 >
                                                     <span className="flex items-center justify-center h-full w-full">{format(date, 'd')}</span>
@@ -102,7 +103,7 @@ export function ScheduleCalendar() {
                                         </Tooltip>
                                     );
                                 }
-                                return <div className={cn("h-9 w-9 p-0 text-center text-sm", props.modifiers.today && "bg-accent text-accent-foreground", props.modifiers.selected && "bg-primary text-primary-foreground", props.modifiers.scheduled && "border-2 border-primary rounded-md")}>{format(date, 'd')}</div>;
+                                return <div className={cn("h-9 w-9 p-0 text-center text-sm", dayModifiers.today && "bg-accent text-accent-foreground", dayModifiers.selected && "bg-primary text-primary-foreground", dayModifiers.scheduled && "border-2 border-primary rounded-md")}>{format(date, 'd')}</div>;
                             }
                         }}
                     />
