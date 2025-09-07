@@ -1,5 +1,6 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { LoadsDataTable } from '@/components/dashboard/loads-data-table';
 
 export default function LoadsPage() {
   return (
@@ -10,13 +11,11 @@ export default function LoadsPage() {
           <CardHeader>
             <CardTitle className="font-headline">Available Loads</CardTitle>
             <CardDescription>
-              Browse, bid on, and manage available loads for company and non-company drivers.
+              Browse, add, assign, and manage available loads.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                <p className="text-muted-foreground">Loads board functionality coming soon.</p>
-            </div>
+            <LoadsDataTable />
           </CardContent>
         </Card>
       </main>
