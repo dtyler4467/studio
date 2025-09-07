@@ -13,10 +13,13 @@ type Shift = {
     endTime: string;
 };
 
+type EmployeeRole = 'Admin' | 'Dispatcher' | 'Driver';
+
 type Employee = {
     id: string;
     name: string;
     email?: string;
+    role: EmployeeRole;
 }
 
 type Holiday = {
@@ -55,6 +58,8 @@ type ScheduleContextType = {
   registerUser: (user: Omit<Registration, 'id' | 'status'>) => void;
   approveRegistration: (registrationId: string) => void;
   denyRegistration: (registrationId: string) => void;
+  updateEmployeeRole: (employeeId: string, role: EmployeeRole) => void;
+  deleteEmployee: (employeeId: string) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -66,10 +71,10 @@ const initialShifts: Shift[] = [
 
 
 const mockEmployees: Employee[] = [
-    { id: "USR001", name: "John Doe", email: "john.doe@example.com" },
-    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com" },
-    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com" },
-    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com" },
+    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver" },
+    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver" },
+    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher" },
+    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin" },
 ];
 
 const holidays: Holiday[] = [
@@ -140,22 +145,35 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         const registration = registrations.find(r => r.id === registrationId);
         if (!registration) return;
 
-        setRegistrations(prev => prev.map(reg => reg.id === registrationId ? { ...reg, status: 'Approved' as const } : reg));
+        setRegistrations(prev => prev.map(reg => reg.id === registrationId ? { ...reg, status: 'Approved' as const } : reg).filter(r => r.id !== registrationId));
         
-        const newEmployee = {
+        const newEmployee: Employee = {
             id: `USR${Date.now()}`,
             name: registration.name,
             email: registration.email,
+            role: 'Driver', // Default role
         };
         setEmployees(prev => [...prev, newEmployee]);
     }
 
     const denyRegistration = (registrationId: string) => {
-        setRegistrations(prev => prev.map(reg => reg.id === registrationId ? { ...reg, status: 'Denied' as const } : reg));
+        setRegistrations(prev => prev.map(reg => reg.id === registrationId ? { ...reg, status: 'Denied' as const } : reg).filter(r => r.id !== registrationId));
     }
 
+    const updateEmployeeRole = (employeeId: string, role: EmployeeRole) => {
+        setEmployees(prev => prev.map(emp => emp.id === employeeId ? { ...emp, role } : emp));
+    };
+
+    const deleteEmployee = (employeeId: string) => {
+        setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+        // Also remove their shifts, time off requests etc.
+        setShifts(prev => prev.filter(s => s.employeeId !== employeeId));
+        setTimeOffRequests(prev => prev.filter(t => t.employeeId !== employeeId));
+    };
+
+
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee }}>
       {children}
     </ScheduleContext.Provider>
   );

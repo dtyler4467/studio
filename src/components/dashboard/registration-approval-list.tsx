@@ -5,18 +5,37 @@ import { useSchedule } from "@/hooks/use-schedule";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 
 export function RegistrationApprovalList() {
     const { registrations, approveRegistration, denyRegistration } = useSchedule();
+    const { toast } = useToast();
 
     const pendingRegistrations = registrations.filter(reg => reg.status === 'Pending');
+
+    const handleApprove = (id: string) => {
+        approveRegistration(id);
+        toast({
+            title: "User Approved",
+            description: "The new user has been approved and added to personnel.",
+        });
+    };
+
+    const handleDeny = (id: string) => {
+        denyRegistration(id);
+        toast({
+            variant: "destructive",
+            title: "User Denied",
+            description: "The registration request has been denied.",
+        });
+    };
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Approve New User Registrations</CardTitle>
                 <CardDescription>
-                    Review and approve or deny new users who have registered for an account.
+                    Review and approve or deny new users who have registered for an account. Approved users get the 'Driver' role by default.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -39,8 +58,8 @@ export function RegistrationApprovalList() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => denyRegistration(request.id)}>Deny</Button>
-                                        <Button size="sm" onClick={() => approveRegistration(request.id)}>Approve</Button>
+                                        <Button size="sm" variant="outline" onClick={() => handleDeny(request.id)}>Deny</Button>
+                                        <Button size="sm" onClick={() => handleApprove(request.id)}>Approve</Button>
                                     </div>
                                 </div>
                             );

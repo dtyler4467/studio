@@ -32,6 +32,7 @@ import {
   UserPlus,
   Printer,
   CalendarCog,
+  Users,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -56,6 +57,7 @@ const adminNavItems = [
     { href: '/dashboard/administration/shifts', icon: CalendarCog, label: 'Shift Management' },
     { href: '/dashboard/administration/time-off', icon: CalendarCheck, label: 'Time Off Requests' },
     { href: '/dashboard/administration/registrations', icon: UserPlus, label: 'Registrations' },
+    { href: '/dashboard/administration/personnel', icon: Users, label: 'Personnel' },
     { href: '/dashboard/administration/print', icon: Printer, label: 'Print/Email' },
 ];
 
