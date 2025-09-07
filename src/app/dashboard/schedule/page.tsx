@@ -1,5 +1,6 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar';
 
 export default function SchedulePage() {
   return (
@@ -10,13 +11,11 @@ export default function SchedulePage() {
           <CardHeader>
             <CardTitle className="font-headline">Upcoming Shifts</CardTitle>
             <CardDescription>
-              View your assigned work schedule and upcoming shifts.
+              View your assigned work schedule and select a date or range to see details.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                <p className="text-muted-foreground">Schedule viewer coming soon.</p>
-            </div>
+            <ScheduleCalendar />
           </CardContent>
         </Card>
       </main>
