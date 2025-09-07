@@ -15,10 +15,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 
 export function ScheduleCalendar() {
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date())
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined)
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const [mode, setMode] = React.useState<"single" | "range">("single")
   const { shifts, holidays } = useSchedule();
+
+  React.useEffect(() => {
+    setSelectedDate(new Date());
+  }, []);
 
   // Assuming a single user for now with ID USR001 (John Doe)
   const currentUserId = "USR001"; 
@@ -160,7 +164,11 @@ export function ScheduleCalendar() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {selectedDayShifts.length > 0 ? (
+                    {!selectedDate ? (
+                        <div className="rounded-md border border-dashed h-48 w-full flex items-center justify-center">
+                             <p className="text-muted-foreground">Loading schedule...</p>
+                        </div>
+                    ) : selectedDayShifts.length > 0 ? (
                         <ul className="space-y-2">
                             {selectedDayShifts.map(shift => (
                                 <li key={shift.id} className="p-3 bg-muted rounded-md text-sm">
