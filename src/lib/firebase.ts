@@ -1,24 +1,25 @@
+"use client";
+
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 
 const firebaseConfig = {
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  projectId: "logiflow-8oju4",
+  appId: "1:719952558782:web:dc7dddf4ec6ba35baf7cef",
+  storageBucket: "logiflow-8oju4.firebasestorage.app",
+  apiKey: "AIzaSyDxS__aq2vbL6mSV4xsaLWnWCh7oyFu8EE",
+  authDomain: "logiflow-8oju4.firebaseapp.com",
+  messagingSenderId: "719952558782",
 };
 
-let app: FirebaseApp;
-let auth: Auth;
 
+let app: FirebaseApp;
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
 } else {
   app = getApp();
 }
 
-auth = getAuth(app);
+const auth: Auth = getAuth(app);
 
 export { app, auth };
