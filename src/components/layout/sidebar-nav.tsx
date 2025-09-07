@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -10,6 +11,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -24,8 +28,16 @@ import {
   CircleHelp,
   Shield,
   CalendarCheck,
+  ChevronDown,
+  UserPlus,
+  Printer,
+  CalendarCog,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
+import { useSidebar } from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -40,11 +52,19 @@ const navItems = [
 ];
 
 const adminNavItems = [
-    { href: '/dashboard/administration', icon: Shield, label: 'Administration' },
+    { href: '/dashboard/administration', icon: Shield, label: 'Overview' },
+    { href: '/dashboard/administration/shifts', icon: CalendarCog, label: 'Shift Management' },
+    { href: '/dashboard/administration/time-off', icon: CalendarCheck, label: 'Time Off Requests' },
+    { href: '/dashboard/administration/registrations', icon: UserPlus, label: 'Registrations' },
+    { href: '/dashboard/administration/print', icon: Printer, label: 'Print/Email' },
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { state } = useSidebar();
+  const [isAdminOpen, setIsAdminOpen] = useState(true);
+
+  const isAnyAdminActive = adminNavItems.some(item => pathname.startsWith(item.href));
 
   return (
     <Sidebar>
@@ -71,25 +91,37 @@ export function SidebarNav() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+        
         <SidebarMenu className="mt-auto">
-            <SidebarMenuItem>
-                <span className="text-xs text-muted-foreground font-semibold uppercase px-2">Admin</span>
-            </SidebarMenuItem>
-             {adminNavItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.label}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+             <Collapsible open={isAdminOpen} onOpenChange={setIsAdminOpen}>
+                <CollapsibleTrigger asChild>
+                     <SidebarMenuButton
+                        variant="default"
+                        className="justify-start w-full group"
+                        isActive={isAnyAdminActive}
+                        >
+                        <Shield />
+                        <span>Administration</span>
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isAdminOpen && "rotate-180")} />
+                    </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <SidebarMenuSub>
+                        {adminNavItems.map((item) => (
+                            <SidebarMenuSubItem key={item.href}>
+                                <SidebarMenuSubButton asChild isActive={pathname === item.href}>
+                                    <Link href={item.href}>
+                                        <item.icon />
+                                        <span>{item.label}</span>
+                                    </Link>
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                        ))}
+                    </SidebarMenuSub>
+                </CollapsibleContent>
+             </Collapsible>
         </SidebarMenu>
+
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
