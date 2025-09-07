@@ -22,6 +22,8 @@ import {
   Book,
   Settings,
   CircleHelp,
+  Shield,
+  CalendarCheck,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 
@@ -33,7 +35,12 @@ const navItems = [
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking' },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts' },
   { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule' },
+  { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off' },
   { href: '/dashboard/resources', icon: Book, label: 'Training' },
+];
+
+const adminNavItems = [
+    { href: '/dashboard/administration', icon: Shield, label: 'Administration' },
 ];
 
 export function SidebarNav() {
@@ -50,6 +57,25 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
+            <SidebarMenuItem key={item.href}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                tooltip={item.label}
+              >
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+        <SidebarMenu className="mt-auto">
+            <SidebarMenuItem>
+                <span className="text-xs text-muted-foreground font-semibold uppercase px-2">Admin</span>
+            </SidebarMenuItem>
+             {adminNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
