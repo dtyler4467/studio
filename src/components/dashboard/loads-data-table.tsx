@@ -63,14 +63,16 @@ type Load = {
   rate: number
   status: "Available" | "Assigned" | "In-Transit" | "Delivered"
   assignedTo?: string;
+  carrier?: string;
+  scac?: string;
 }
 
 const initialData: Load[] = [
     { id: "LD001", origin: "Los Angeles, CA", destination: "Phoenix, AZ", pickupDate: "2024-08-01", deliveryDate: "2024-08-02", rate: 1200, status: "Available" },
     { id: "LD002", origin: "Chicago, IL", destination: "New York, NY", pickupDate: "2024-08-03", deliveryDate: "2024-08-05", rate: 2500, status: "Available" },
-    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Assigned", assignedTo: "Jane Doe" },
-    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith" },
-    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe" },
+    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Assigned", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT" },
+    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith", carrier: "Knight-Swift", scac: "KNX" },
+    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT" },
 ]
 
 const drivers = [
@@ -114,12 +116,14 @@ export function LoadsDataTable() {
           )
         );
         
+        const assignedDriverName = drivers.find(d => d.id === selectedDriver)?.name;
         toast({
             title: "Load Assigned!",
             description: (
               <div>
-                <p>Load <strong>{selectedLoad.id}</strong> assigned to <strong>{drivers.find(d => d.id === selectedDriver)?.name}</strong>.</p>
+                <p>Load <strong>{selectedLoad.id}</strong> assigned to <strong>{assignedDriverName}</strong>.</p>
                 <p className="text-xs mt-2">
+                  Carrier: {selectedLoad.carrier || 'N/A'}, SCAC: {selectedLoad.scac || 'N/A'}<br/>
                   {selectedLoad.origin} to {selectedLoad.destination}<br />
                   Pickup: {selectedLoad.pickupDate}
                 </p>
@@ -197,6 +201,16 @@ export function LoadsDataTable() {
       {
         accessorKey: "status",
         header: "Status",
+      },
+      {
+        accessorKey: "carrier",
+        header: "Carrier",
+        cell: ({ row }) => row.getValue("carrier") || "N/A"
+      },
+      {
+        accessorKey: "scac",
+        header: "SCAC",
+        cell: ({ row }) => row.getValue("scac") || "N/A"
       },
       {
         accessorKey: "assignedTo",
@@ -295,6 +309,8 @@ export function LoadsDataTable() {
                            pickupDate: formData.get("pickupDate") as string,
                            deliveryDate: formData.get("deliveryDate") as string,
                            rate: Number(formData.get("rate")),
+                           carrier: formData.get("carrier") as string,
+                           scac: formData.get("scac") as string,
                          };
                          addLoad(newLoad);
                     }}>
@@ -318,6 +334,14 @@ export function LoadsDataTable() {
                              <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="rate" className="text-right">Rate ($)</Label>
                                 <Input id="rate" name="rate" type="number" className="col-span-3" required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="carrier" className="text-right">Carrier</Label>
+                                <Input id="carrier" name="carrier" className="col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="scac" className="text-right">SCAC</Label>
+                                <Input id="scac" name="scac" className="col-span-3" />
                             </div>
                         </div>
                         <DialogFooter>
@@ -469,5 +493,3 @@ export function LoadsDataTable() {
     </div>
   )
 }
-
-    
