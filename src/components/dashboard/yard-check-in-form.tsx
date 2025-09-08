@@ -30,6 +30,7 @@ export const formSchema = z.object({
     required_error: "You need to select a transaction type.",
   }),
   trailerId: z.string().min(3, "Trailer ID must be at least 3 characters."),
+  sealNumber: z.string().optional(),
   carrier: z.string().min(2, "Carrier name is required."),
   scac: z.string().length(4, "SCAC must be 4 letters.").optional().or(z.literal("")),
   driverName: z.string().min(2, "Driver name is required."),
@@ -129,12 +130,12 @@ export function YardCheckInForm({ form }: YardCheckInFormProps) {
             />
             <FormField
             control={form.control}
-            name="loadNumber"
+            name="sealNumber"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Load/BOL Number (Optional)</FormLabel>
+                <FormLabel>Seal Number (Optional)</FormLabel>
                 <FormControl>
-                    <Input placeholder="e.g. LD004, BOL12345" {...field} />
+                    <Input placeholder="e.g. S123456" {...field} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -182,6 +183,19 @@ export function YardCheckInForm({ form }: YardCheckInFormProps) {
             </FormItem>
           )}
         />
+         <FormField
+            control={form.control}
+            name="loadNumber"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Load/BOL Number (Optional)</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. LD004, BOL12345" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
         <div className="grid grid-cols-2 gap-4">
             <FormField
             control={form.control}

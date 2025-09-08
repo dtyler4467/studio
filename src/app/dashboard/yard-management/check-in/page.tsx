@@ -25,6 +25,7 @@ export default function YardCheckInPage() {
         defaultValues: {
             transactionType: "inbound",
             trailerId: "",
+            sealNumber: "",
             carrier: "",
             scac: "",
             driverName: "",
@@ -48,6 +49,7 @@ export default function YardCheckInPage() {
             description: (
                  <div className="text-sm space-y-1">
                     <p><strong>Trailer:</strong> {data.trailerId}</p>
+                    <p><strong>Seal:</strong> {data.sealNumber || 'N/A'}</p>
                     <p><strong>Carrier:</strong> {data.carrier} (SCAC: {data.scac || 'N/A'})</p>
                     <p><strong>Driver:</strong> {data.driverName}</p>
                     <p className="capitalize"><strong>Assignment:</strong> {assignmentDetails}</p>

@@ -96,6 +96,7 @@ export default function DocumentViewerPage() {
                             <CardContent className="grid grid-cols-2 gap-4 text-sm">
                                 <DetailItem label="Trailer ID" value={event.trailerId} />
                                 <DetailItem label="Load/BOL Number" value={event.loadNumber} />
+                                <DetailItem label="Seal Number" value={event.sealNumber} />
                                 <DetailItem label="Carrier" value={event.carrier} />
                                 <DetailItem label="SCAC" value={event.scac} />
                                 <DetailItem label="Driver" value={event.driverName} />

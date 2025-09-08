@@ -46,6 +46,7 @@ import { YardEvent } from "@/hooks/use-schedule"
 
 const filterableColumns = [
     { id: "trailerId", name: "Trailer ID" },
+    { id: "sealNumber", name: "Seal Number"},
     { id: "scac", name: "SCAC" },
     { id: "driverName", name: "Driver" },
     { id: "clerkName", name: "Clerk" },
@@ -357,6 +358,10 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void): Col
     {
         accessorKey: "trailerId",
         header: "Trailer ID",
+    },
+     {
+        accessorKey: "sealNumber",
+        header: "Seal Number",
     },
     {
         accessorKey: "carrier",
