@@ -115,6 +115,8 @@ type ScheduleContextType = {
   expenseReports: ExpenseReport[];
   trainingPrograms: TrainingProgram[];
   trainingAssignments: TrainingAssignment[];
+  warehouseDoors: string[];
+  parkingLanes: string[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
@@ -132,6 +134,8 @@ type ScheduleContextType = {
   setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
   getTrainingModuleById: (id: string) => TrainingModule | null;
   assignTraining: (employeeId: string, programId: string) => void;
+  addWarehouseDoor: (doorId: string) => void;
+  addParkingLane: (laneId: string) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -173,7 +177,7 @@ const initialRegistrations: Registration[] = [
 ]
 
 const initialYardEvents: YardEvent[] = [
-    { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', sealNumber: 'S12345', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD123', assignmentType: 'door_assignment', assignmentValue: 'D42', timestamp: new Date('2024-07-28T08:15:00Z'), documentDataUri: "https://picsum.photos/seed/bol/800/1100" },
+    { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', sealNumber: 'S12345', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD123', assignmentType: 'door_assignment', assignmentValue: 'D4', timestamp: new Date('2024-07-28T08:15:00Z'), documentDataUri: "https://picsum.photos/seed/bol/800/1100" },
     { id: 'EVT002', transactionType: 'outbound', trailerId: 'TR48991', sealNumber: 'S67890', carrier: 'J.B. Hunt', scac: 'JBHT', driverName: 'Jane Smith', clerkName: 'Admin User', loadNumber: 'LD124', assignmentType: 'empty', timestamp: new Date('2024-07-28T09:30:00Z') },
     { id: 'EVT003', transactionType: 'inbound', trailerId: 'TR53456', carrier: 'Schneider', scac: 'SNDR', driverName: 'Mike Johnson', clerkName: 'Jane Clerk', loadNumber: 'LD125', assignmentType: 'lane_assignment', assignmentValue: 'L12', timestamp: new Date('2024-07-27T14:00:00Z') },
     { id: 'EVT004', transactionType: 'outbound', trailerId: 'TR53123', sealNumber: 'S54321', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'Emily Davis', clerkName: 'Jane Clerk', loadNumber: 'LD126', assignmentType: 'material', timestamp: new Date('2024-07-27T16:45:00Z') },
@@ -275,6 +279,8 @@ const initialTrainingAssignments: TrainingAssignment[] = [
     { id: 'TA003', employeeId: 'USR004', programId: 'PROG002', status: 'Completed', assignedDate: new Date(), completedDate: new Date() },
 ];
 
+const initialWarehouseDoors = Array.from({ length: 10 }, (_, i) => `D${i + 1}`);
+const initialParkingLanes = Array.from({ length: 20 }, (_, i) => `L${i + 1}`);
 
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -288,6 +294,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
   const [trainingPrograms, setTrainingPrograms] = useState<TrainingProgram[]>(initialTrainingPrograms);
   const [trainingAssignments, setTrainingAssignments] = useState<TrainingAssignment[]>(initialTrainingAssignments);
+  const [warehouseDoors, setWarehouseDoors] = useState<string[]>(initialWarehouseDoors);
+  const [parkingLanes, setParkingLanes] = useState<string[]>(initialParkingLanes);
 
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
@@ -395,9 +403,25 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setTrainingAssignments(prev => [...prev, newAssignment]);
     };
 
+    const addWarehouseDoor = (doorId: string) => {
+        if (!doorId.trim()) throw new Error("Door ID cannot be empty.");
+        if (warehouseDoors.includes(doorId.trim().toUpperCase())) {
+            throw new Error("Door ID already exists.");
+        }
+        setWarehouseDoors(prev => [...prev, doorId.trim().toUpperCase()]);
+    };
+
+    const addParkingLane = (laneId: string) => {
+        if (!laneId.trim()) throw new Error("Lane ID cannot be empty.");
+        if (parkingLanes.includes(laneId.trim().toUpperCase())) {
+            throw new Error("Lane ID already exists.");
+        }
+        setParkingLanes(prev => [...prev, laneId.trim().toUpperCase()]);
+    };
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane }}>
       {children}
     </ScheduleContext.Provider>
   );
