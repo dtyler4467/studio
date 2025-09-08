@@ -29,6 +29,22 @@ import { Input } from "../ui/input"
 import { MoreHorizontal } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { getSortedRowModel } from "@tanstack/react-table"
+import { Skeleton } from "../ui/skeleton";
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "PPP p"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[150px]" />;
+    }
+
+    return <>{formattedDate}</>;
+}
+
 
 export function TimeClockAdminTable() {
     const { timeClockEvents, employees } = useSchedule()
@@ -49,7 +65,7 @@ export function TimeClockAdminTable() {
       {
         accessorKey: "timestamp",
         header: "Date & Time",
-        cell: ({ row }) => format(new Date(row.original.timestamp), "PPP p"),
+        cell: ({ row }) => <ClientFormattedDate date={new Date(row.original.timestamp)} />,
       },
        {
         accessorKey: "type",
