@@ -5,6 +5,7 @@ import * as React from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
+  RowSelectionState,
   SortingState,
   VisibilityState,
   flexRender,
@@ -15,9 +16,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { format, isSameDay } from "date-fns"
-import { ArrowUpDown, ChevronDown, Filter, X } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Filter, X, Printer, Mail } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -41,7 +43,8 @@ import { Calendar } from "../ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Skeleton } from "../ui/skeleton"
 import { useRouter } from "next/navigation"
-import { YardEvent } from "@/hooks/use-schedule"
+import { useSchedule, YardEvent } from "@/hooks/use-schedule"
+import { useToast } from "@/hooks/use-toast"
 
 
 const filterableColumns = [
@@ -69,15 +72,66 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
     return <div>{formattedDate}</div>;
 }
 
+const createPrintableHTML = (events: YardEvent[]) => {
+    return `
+      <html>
+        <head>
+          <title>Yard History Report</title>
+          <style>
+            body { font-family: sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            h1 { font-size: 24px; }
+          </style>
+        </head>
+        <body>
+          <h1>Yard History Report</h1>
+          <p>Generated on: ${format(new Date(), 'PPP p')}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Type</th>
+                <th>Trailer ID</th>
+                <th>Seal #</th>
+                <th>Carrier</th>
+                <th>Driver</th>
+                <th>Clerk</th>
+                <th>Assignment</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${events.map(event => `
+                <tr>
+                  <td>${format(event.timestamp, 'Pp')}</td>
+                  <td style="text-transform: capitalize;">${event.transactionType}</td>
+                  <td>${event.trailerId}</td>
+                  <td>${event.sealNumber || 'N/A'}</td>
+                  <td>${event.carrier}</td>
+                  <td>${event.driverName}</td>
+                  <td>${event.clerkName}</td>
+                  <td style="text-transform: capitalize;">${event.assignmentType.replace(/_/g, ' ')}${event.assignmentValue ? `: ${event.assignmentValue}` : ''}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+};
+
 
 export function YardHistoryTable() {
     const { yardEvents } = useSchedule();
     const router = useRouter();
+    const { toast } = useToast();
     const [activeFilters, setActiveFilters] = React.useState<string[]>([]);
     
     const [sorting, setSorting] = React.useState<SortingState>([ { id: 'timestamp', desc: true } ])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+    const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
 
     const onFilterChange = (columnId: string, value: any) => {
         table.getColumn(columnId)?.setFilterValue(value);
@@ -89,7 +143,6 @@ export function YardHistoryTable() {
                 ? prev.filter(id => id !== columnId)
                 : [...prev, columnId];
             
-            // Clear filter value when removing filter
             if (!newFilters.includes(columnId)) {
                 onFilterChange(columnId, undefined);
             }
@@ -98,11 +151,36 @@ export function YardHistoryTable() {
         });
     };
 
+    const handlePrint = (selectedRows: YardEvent[]) => {
+        if (selectedRows.length === 0) {
+            toast({ variant: 'destructive', title: "Nothing to print", description: "Please select at least one record to print." });
+            return;
+        }
+        const printableHTML = createPrintableHTML(selectedRows);
+        const printWindow = window.open('', '_blank');
+        printWindow?.document.write(printableHTML);
+        printWindow?.document.close();
+        printWindow?.print();
+    };
+
+    const handleEmail = (selectedRows: YardEvent[]) => {
+        if (selectedRows.length === 0) {
+            toast({ variant: 'destructive', title: "Nothing to email", description: "Please select at least one record to email." });
+            return;
+        }
+        const subject = "Yard History Report";
+        const body = selectedRows.map(event => 
+            `Date: ${format(event.timestamp, 'Pp')}\nType: ${event.transactionType}\nTrailer: ${event.trailerId}\nCarrier: ${event.carrier}\nDriver: ${event.driverName}\nClerk: ${event.clerkName}\n---`
+        ).join('\n\n');
+        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    };
+
     const table = useReactTable({
         data: yardEvents,
         columns: getColumns(onFilterChange),
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
+        onRowSelectionChange: setRowSelection,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -112,13 +190,25 @@ export function YardHistoryTable() {
           sorting,
           columnFilters,
           columnVisibility,
+          rowSelection,
         },
     });
+    
+    const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original);
+
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between py-4 gap-2">
         <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => handlePrint(selectedRows)} disabled={selectedRows.length === 0}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print Selected
+            </Button>
+            <Button variant="outline" onClick={() => handleEmail(selectedRows)} disabled={selectedRows.length === 0}>
+                <Mail className="mr-2 h-4 w-4" />
+                Email Selected
+            </Button>
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline">
@@ -159,7 +249,6 @@ export function YardHistoryTable() {
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
                 .map((column) => {
-                    // Create a more readable label from the column ID
                     const formattedLabel = column.id.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                     return (
                     <DropdownMenuCheckboxItem
@@ -213,11 +302,18 @@ export function YardHistoryTable() {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="cursor-pointer"
-                  onClick={() => router.push(`/dashboard/yard-management/documents/${row.original.id}`)}
+                  data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell 
+                        key={cell.id}
+                        onClick={() => {
+                            if (cell.column.id !== 'select') {
+                                router.push(`/dashboard/yard-management/documents/${row.original.id}`)
+                            }
+                        }}
+                        className={cell.column.id !== 'select' ? 'cursor-pointer' : ''}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -239,7 +335,11 @@ export function YardHistoryTable() {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      <div className="flex items-center justify-between space-x-2 py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
         <div className="space-x-2">
           <Button
             variant="outline"
@@ -332,6 +432,28 @@ function FilterInput({ columnId, onFilterChange, table }: { columnId: string, on
 
 const getColumns = (onFilterChange: (columnId: string, value: any) => void): ColumnDef<YardEvent>[] => [
     {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
         accessorKey: "timestamp",
         header: ({ column }) => (
             <Button
@@ -391,10 +513,8 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void): Col
             const assignmentValue = row.original.assignmentValue;
             return <div className="capitalize">{assignmentType}{assignmentValue ? `: ${assignmentValue}` : ''}</div>
         },
-        accessorFn: (row) => `${row.assignmentType}${row.assignmentValue || ''}`, // for filtering
+        accessorFn: (row) => `${row.assignmentType}${row.assignmentValue || ''}`,
     },
 ];
-
-import { useSchedule } from "@/hooks/use-schedule";
 
     
