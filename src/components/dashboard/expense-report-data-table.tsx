@@ -40,25 +40,30 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 
 type ExpenseReport = {
   id: string
   employeeName: string
   date: string
   description: string
-  category: "Fuel" | "Maintenance" | "Lodging" | "Meals" | "Other"
+  category: "Food" | "Fuel" | "Utilities" | "Insurance" | "Supplies" | "Repairs" | "Accidents" | "Payroll" | "Lease" | "Other"
   amount: number
   status: "Pending" | "Approved" | "Denied"
 }
 
 const mockData: ExpenseReport[] = [
     { id: "EXP001", employeeName: "John Doe", date: "2024-07-25", description: "Fuel stop in Nevada", category: "Fuel", amount: 150.75, status: "Approved" },
-    { id: "EXP002", employeeName: "Jane Doe", date: "2024-07-26", description: "Hotel stay in Denver", category: "Lodging", amount: 120.00, status: "Approved" },
-    { id: "EXP003", employeeName: "Mike Smith", date: "2024-07-27", description: "Dinner with client", category: "Meals", amount: 85.50, status: "Pending" },
-    { id: "EXP004", employeeName: "John Doe", date: "2024-07-28", description: "Oil change and tire rotation", category: "Maintenance", amount: 220.00, status: "Pending" },
+    { id: "EXP002", employeeName: "Jane Doe", date: "2024-07-26", description: "Hotel stay in Denver", category: "Other", amount: 120.00, status: "Approved" },
+    { id: "EXP003", employeeName: "Mike Smith", date: "2024-07-27", description: "Dinner with client", category: "Food", amount: 85.50, status: "Pending" },
+    { id: "EXP004", employeeName: "John Doe", date: "2024-07-28", description: "Oil change and tire rotation", category: "Repairs", amount: 220.00, status: "Pending" },
     { id: "EXP005", employeeName: "Emily Jones", date: "2024-07-29", description: "Tolls and parking", category: "Other", amount: 45.25, status: "Denied" },
-]
+    { id: "EXP006", employeeName: "Admin", date: "2024-07-30", description: "Monthly vehicle lease", category: "Lease", amount: 550.00, status: "Approved" },
+    { id: "EXP007", employeeName: "Jane Doe", date: "2024-07-30", description: "Office supplies", category: "Supplies", amount: 75.00, status: "Pending" },
+    { id: "EXP008", employeeName: "HR", date: "2024-07-31", description: "Monthly payroll", category: "Payroll", amount: 15000.00, status: "Approved" },
+];
 
+const categories: ExpenseReport['category'][] = ["Food", "Fuel", "Utilities", "Insurance", "Supplies", "Repairs", "Accidents", "Payroll", "Lease", "Other"];
 
 export function ExpenseReportDataTable() {
     const [data, setData] = React.useState<ExpenseReport[]>(mockData);
@@ -74,7 +79,7 @@ export function ExpenseReportDataTable() {
     
     const exportToCsv = () => {
         const headers = ["ID", "Employee Name", "Date", "Description", "Category", "Amount", "Status"];
-        const rows = data.map(expense => [
+        const rows = table.getRowModel().rows.map(row => row.original).map(expense => [
             expense.id,
             `"${expense.employeeName}"`,
             expense.date,
@@ -237,7 +242,7 @@ export function ExpenseReportDataTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-2">
         <Input
           placeholder="Filter by employee name..."
           value={(table.getColumn("employeeName")?.getFilterValue() as string) ?? ""}
@@ -246,6 +251,26 @@ export function ExpenseReportDataTable() {
           }
           className="max-w-sm"
         />
+        <Select
+            value={(table.getColumn('category')?.getFilterValue() as string) ?? 'all'}
+            onValueChange={(value) => {
+                if (value === 'all') {
+                    table.getColumn('category')?.setFilterValue(undefined);
+                } else {
+                    table.getColumn('category')?.setFilterValue(value);
+                }
+            }}
+        >
+            <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
         <div className="ml-auto flex gap-2">
             <Button variant="outline" onClick={exportToCsv}>
                 <Download className="mr-2" />
@@ -356,3 +381,5 @@ export function ExpenseReportDataTable() {
     </div>
   )
 }
+
+  
