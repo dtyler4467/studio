@@ -39,8 +39,20 @@ import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Label } from "../ui/label"
+import { MultiSelect } from "../ui/multi-select"
+import { Badge } from "../ui/badge"
 
 const validRoles: Employee['role'][] = ["Admin", "Dispatcher", "Driver", "Employee", "Forklift", "Laborer", "Manager", "Visitor", "Vendor"];
+
+const workLocationOptions = [
+    { value: 'Site 1', label: 'Site 1' },
+    { value: 'Site 2', label: 'Site 2' },
+    { value: 'Mobile', label: 'Mobile' },
+    { value: 'Warehouse', label: 'Warehouse' },
+    { value: 'Work From Home', label: 'Work From Home' },
+    { value: 'Yard', label: 'Yard' },
+];
+
 
 const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (newEmployee: Omit<Employee, 'id' | 'personnelId'>) => void }) => {
     const [newEmployee, setNewEmployee] = React.useState({
@@ -48,14 +60,14 @@ const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, 
         email: '',
         phoneNumber: '',
         role: 'Driver' as Employee['role'],
-        workLocation: 'Main Warehouse',
+        workLocation: [] as string[],
     });
 
     const handleSave = () => {
         if (newEmployee.name && newEmployee.email) {
             onSave(newEmployee);
             onOpenChange(false);
-            setNewEmployee({ name: '', email: '', phoneNumber: '', role: 'Driver', workLocation: 'Main Warehouse' }); // Reset form
+            setNewEmployee({ name: '', email: '', phoneNumber: '', role: 'Driver', workLocation: [] }); // Reset form
         }
     };
 
@@ -83,7 +95,14 @@ const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, 
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="workLocation" className="text-right">Work Location</Label>
-                        <Input id="workLocation" value={newEmployee.workLocation} onChange={e => setNewEmployee({...newEmployee, workLocation: e.target.value})} className="col-span-3" />
+                         <MultiSelect
+                            options={workLocationOptions}
+                            selected={newEmployee.workLocation}
+                            onChange={(selected) => setNewEmployee({...newEmployee, workLocation: selected})}
+                            className="col-span-3"
+                            placeholder="Select locations..."
+                            allowOther
+                        />
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="role" className="text-right">Role</Label>
@@ -148,7 +167,14 @@ const EditEmployeeDialog = ({ employee, isOpen, onOpenChange, onSave }: { employ
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="workLocation" className="text-right">Work Location</Label>
-                        <Input id="workLocation" value={editedEmployee.workLocation} onChange={e => setEditedEmployee({...editedEmployee, workLocation: e.target.value})} className="col-span-3" />
+                        <MultiSelect
+                            options={workLocationOptions}
+                            selected={editedEmployee.workLocation || []}
+                            onChange={(selected) => setEditedEmployee({...editedEmployee, workLocation: selected})}
+                            className="col-span-3"
+                            placeholder="Select locations..."
+                            allowOther
+                        />
                     </div>
                 </div>
                 <DialogFooter>
@@ -239,7 +265,7 @@ export function PersonnelDataTable() {
             emp.email,
             emp.phoneNumber,
             emp.role,
-            emp.workLocation || 'N/A'
+            `"${emp.workLocation?.join(', ') || 'N/A'}"`
         ].join(','));
 
         const csvContent = "data:text/csv;charset=utf-8," 
@@ -276,7 +302,7 @@ export function PersonnelDataTable() {
                     const email = String(row['Email']);
                     const role = String(row['Role']) as Employee['role'];
                     const phoneNumber = String(row['Phone Number']);
-                    const workLocation = String(row['Work Location']);
+                    const workLocation = String(row['Work Location'] || '').split(',').map(item => item.trim()).filter(Boolean);
 
                     if (!name || !email) {
                         throw new Error(`Row is missing required fields (Name, Email).`);
@@ -333,7 +359,49 @@ export function PersonnelDataTable() {
       {
         accessorKey: "workLocation",
         header: "Work Location",
-        cell: ({ row }) => row.original.workLocation || 'N/A',
+        cell: ({ row }) => {
+            const employee = row.original;
+            const locations = employee.workLocation || [];
+            
+            const handleLocationChange = (newLocations: string[]) => {
+                updateEmployee({...employee, workLocation: newLocations});
+            }
+
+            if (!locations.length) {
+                return (
+                     <MultiSelect
+                        options={workLocationOptions}
+                        selected={[]}
+                        onChange={handleLocationChange}
+                        className="w-[200px]"
+                        placeholder="Assign location..."
+                        allowOther
+                    />
+                )
+            }
+            
+            return (
+                <div className="flex flex-wrap gap-1 items-center">
+                    {locations.map(loc => <Badge key={loc} variant="secondary">{loc}</Badge>)}
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                           <Button variant="ghost" size="icon" className="h-6 w-6"><Pencil className="w-3 h-3" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent onClick={(e) => e.stopPropagation()} className="p-0">
+                           <MultiSelect
+                                options={workLocationOptions}
+                                selected={locations}
+                                onChange={handleLocationChange}
+                                className="w-full border-none"
+                                placeholder="Assign location..."
+                                allowOther
+                                asDropdown
+                            />
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )
+        },
       },
       {
         accessorKey: "role",
@@ -483,7 +551,7 @@ export function PersonnelDataTable() {
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} onClick={(e) => {
-                        if (['actions', 'role'].includes(cell.column.id)) {
+                        if (['actions', 'role', 'workLocation'].includes(cell.column.id)) {
                              e.stopPropagation();
                         }
                     }}>
@@ -522,3 +590,5 @@ export function PersonnelDataTable() {
     </div>
   )
 }
+
+    

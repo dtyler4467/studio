@@ -24,7 +24,7 @@ export type Employee = {
     personnelId?: string;
     phoneNumber?: string;
     documentDataUri?: string | null;
-    workLocation?: string;
+    workLocation?: string[];
 }
 
 export type Holiday = {
@@ -184,10 +184,10 @@ const initialShifts: Shift[] = [
 
 
 const mockEmployees: Employee[] = [
-    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: "Main Warehouse" },
-    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: "Main Warehouse" },
-    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: "Office" },
-    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: "Office" },
+    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"] },
+    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"] },
+    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"] },
+    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"] },
 ];
 
 const holidays: Holiday[] = [
@@ -430,7 +430,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             email: registration.email,
             role: registration.role,
             personnelId: `TEMP-${Math.floor(100 + Math.random() * 900)}`,
-            phoneNumber: registration.phoneNumber
+            phoneNumber: registration.phoneNumber,
+            workLocation: []
         };
         setEmployees(prev => [...prev, newEmployee]);
     }
