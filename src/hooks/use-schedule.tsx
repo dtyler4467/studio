@@ -124,6 +124,7 @@ export type TimeClockEvent = {
     timestamp: string; // ISO string
     type: 'in' | 'out';
     notes?: string;
+    status?: 'Pending' | 'Approved' | 'Denied';
 }
 
 
@@ -170,6 +171,7 @@ type ScheduleContextType = {
   addParkingLane: (laneId: string) => void;
   restoreDeletedItem: (logId: string) => void;
   addTimeClockEvent: (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => void;
+  updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
 };
 
 const initialShifts: Shift[] = [
@@ -336,11 +338,11 @@ const initialDeletionLogs: DeletionLog[] = [
 ];
 
 const initialTimeClockEvents: TimeClockEvent[] = [
-    { id: 'TC001', employeeId: 'USR001', timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), type: 'in' },
-    { id: 'TC002', employeeId: 'USR001', timestamp: new Date(Date.now() - 1 * 60 * 1000).toISOString(), type: 'out', notes: 'Left early' },
-    { id: 'TC003', employeeId: 'USR002', timestamp: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(), type: 'in' },
+    { id: 'TC001', employeeId: 'USR001', timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), type: 'in', status: 'Approved' },
+    { id: 'TC002', employeeId: 'USR001', timestamp: new Date(Date.now() - 1 * 60 * 1000).toISOString(), type: 'out' },
+    { id: 'TC003', employeeId: 'USR002', timestamp: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(), type: 'in', status: 'Pending' },
     { id: 'TC004', employeeId: 'USR002', timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), type: 'out' },
-    { id: 'TC005', employeeId: 'USR003', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), type: 'in' },
+    { id: 'TC005', employeeId: 'USR003', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), type: 'in', status: 'Denied' },
 ];
 
 
@@ -596,13 +598,18 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             ...event,
             id: `TC${Date.now()}`,
             timestamp: new Date().toISOString(),
+            status: 'Pending',
         };
         setTimeClockEvents(prev => [...prev, newEvent]);
+    }
+    
+    const updateTimeClockStatus = (clockInId: string, status: 'Approved' | 'Denied') => {
+        setTimeClockEvents(prev => prev.map(e => e.id === clockInId ? { ...e, status } : e));
     }
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );

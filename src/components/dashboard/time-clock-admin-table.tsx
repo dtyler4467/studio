@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react"
-import { useSchedule, TimeClockEvent } from "@/hooks/use-schedule"
+import { useSchedule, TimeClockEvent, Employee } from "@/hooks/use-schedule"
 import {
   ColumnDef,
   flexRender,
@@ -12,7 +12,7 @@ import {
   useReactTable,
   SortingState,
 } from "@tanstack/react-table"
-import { format } from "date-fns"
+import { format, differenceInMinutes, formatDistanceStrict } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -26,16 +26,26 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
 import { Input } from "../ui/input"
-import { MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { MoreHorizontal, Pencil, Check, X } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "../ui/dropdown-menu"
 import { getSortedRowModel } from "@tanstack/react-table"
 import { Skeleton } from "../ui/skeleton";
+import { cn } from "@/lib/utils"
 
-const ClientFormattedDate = ({ date }: { date: Date }) => {
+type TimeCardEntry = {
+    employee: Employee;
+    clockIn: TimeClockEvent;
+    clockOut?: TimeClockEvent;
+    hours: string;
+    status: 'Pending' | 'Approved' | 'Denied';
+};
+
+
+const ClientFormattedDate = ({ date }: { date: Date | string }) => {
     const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
 
     React.useEffect(() => {
-        setFormattedDate(format(date, "PPP p"));
+        setFormattedDate(format(new Date(date), "PPP p"));
     }, [date]);
 
     if (!formattedDate) {
@@ -47,63 +57,123 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
 
 
 export function TimeClockAdminTable() {
-    const { timeClockEvents, employees } = useSchedule()
+    const { timeClockEvents, employees, updateTimeClockStatus } = useSchedule()
     const { toast } = useToast()
-    const [sorting, setSorting] = React.useState<SortingState>([{ id: 'timestamp', desc: true }])
+    const [sorting, setSorting] = React.useState<SortingState>([{ id: 'clockIn', desc: true }])
     const [globalFilter, setGlobalFilter] = React.useState('')
 
-    const getEmployeeName = (employeeId: string) => {
-        return employees.find(e => e.id === employeeId)?.name || "Unknown";
+    const timeCardEntries = React.useMemo(() => {
+        const entries: TimeCardEntry[] = [];
+        const sortedEvents = [...timeClockEvents].sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+        employees.forEach(employee => {
+            const employeeEvents = sortedEvents.filter(e => e.employeeId === employee.id);
+            for (let i = 0; i < employeeEvents.length; i++) {
+                if (employeeEvents[i].type === 'in') {
+                    const clockIn = employeeEvents[i];
+                    const clockOut = employeeEvents[i+1]?.type === 'out' ? employeeEvents[i+1] : undefined;
+                    
+                    let hours = 'In Progress';
+                    if (clockOut) {
+                         const start = new Date(clockIn.timestamp);
+                         const end = new Date(clockOut.timestamp);
+                         hours = formatDistanceStrict(end, start, { unit: 'hour' });
+                         // To move to the next pair
+                         i++;
+                    }
+
+                    entries.push({
+                        employee,
+                        clockIn,
+                        clockOut,
+                        hours,
+                        status: clockIn.status || 'Pending'
+                    })
+                }
+            }
+        });
+
+        return entries.sort((a,b) => new Date(b.clockIn.timestamp).getTime() - new Date(a.clockIn.timestamp).getTime());
+
+    }, [timeClockEvents, employees]);
+
+    const handleStatusChange = (clockInId: string, status: 'Approved' | 'Denied') => {
+        updateTimeClockStatus(clockInId, status);
+        toast({
+            title: `Time Card ${status}`,
+            description: `The time entry has been marked as ${status.toLowerCase()}.`
+        })
     }
 
-    const columns: ColumnDef<TimeClockEvent>[] = [
+    const columns: ColumnDef<TimeCardEntry>[] = [
       {
-        accessorKey: "employeeId",
+        accessorKey: "employee.name",
         header: "Employee",
-        cell: ({ row }) => getEmployeeName(row.original.employeeId),
       },
       {
-        accessorKey: "timestamp",
-        header: "Date & Time",
-        cell: ({ row }) => <ClientFormattedDate date={new Date(row.original.timestamp)} />,
+        id: 'clockIn',
+        accessorKey: "clockIn.timestamp",
+        header: "Clock In",
+        cell: ({ row }) => <ClientFormattedDate date={row.original.clockIn.timestamp} />,
       },
        {
-        accessorKey: "type",
-        header: "Type",
+        id: 'clockOut',
+        accessorKey: "clockOut.timestamp",
+        header: "Clock Out",
+        cell: ({ row }) => row.original.clockOut ? <ClientFormattedDate date={row.original.clockOut.timestamp} /> : <Badge variant="secondary">In Progress</Badge>
+      },
+      {
+          accessorKey: "hours",
+          header: "Hours"
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
         cell: ({ row }) => {
-            const type = row.original.type;
-            return <Badge variant={type === 'in' ? 'secondary' : 'outline'} className="capitalize">{type === 'in' ? 'Clock In' : 'Clock Out'}</Badge>
+            const status = row.getValue("status") as TimeCardEntry['status'];
+             const variant = {
+                "Pending": "secondary",
+                "Approved": "default",
+                "Denied": "destructive"
+            }[status] as "secondary" | "default" | "destructive";
+
+            return <Badge variant={variant} className={cn(status === 'Approved' && 'bg-green-600')}>{status}</Badge>
         }
       },
-       {
-        accessorKey: "notes",
-        header: "Notes",
-        cell: ({ row }) => row.original.notes || 'N/A'
-       },
       {
         id: "actions",
         cell: ({ row }) => {
-          return (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem>Edit Entry</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Delete Entry</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-          )
+            const entry = row.original;
+            const isComplete = !!entry.clockOut;
+            return (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                         <DropdownMenuItem disabled={!isComplete} onClick={() => handleStatusChange(entry.clockIn.id, 'Approved')}>
+                            <Check className="mr-2" /> Approve
+                        </DropdownMenuItem>
+                         <DropdownMenuItem disabled={!isComplete} className="text-destructive" onClick={() => handleStatusChange(entry.clockIn.id, 'Denied')}>
+                            <X className="mr-2" /> Deny
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                            <Pencil className="mr-2" /> Edit Entry
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )
         },
       },
     ]
 
     const table = useReactTable({
-        data: timeClockEvents,
+        data: timeCardEntries,
         columns,
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
@@ -151,7 +221,7 @@ export function TimeClockAdminTable() {
                     {table.getRowModel().rows?.length ? (
                     table.getRowModel().rows.map((row) => (
                         <TableRow
-                        key={row.id}
+                        key={row.original.clockIn.id}
                         data-state={row.getIsSelected() && "selected"}
                         >
                         {row.getVisibleCells().map((cell) => (
