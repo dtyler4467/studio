@@ -263,26 +263,24 @@ export function SidebarNav() {
                 return (
                      <Collapsible key={item.href} asChild open={isLoadBoardHubOpen} onOpenChange={setIsLoadBoardHubOpen}>
                          <SidebarMenuItem>
-                             <CollapsibleTrigger asChild>
-                                 <SidebarMenuButton
-                                     isActive={isSubItemActive(item.href)}
-                                     tooltip={loadBoardHub.name}
-                                     className="justify-start w-full group"
-                                 >
-                                     <div className="w-full flex items-center justify-between">
-                                         <div className="flex items-center gap-2">
-                                             <item.icon />
-                                             <span>{loadBoardHub.name}</span>
-                                         </div>
-                                         <div className="flex items-center">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 mr-1 group-data-[collapsible=icon]:hidden" onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleOpenEditDialog(loadBoardHub)}}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <ChevronDown className={cn("h-4 w-4 transition-transform", isLoadBoardHubOpen && "rotate-180")} />
-                                         </div>
-                                     </div>
-                                 </SidebarMenuButton>
-                             </CollapsibleTrigger>
+                            <div className="flex items-center w-full">
+                               <CollapsibleTrigger asChild>
+                                   <SidebarMenuButton
+                                       isActive={isSubItemActive(item.href)}
+                                       tooltip={loadBoardHub.name}
+                                       className="justify-start w-full group flex-grow"
+                                   >
+                                       <div className="flex items-center gap-2">
+                                         <item.icon />
+                                         <span>{loadBoardHub.name}</span>
+                                       </div>
+                                       <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isLoadBoardHubOpen && "rotate-180")} />
+                                   </SidebarMenuButton>
+                               </CollapsibleTrigger>
+                               <Button variant="ghost" size="icon" className="h-7 w-7 mr-1 group-data-[collapsible=icon]:hidden shrink-0" onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleOpenEditDialog(loadBoardHub)}}>
+                                    <Pencil className="h-4 w-4" />
+                               </Button>
+                            </div>
                              <CollapsibleContent>
                                  <SidebarMenuSub>
                                      {hubSubItems.map((subItem) => (
@@ -310,10 +308,10 @@ export function SidebarNav() {
                                                 </SidebarMenuSubButton>
                                                 <div className="flex group-data-[collapsible=icon]:hidden">
                                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(board)}}>
-                                                        <Pencil className="h-3 w-3" />
+                                                        <Pencil className="h-3 h-3" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => {e.stopPropagation(); deleteLocalLoadBoard(board.id)}} disabled={localLoadBoards.length <= 1}>
-                                                        <MinusCircle className="h-3 w-3" />
+                                                        <MinusCircle className="h-3 h-3" />
                                                     </Button>
                                                 </div>
                                             </div>
