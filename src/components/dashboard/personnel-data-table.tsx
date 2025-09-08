@@ -41,10 +41,18 @@ type Employee = {
 }
 
 export function PersonnelDataTable() {
-    const { employees, updateEmployeeRole, deleteEmployee } = useSchedule();
+    const { employees, currentUser, updateEmployeeRole, deleteEmployee } = useSchedule();
     const { toast } = useToast();
 
     const handleRoleChange = (employeeId: string, role: Employee['role']) => {
+        if (currentUser?.id === employeeId && role !== 'Admin') {
+            toast({
+                variant: "destructive",
+                title: "Action Forbidden",
+                description: "You cannot change your own role from Admin.",
+            });
+            return;
+        }
         updateEmployeeRole(employeeId, role);
         toast({
             title: "Role Updated",
@@ -53,6 +61,14 @@ export function PersonnelDataTable() {
     };
 
     const handleDelete = (employeeId: string) => {
+        if (currentUser?.id === employeeId) {
+             toast({
+                variant: "destructive",
+                title: "Action Forbidden",
+                description: "You cannot delete your own account.",
+            });
+            return;
+        }
         deleteEmployee(employeeId);
         toast({
             variant: "destructive",
@@ -113,7 +129,7 @@ export function PersonnelDataTable() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem className="text-destructive flex items-center gap-2">
+                            <DropdownMenuItem className="text-destructive flex items-center gap-2" disabled={currentUser?.id === employee.id}>
                                 <Trash2 className="w-4 h-4" /> Delete User
                             </DropdownMenuItem>
                          </AlertDialogTrigger>

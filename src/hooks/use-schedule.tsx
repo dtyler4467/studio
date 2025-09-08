@@ -108,6 +108,7 @@ export type TrainingAssignment = {
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
+  currentUser: Employee | null;
   holidays: Holiday[];
   timeOffRequests: TimeOffRequest[];
   registrations: Registration[];
@@ -288,6 +289,7 @@ const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined
 export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [currentUser, setCurrentUser] = useState<Employee | null>(null);
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>(initialTimeOffRequests);
   const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
   const [yardEvents, setYardEvents] = useState<YardEvent[]>(initialYardEvents);
@@ -296,6 +298,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [trainingAssignments, setTrainingAssignments] = useState<TrainingAssignment[]>(initialTrainingAssignments);
   const [warehouseDoors, setWarehouseDoors] = useState<string[]>(initialWarehouseDoors);
   const [parkingLanes, setParkingLanes] = useState<string[]>(initialParkingLanes);
+  
+  React.useEffect(() => {
+    // In a real app, this would be determined by an auth state listener.
+    // For now, we'll mock the current user as the first Admin.
+    const adminUser = employees.find(e => e.role === 'Admin');
+    setCurrentUser(adminUser || null);
+  }, [employees]);
 
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
@@ -421,7 +430,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane }}>
       {children}
     </ScheduleContext.Provider>
   );
