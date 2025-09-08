@@ -135,7 +135,11 @@ export function ExpenseReportDataTable() {
        {
         accessorKey: "date",
         header: "Date",
-        cell: ({ row }) => format(new Date(row.getValue("date")), "PPP")
+        cell: ({ row }) => {
+            const dateString = row.getValue("date") as string;
+            // Add time to treat it as local to avoid timezone shift
+            return format(new Date(`${dateString}T00:00:00`), "PPP");
+        }
       },
       {
         accessorKey: "description",
