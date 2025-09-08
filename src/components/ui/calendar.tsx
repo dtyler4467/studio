@@ -82,28 +82,34 @@ function Calendar({
           for (let i = from; i <= to; i++) {
             years.push(i);
           }
+          
+           const months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+           ];
 
           if (props.name === "months") {
+            const selectedMonth = props.value !== undefined ? new Date(props.value).getMonth() : new Date().getMonth();
             return (
               <Select
                 onValueChange={(newValue) => {
-                  const newDate = new Date(props.value as Date);
+                  const newDate = props.value ? new Date(props.value) : new Date();
                   newDate.setMonth(parseInt(newValue));
                   props.onChange?.(newDate);
                 }}
-                value={String(props.value)}
+                value={String(selectedMonth)}
               >
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
                 <SelectContent>
                   <ScrollArea className="h-48">
-                    {props.options.map((option) => (
+                    {months.map((month, index) => (
                       <SelectItem
-                        key={String(option.props.value)}
-                        value={String(option.props.value)}
+                        key={month}
+                        value={String(index)}
                       >
-                        {option.props.children}
+                        {month}
                       </SelectItem>
                     ))}
                   </ScrollArea>
@@ -111,14 +117,15 @@ function Calendar({
               </Select>
             );
           } else if (props.name === "years") {
+            const selectedYear = props.value !== undefined ? new Date(props.value).getFullYear() : new Date().getFullYear();
             return (
               <Select
                 onValueChange={(newValue) => {
-                  const newDate = new Date(props.value as Date);
+                   const newDate = props.value ? new Date(props.value) : new Date();
                   newDate.setFullYear(parseInt(newValue));
                   props.onChange?.(newDate);
                 }}
-                value={String(props.value)}
+                value={String(selectedYear)}
               >
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Year" />
