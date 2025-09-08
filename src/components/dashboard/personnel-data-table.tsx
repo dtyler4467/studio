@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
-import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable, ColumnFiltersState } from "@tanstack/react-table"
+import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable, ColumnFiltersState, getGlobalFacetedRowModel } from "@tanstack/react-table"
 import { MoreHorizontal, Trash2, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -48,7 +48,7 @@ export function PersonnelDataTable() {
     const { employees, currentUser, updateEmployeeRole, deleteEmployee } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = React.useState('');
 
 
     const handleRoleChange = (employeeId: string, role: Employee['role']) => {
@@ -192,10 +192,11 @@ export function PersonnelDataTable() {
     data: employees,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getFilteredRowModel: getFilteredRowModel(),
+    getGlobalFacetedRowModel: getGlobalFacetedRowModel(),
     state: {
-        columnFilters,
+        globalFilter,
     }
   })
 
@@ -203,10 +204,10 @@ export function PersonnelDataTable() {
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter by name..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          placeholder="Search by ID, name, email, or role..."
+          value={globalFilter ?? ""}
           onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
+            setGlobalFilter(event.target.value)
           }
           className="max-w-sm"
         />
