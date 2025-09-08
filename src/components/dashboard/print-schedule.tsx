@@ -6,20 +6,46 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Button } from "../ui/button";
 import { Printer, Mail, FileDown } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 export function PrintSchedule() {
     const { shifts, employees } = useSchedule();
+    const { toast } = useToast();
 
     const handlePrintCalendar = () => {
         const printContents = document.getElementById('shift-calendar-printable')?.innerHTML;
+        const calendarExists = document.getElementById('shift-calendar-printable');
+
+        if (!calendarExists) {
+            toast({
+                variant: "destructive",
+                title: "Print Error",
+                description: "The schedule calendar is not on this page. Please navigate to Shift Management to print.",
+            });
+            return;
+        }
+
         if (printContents) {
             const originalContents = document.body.innerHTML;
-            document.body.innerHTML = printContents;
+            document.body.innerHTML = `<style>
+                @media print {
+                    body * { visibility: hidden; }
+                    #shift-calendar-printable, #shift-calendar-printable * { visibility: visible; }
+                    #shift-calendar-printable { position: absolute; left: 0; top: 0; width: 100%; }
+                    .rdp { display: block !important; }
+                }
+            </style>${printContents}`;
             window.print();
             document.body.innerHTML = originalContents;
-            window.location.reload();
+            // A full reload can be jarring, let's just restore state.
+            // This might need more complex state management in a real app.
+            window.location.reload(); 
         } else {
-            alert("Could not find the calendar to print.");
+            toast({
+                variant: "destructive",
+                title: "Print Error",
+                description: "Could not find the calendar content to print.",
+            });
         }
     };
     
@@ -47,6 +73,11 @@ export function PrintSchedule() {
         document.body.appendChild(link); 
         link.click();
         document.body.removeChild(link);
+
+        toast({
+            title: "Export Successful",
+            description: "The schedule has been exported to a CSV file.",
+        });
     };
 
     const handleEmailSchedule = () => {
@@ -60,7 +91,7 @@ export function PrintSchedule() {
             <CardHeader>
                 <CardTitle className="font-headline">Print or Email Schedule</CardTitle>
                 <CardDescription>
-                    Select an option below to print the monthly calendar, export shift data to a CSV file, or email the schedule.
+                    Select an option below to print the monthly calendar, export shift data to a CSV file, or email the schedule. Note: Printing requires you to be on the 'Shift Management' page.
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row gap-4">

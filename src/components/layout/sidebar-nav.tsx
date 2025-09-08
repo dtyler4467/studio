@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -50,11 +51,11 @@ const navItems = [
         { href: '/dashboard/yard-management', label: 'Overview' },
         { href: '/dashboard/yard-management/check-in', label: 'Inbound/Outbound' },
         { href: '/dashboard/yard-management/history', label: 'Yard History' },
-        { href: '/dashboard/dispatch', label: 'Dispatch' },
-        { href: '/dashboard/tracking', label: 'Tracking' },
     ]
   },
+  { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch' },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board' },
+  { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking' },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts' },
   { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule' },
   { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off' },
@@ -73,7 +74,8 @@ const adminNavItems = [
 export function SidebarNav() {
   const pathname = usePathname();
   const { state } = useSidebar();
-  const [isAdminOpen, setIsAdminOpen] = useState(true);
+  const [isYardManagementOpen, setIsYardManagementOpen] = useState(pathname.startsWith('/dashboard/yard-management'));
+  const [isAdminOpen, setIsAdminOpen] = useState(pathname.startsWith('/dashboard/administration'));
 
   return (
     <Sidebar>
@@ -86,48 +88,56 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-             <Collapsible key={item.href} asChild>
-                 <SidebarMenuItem>
-                 <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                        asChild={!!item.subItems}
-                        isActive={pathname.startsWith(item.href) && (!item.subItems || item.subItems.length === 0)}
-                        tooltip={item.label}
-                        className="justify-start w-full group"
-                    >
-                        {item.subItems ? (
-                             <div className="w-full flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <item.icon />
-                                    <span>{item.label}</span>
-                                </div>
-                                <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", "group-data-[state=open]:rotate-180")} />
-                             </div>
-                        ) : (
-                            <Link href={item.href}>
-                                <item.icon />
-                                <span>{item.label}</span>
-                            </Link>
-                        )}
-                    </SidebarMenuButton>
-                 </CollapsibleTrigger>
-                {item.subItems && (
-                     <CollapsibleContent>
-                        <SidebarMenuSub>
-                            {item.subItems.map((subItem) => (
-                                <SidebarMenuSubItem key={subItem.href}>
-                                    <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
-                                        <Link href={subItem.href}>
-                                            <span>{subItem.label}</span>
-                                        </Link>
-                                    </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                            ))}
-                        </SidebarMenuSub>
-                    </CollapsibleContent>
-                )}
+             item.href === '/dashboard/yard-management' ? (
+                 <Collapsible key={item.href} asChild open={isYardManagementOpen} onOpenChange={setIsYardManagementOpen}>
+                     <SidebarMenuItem>
+                         <CollapsibleTrigger asChild>
+                             <SidebarMenuButton
+                                 isActive={pathname.startsWith(item.href)}
+                                 tooltip={item.label}
+                                 className="justify-start w-full group"
+                             >
+                                 <div className="w-full flex items-center justify-between">
+                                     <div className="flex items-center gap-2">
+                                         <item.icon />
+                                         <span>{item.label}</span>
+                                     </div>
+                                     <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isYardManagementOpen && "rotate-180")} />
+                                 </div>
+                             </SidebarMenuButton>
+                         </CollapsibleTrigger>
+                         {item.subItems && (
+                             <CollapsibleContent>
+                                 <SidebarMenuSub>
+                                     {item.subItems.map((subItem) => (
+                                         <SidebarMenuSubItem key={subItem.href}>
+                                             <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                                                 <Link href={subItem.href}>
+                                                     <span>{subItem.label}</span>
+                                                 </Link>
+                                             </SidebarMenuSubButton>
+                                         </SidebarMenuSubItem>
+                                     ))}
+                                 </SidebarMenuSub>
+                             </CollapsibleContent>
+                         )}
+                     </SidebarMenuItem>
+                 </Collapsible>
+             ) : (
+                <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    tooltip={item.label}
+                    className="justify-start w-full group"
+                >
+                    <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                    </Link>
+                </SidebarMenuButton>
                 </SidebarMenuItem>
-            </Collapsible>
+             )
           ))}
         </SidebarMenu>
         
@@ -137,7 +147,7 @@ export function SidebarNav() {
                      <SidebarMenuButton
                         variant="default"
                         className="justify-start w-full group"
-                        isActive={adminNavItems.some(item => pathname.startsWith(item.href))}
+                        isActive={pathname.startsWith('/dashboard/administration')}
                         >
                         <Shield />
                         <span>Administration</span>
