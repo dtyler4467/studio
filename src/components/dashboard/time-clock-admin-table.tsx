@@ -325,7 +325,7 @@ export function TimeClockAdminTable() {
                             format((table.getColumn("clockIn")?.getFilterValue() as DateRange).from!, "LLL dd, y")
                         )
                         ) : (
-                        <span>Filter by date...</span>
+                        <span>Filter by date range...</span>
                         )}
                     </Button>
                     </PopoverTrigger>
