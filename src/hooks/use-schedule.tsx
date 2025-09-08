@@ -24,6 +24,7 @@ export type Employee = {
     personnelId?: string;
     phoneNumber?: string;
     documentDataUri?: string | null;
+    workLocation?: string;
 }
 
 export type Holiday = {
@@ -183,10 +184,10 @@ const initialShifts: Shift[] = [
 
 
 const mockEmployees: Employee[] = [
-    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", personnelId: "JD-001", phoneNumber: "555-123-4567" },
-    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", personnelId: "JD-002", phoneNumber: "555-234-5678" },
-    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", personnelId: "MS-001", phoneNumber: "555-345-6789" },
-    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", personnelId: "EJ-001", phoneNumber: "555-456-7890" },
+    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: "Main Warehouse" },
+    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: "Main Warehouse" },
+    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: "Office" },
+    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: "Office" },
 ];
 
 const holidays: Holiday[] = [

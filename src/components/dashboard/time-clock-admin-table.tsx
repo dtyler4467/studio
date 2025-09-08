@@ -134,7 +134,9 @@ export function TimeClockAdminTable() {
         }
 
         const dataToExport = filteredData.map(entry => ({
+            'Employee ID': entry.employee.personnelId,
             'Employee Name': entry.employee.name,
+            'Work Location': entry.employee.workLocation || 'N/A',
             'Clock In': format(new Date(entry.clockIn.timestamp), 'yyyy-MM-dd HH:mm:ss'),
             'Clock Out': entry.clockOut ? format(new Date(entry.clockOut.timestamp), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
             'Hours': entry.hours,
@@ -159,6 +161,17 @@ export function TimeClockAdminTable() {
         accessorFn: (row) => row.employee.name,
         id: "employeeName",
         header: "Employee",
+        cell: ({ row }) => (
+            <div>
+                <span className="font-medium">{row.original.employee.name}</span>
+                <div className="text-sm text-muted-foreground">{row.original.employee.personnelId}</div>
+            </div>
+        )
+      },
+      {
+        id: 'workLocation',
+        header: "Work Location",
+        accessorFn: (row) => row.employee.workLocation,
       },
       {
         id: 'clockIn',
@@ -369,4 +382,3 @@ export function TimeClockAdminTable() {
         </div>
     )
 }
-
