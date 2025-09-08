@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const DetailItem = ({ label, value }: { label: string, value: string | undefined }) => (
     <div>
@@ -135,5 +136,3 @@ export default function DocumentViewerPage() {
     </div>
   );
 }
-
-    
