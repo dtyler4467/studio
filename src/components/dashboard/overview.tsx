@@ -28,6 +28,7 @@ export function Overview() {
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
+    // This needs to be client-side only to avoid hydration errors
     setChartData([
       { date: 'Mon', shipments: Math.floor(Math.random() * 200) + 50 },
       { date: 'Tue', shipments: Math.floor(Math.random() * 200) + 50 },
@@ -41,7 +42,7 @@ export function Overview() {
 
 
   return (
-    <Card className="col-span-1 lg:col-span-2">
+    <Card>
       <CardHeader>
         <CardTitle className="font-headline">Shipments Overview</CardTitle>
         <CardDescription>An overview of shipments for the past week.</CardDescription>
