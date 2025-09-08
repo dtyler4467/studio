@@ -210,7 +210,7 @@ export function TimeClockAdminTable() {
         cell: ({ row }) => <ClientFormattedDate date={row.original.clockIn.timestamp} />,
         filterFn: (row, id, value: DateRange) => {
             const rowDate = new Date(row.getValue(id) as string);
-            if (value.from && value.to) {
+            if (value?.from && value?.to) {
                 return isWithinInterval(rowDate, { start: value.from, end: value.to });
             }
             return true;
