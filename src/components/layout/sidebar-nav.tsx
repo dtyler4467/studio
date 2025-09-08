@@ -38,12 +38,13 @@ import {
   History,
   CreditCard,
   GraduationCap,
+  Map,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -55,6 +56,7 @@ const navItems = [
         { href: '/dashboard/yard-management', label: 'Overview' },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search },
         { href: '/dashboard/yard-management/check-in', label: 'Check In/Out' },
+        { href: '/dashboard/yard-management/lane-manager', label: 'Lane Manager', icon: Map },
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History },
     ]
   },
@@ -81,11 +83,20 @@ const adminNavItems = [
 export function SidebarNav() {
   const pathname = usePathname();
   const { state } = useSidebar();
-  const [isYardManagementOpen, setIsYardManagementOpen] = useState(pathname.startsWith('/dashboard/yard-management'));
-  const [isAdminOpen, setIsAdminOpen] = useState(pathname.startsWith('/dashboard/administration'));
+  const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+
+  useEffect(() => {
+    setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
+    setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
+  }, [pathname]);
 
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
+    // Exact match for overview pages to prevent matching parent layout routes
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration') {
+        return pathname === href;
+    }
     return pathname.startsWith(href);
   }
 
@@ -174,7 +185,7 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                         {adminNavItems.map((item) => (
                             <SidebarMenuSubItem key={item.href}>
-                                <SidebarMenuSubButton asChild isActive={pathname === item.href}>
+                                <SidebarMenuSubButton asChild isActive={isSubItemActive(item.href)}>
                                     <Link href={item.href}>
                                         <item.icon />
                                         <span>{item.label}</span>
