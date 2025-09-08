@@ -35,6 +35,7 @@ import {
   CalendarCog,
   Users,
   Search,
+  History,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -51,12 +52,13 @@ const navItems = [
     subItems: [
         { href: '/dashboard/yard-management', label: 'Overview' },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search },
-        { href: '/dashboard/yard-management/history', label: 'Yard History' },
-        { href: '/dashboard/dispatch', label: 'Dispatch', icon: Send },
-        { href: '/dashboard/tracking', label: 'Tracking', icon: MapPin },
+        { href: '/dashboard/yard-management/check-in', label: 'Check In/Out' },
+        { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History },
     ]
   },
+  { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch' },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board' },
+  { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking' },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts' },
   { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule' },
   { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off' },
@@ -75,19 +77,15 @@ const adminNavItems = [
 export function SidebarNav() {
   const pathname = usePathname();
   const { state } = useSidebar();
-  const [isYardManagementOpen, setIsYardManagementOpen] = useState(pathname.startsWith('/dashboard/yard-management') || pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/tracking'));
+  const [isYardManagementOpen, setIsYardManagementOpen] = useState(pathname.startsWith('/dashboard/yard-management'));
   const [isAdminOpen, setIsAdminOpen] = useState(pathname.startsWith('/dashboard/administration'));
 
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
-    if (href === '/dashboard/yard-management') return pathname === href;
-    if (href === '/dashboard/yard-management/search' && pathname === '/dashboard/yard-management/check-in') {
-      return true;
-    }
     return pathname.startsWith(href);
   }
 
-  const isYardManagementActive = pathname.startsWith('/dashboard/yard-management') || pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/tracking');
+  const isYardManagementActive = pathname.startsWith('/dashboard/yard-management');
 
 
   return (
