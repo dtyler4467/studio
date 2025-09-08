@@ -34,7 +34,7 @@ import {
   Printer,
   CalendarCog,
   Users,
-  Upload,
+  Search,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -50,7 +50,7 @@ const navItems = [
     label: 'Yard Management',
     subItems: [
         { href: '/dashboard/yard-management', label: 'Overview' },
-        { href: '/dashboard/yard-management/check-in', label: 'Inbound/Outbound' },
+        { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search },
         { href: '/dashboard/yard-management/history', label: 'Yard History' },
         { href: '/dashboard/dispatch', label: 'Dispatch', icon: Send },
         { href: '/dashboard/tracking', label: 'Tracking', icon: MapPin },
@@ -81,6 +81,9 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     if (href === '/dashboard/yard-management') return pathname === href;
+    if (href === '/dashboard/yard-management/search' && pathname === '/dashboard/yard-management/check-in') {
+      return true;
+    }
     return pathname.startsWith(href);
   }
 
@@ -119,9 +122,7 @@ export function SidebarNav() {
                          {item.subItems && (
                              <CollapsibleContent>
                                  <SidebarMenuSub>
-                                     {item.subItems.map((subItem) => {
-                                        const Icon = subItem.icon ? subItem.icon : subItem.href.endsWith('upload') ? Upload : subItem.href.endsWith('history') ? 'div' : 'div'
-                                        return (
+                                     {item.subItems.map((subItem) => (
                                          <SidebarMenuSubItem key={subItem.href}>
                                              <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
                                                  <Link href={subItem.href}>
@@ -130,8 +131,7 @@ export function SidebarNav() {
                                                  </Link>
                                              </SidebarMenuSubButton>
                                          </SidebarMenuSubItem>
-                                     )}
-                                     )}
+                                     ))}
                                  </SidebarMenuSub>
                              </CollapsibleContent>
                          )}

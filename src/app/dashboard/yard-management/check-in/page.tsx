@@ -1,9 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { YardCheckInForm, FormValues, formSchema } from '@/components/dashboard/yard-check-in-form';
@@ -13,14 +14,17 @@ import { useSchedule } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight, Search } from 'lucide-react';
+import Link from 'next/link';
 
 export default function YardCheckInPage() {
     const { addYardEvent } = useSchedule();
     const { toast } = useToast();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [documentDataUri, setDocumentDataUri] = useState<string | null>(null);
 
-     const form = useForm<FormValues>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             transactionType: "inbound",
@@ -33,7 +37,20 @@ export default function YardCheckInPage() {
             assignmentType: "empty",
             assignmentValue: "",
         },
-     });
+    });
+
+    useEffect(() => {
+        // Pre-populate form from URL search params
+        const loadNumber = searchParams.get('loadNumber');
+        if (loadNumber) {
+             form.setValue('loadNumber', loadNumber);
+             form.setValue('trailerId', searchParams.get('trailerId') || '');
+             form.setValue('carrier', searchParams.get('carrier') || '');
+             form.setValue('scac', searchParams.get('scac') || '');
+             form.setValue('driverName', searchParams.get('driver') || '');
+        }
+    }, [searchParams, form]);
+
 
     const handleFormSubmit = (data: FormValues) => {
         addYardEvent(data, documentDataUri);
@@ -49,6 +66,7 @@ export default function YardCheckInPage() {
             description: (
                  <div className="text-sm space-y-1">
                     <p><strong>Trailer:</strong> {data.trailerId}</p>
+                    <p><strong>Load/BOL:</strong> {data.loadNumber}</p>
                     <p><strong>Seal:</strong> {data.sealNumber || 'N/A'}</p>
                     <p><strong>Carrier:</strong> {data.carrier} (SCAC: {data.scac || 'N/A'})</p>
                     <p><strong>Driver:</strong> {data.driverName}</p>
@@ -59,8 +77,9 @@ export default function YardCheckInPage() {
             ),
         });
         
-        setDocumentDataUri(null); // Reset after submission
+        setDocumentDataUri(null);
         form.reset();
+        router.push('/dashboard/yard-management/search');
     };
 
 
@@ -70,10 +89,20 @@ export default function YardCheckInPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
         <CardHeader>
-            <CardTitle className="font-headline">Gate Check In/Out</CardTitle>
-            <CardDescription>
-            Log truck arrivals and departures at the gate, and optionally attach relevant documents.
-            </CardDescription>
+            <div className="flex justify-between items-start">
+                 <div>
+                    <CardTitle className="font-headline">Gate Check In/Out</CardTitle>
+                    <CardDescription>
+                        Log truck arrivals and departures. You can start by searching for a load or entering details manually.
+                    </CardDescription>
+                 </div>
+                 <Button variant="outline" asChild>
+                    <Link href="/dashboard/yard-management/search">
+                        <Search className="mr-2" />
+                        Search for a Load
+                    </Link>
+                 </Button>
+            </div>
         </CardHeader>
         <CardContent>
             <YardCheckInForm form={form} />
