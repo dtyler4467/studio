@@ -9,7 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, User, Shield, FileText } from "lucide-react";
+import { Mail, Phone, User, Shield, FileText, Image as ImageIcon } from "lucide-react";
+import { DocumentUpload } from "@/components/dashboard/document-upload";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => (
     <div className="flex items-center gap-4">
@@ -22,17 +25,29 @@ const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, lab
 );
 
 export default function PersonnelDetailPage() {
-  const { getEmployeeById } = useSchedule();
+  const { getEmployeeById, updateEmployeeDocument, getEmployeeDocument } = useSchedule();
   const params = useParams();
   const { id } = params;
   const [employee, setEmployee] = useState<Employee | null | undefined>(undefined);
+  const [documentDataUri, setDocumentDataUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof id === 'string') {
         const foundEmployee = getEmployeeById(id);
         setEmployee(foundEmployee);
+        if (foundEmployee) {
+            const doc = getEmployeeDocument(foundEmployee.id);
+            setDocumentDataUri(doc);
+        }
     }
-  }, [id, getEmployeeById]);
+  }, [id, getEmployeeById, getEmployeeDocument]);
+
+  const handleDocumentChange = (dataUri: string | null) => {
+    if (employee) {
+        updateEmployeeDocument(employee.id, dataUri);
+        setDocumentDataUri(dataUri);
+    }
+  };
 
   if (employee === undefined) {
     return (
@@ -103,14 +118,8 @@ export default function PersonnelDetailPage() {
                                 <CardTitle>Personnel Documents</CardTitle>
                                 <CardDescription>Manage and view documents associated with this employee.</CardDescription>
                             </CardHeader>
-                             <CardContent>
-                                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                                    <div className="text-center">
-                                        <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                                        <h3 className="mt-4 text-lg font-semibold">No Documents Found</h3>
-                                        <p className="mt-1 text-sm text-muted-foreground">This section is not yet implemented.</p>
-                                    </div>
-                                </div>
+                             <CardContent className="space-y-4">
+                                <DocumentUpload onDocumentChange={handleDocumentChange} currentDocument={documentDataUri} />
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -134,3 +143,5 @@ export default function PersonnelDetailPage() {
     </div>
   );
 }
+
+    

@@ -23,6 +23,7 @@ export type Employee = {
     role: EmployeeRole;
     personnelId?: string;
     phoneNumber?: string;
+    documentDataUri?: string | null;
 }
 
 export type Holiday = {
@@ -147,6 +148,9 @@ type ScheduleContextType = {
   updateEmployee: (updatedEmployee: Employee) => void;
   deleteEmployee: (employeeId: string, deletedBy: string) => void;
   addEmployee: (employeeData: Omit<Employee, 'id' | 'personnelId'>) => void;
+  bulkAddEmployees: (employeeData: Omit<Employee, 'id' | 'personnelId'>[]) => void;
+  updateEmployeeDocument: (employeeId: string, documentDataUri: string | null) => void;
+  getEmployeeDocument: (employeeId: string) => string | null;
   getYardEventById: (id: string) => YardEvent | null;
   addYardEvent: (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => void;
   getExpenseReportById: (id: string) => ExpenseReport | null;
@@ -458,6 +462,28 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setEmployees(prev => [...prev, newEmployee]);
     };
 
+     const bulkAddEmployees = (employeeData: Omit<Employee, 'id' | 'personnelId'>[]) => {
+        const newEmployees = employeeData.map(emp => {
+             const newId = `USR${Date.now()}${Math.random()}`;
+            const newPersonnelId = `${emp.name.split(' ').map(n => n[0]).join('').toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+            return {
+                ...emp,
+                id: newId,
+                personnelId: newPersonnelId,
+            }
+        });
+        setEmployees(prev => [...prev, ...newEmployees]);
+    };
+
+    const updateEmployeeDocument = (employeeId: string, documentDataUri: string | null) => {
+        setEmployees(prev => prev.map(emp => emp.id === employeeId ? { ...emp, documentDataUri } : emp));
+    };
+
+    const getEmployeeDocument = (employeeId: string) => {
+        const employee = employees.find(e => e.id === employeeId);
+        return employee?.documentDataUri || null;
+    }
+
     const getYardEventById = (id: string) => {
         return yardEvents.find(event => event.id === id) || null;
     }
@@ -547,7 +573,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem }}>
       {children}
     </ScheduleContext.Provider>
   );
@@ -560,3 +586,5 @@ export const useSchedule = () => {
   }
   return context;
 };
+
+    
