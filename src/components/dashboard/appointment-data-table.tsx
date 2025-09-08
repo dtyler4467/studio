@@ -47,6 +47,21 @@ import { CalendarIcon } from "lucide-react"
 import { Calendar } from "../ui/calendar"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Skeleton } from "../ui/skeleton"
+
+const ClientFormattedDate = ({ date }: { date: Date | string }) => {
+  const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setFormattedDate(format(new Date(date), "PPP p"));
+  }, [date]);
+
+  if (!formattedDate) {
+    return <Skeleton className="h-4 w-[150px]" />;
+  }
+
+  return <>{formattedDate}</>;
+};
 
 const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (data: Omit<Appointment, 'id' | 'status'>) => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
     const [formData, setFormData] = React.useState({
@@ -221,7 +236,7 @@ export function AppointmentDataTable() {
             </Button>
           )
         },
-        cell: ({ row }) => <div>{format(row.getValue("appointmentTime"), "Pp")}</div>,
+        cell: ({ row }) => <ClientFormattedDate date={row.getValue("appointmentTime")} />,
       },
       {
         accessorKey: "status",
