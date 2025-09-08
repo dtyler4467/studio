@@ -10,7 +10,6 @@ import { Camera, FileUp, Videotape, Trash2, SwitchCamera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type DocumentUploadProps = {
     onDocumentChange: (dataUri: string | null) => void;
@@ -55,8 +54,8 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
              return;
         }
 
-        const currentDeviceId = deviceId || videoDevices[0]?.deviceId;
-        if (currentDeviceId) {
+        const currentDeviceId = deviceId || selectedCameraId || videoDevices[0]?.deviceId;
+        if (currentDeviceId && !selectedCameraId) {
             setSelectedCameraId(currentDeviceId);
         }
         
@@ -80,24 +79,27 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
             description: 'Please enable camera permissions in your browser settings.',
         });
     }
-  }, [stopStream, toast]);
+  }, [stopStream, toast, selectedCameraId]);
 
   useEffect(() => {
     if (activeTab === "camera") {
-        startStream(selectedCameraId || undefined);
+        startStream(selectedCameraId);
     } else {
         stopStream();
     }
-    // Cleanup function to stop stream when component unmounts or tab changes
+    
     return () => {
         stopStream();
     }
   }, [activeTab, startStream, stopStream, selectedCameraId]);
 
-  const handleCameraChange = (deviceId: string) => {
-    setSelectedCameraId(deviceId);
-    // The useEffect will handle restarting the stream
-  }
+  const handleFlipCamera = () => {
+    if (cameras.length > 1) {
+      const currentIndex = cameras.findIndex(c => c.deviceId === selectedCameraId);
+      const nextIndex = (currentIndex + 1) % cameras.length;
+      setSelectedCameraId(cameras[nextIndex].deviceId);
+    }
+  };
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -176,26 +178,14 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
                             <>
                                 <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
                                 <div className="flex gap-2">
-                                    {cameras.length > 1 && (
-                                        <div className="flex-1">
-                                            <Select value={selectedCameraId} onValueChange={handleCameraChange}>
-                                                <SelectTrigger>
-                                                    <SwitchCamera className="mr-2"/>
-                                                    <SelectValue placeholder="Select camera" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {cameras.map(camera => (
-                                                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                                                            {camera.label || `Camera ${cameras.indexOf(camera) + 1}`}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
-                                    <Button onClick={handleCapture} className="flex-1">
+                                     <Button onClick={handleCapture} className="flex-1">
                                         <Camera className="mr-2" /> Capture Document
                                     </Button>
+                                    {cameras.length > 1 && (
+                                        <Button variant="outline" size="icon" onClick={handleFlipCamera} title="Flip camera">
+                                            <SwitchCamera />
+                                        </Button>
+                                    )}
                                 </div>
                             </>
                         )}
