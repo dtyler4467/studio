@@ -81,6 +81,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/yard-management/dock-doors', label: 'Dock Doors', icon: Warehouse, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/parking-lanes', label: 'Parking Lanes', icon: ParkingCircle, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History, roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/trash', label: 'Trash', icon: Trash2, roles: ['Admin', 'Dispatcher'] },
     ]
   },
   { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
@@ -234,7 +235,7 @@ export function SidebarNav() {
     if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub') {
         return pathname === href;
     }
-    if (href === '/dashboard/local-loads') {
+    if (href === '/dashboard/local-loads' || href === '/dashboard/yard-management/trash') {
         return pathname.startsWith(href);
     }
     return pathname.startsWith(href);
