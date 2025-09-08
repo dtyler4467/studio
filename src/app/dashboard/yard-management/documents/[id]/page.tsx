@@ -13,7 +13,8 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, Mail, Printer } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const DetailItem = ({ label, value }: { label: string, value: string | undefined }) => (
     <div>
@@ -22,10 +23,49 @@ const DetailItem = ({ label, value }: { label: string, value: string | undefined
     </div>
 );
 
+const createPrintableHTML = (event: YardEvent) => {
+    return `
+      <html>
+        <head>
+          <title>Gate Event Report - ${event.id}</title>
+          <style>
+            body { font-family: sans-serif; margin: 2rem; }
+            h1, h2 { color: #333; }
+            table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }
+            .capitalize { text-transform: capitalize; }
+          </style>
+        </head>
+        <body>
+          <h1>Gate Event Report</h1>
+          <p>Generated on: ${format(new Date(), 'PPP p')}</p>
+          <h2>Event ID: ${event.id}</h2>
+          <table>
+            <tr><th>Attribute</th><th>Value</th></tr>
+            <tr><td>Date & Time</td><td>${format(event.timestamp, 'Pp')}</td></tr>
+            <tr><td>Type</td><td class="capitalize">${event.transactionType}</td></tr>
+            <tr><td>Trailer ID</td><td>${event.trailerId}</td></tr>
+            <tr><td>Seal #</td><td>${event.sealNumber || 'N/A'}</td></tr>
+            <tr><td>Carrier</td><td>${event.carrier} (SCAC: ${event.scac})</td></tr>
+            <tr><td>Driver</td><td>${event.driverName}</td></tr>
+            <tr><td>Clerk</td><td>${event.clerkName}</td></tr>
+            <tr><td>Load/BOL #</td><td>${event.loadNumber || 'N/A'}</td></tr>
+            <tr><td>Assignment</td><td class="capitalize">${event.assignmentType.replace(/_/g, ' ')}${event.assignmentValue ? `: ${event.assignmentValue}` : ''}</td></tr>
+          </table>
+          ${event.documentDataUri ? `<h2>Attached Document</h2><img src="${event.documentDataUri}" alt="Attached Document" />` : '<h2>No Document Attached</h2>'}
+        </body>
+      </html>
+    `;
+};
+
+
 export default function DocumentViewerPage() {
   const { getYardEventById } = useSchedule();
   const params = useParams();
   const { id } = params;
+  const { toast } = useToast();
   const [event, setEvent] = useState<YardEvent | null | undefined>(undefined);
 
   useEffect(() => {
@@ -34,6 +74,38 @@ export default function DocumentViewerPage() {
         setEvent(foundEvent);
     }
   }, [id, getYardEventById]);
+
+  const handlePrint = () => {
+    if (!event) {
+        toast({ variant: 'destructive', title: "Error", description: "Cannot print event data." });
+        return;
+    }
+    const printableHTML = createPrintableHTML(event);
+    const printWindow = window.open('', '_blank');
+    printWindow?.document.write(printableHTML);
+    printWindow?.document.close();
+    printWindow?.print();
+  };
+
+  const handleEmail = () => {
+    if (!event) {
+        toast({ variant: 'destructive', title: "Error", description: "Cannot email event data." });
+        return;
+    }
+    const subject = `Details for Gate Event: ${event.id}`;
+    const body = [
+        `Event ID: ${event.id}`,
+        `Date: ${format(event.timestamp, 'Pp')}`,
+        `Type: ${event.transactionType}`,
+        `Trailer: ${event.trailerId}`,
+        `Carrier: ${event.carrier}`,
+        `Driver: ${event.driverName}`,
+        `Clerk: ${event.clerkName}`,
+        `---`
+    ].join('\n');
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
 
   if (event === undefined) {
     return (
@@ -83,7 +155,15 @@ export default function DocumentViewerPage() {
                             Viewing documents and details for trailer <span className="font-semibold">{event.trailerId}</span> from <span className="font-semibold">{format(event.timestamp, 'Pp')}</span>.
                         </CardDescription>
                     </div>
-                     <Badge variant={event.transactionType === 'inbound' ? 'secondary' : 'outline'} className="capitalize text-lg">{event.transactionType}</Badge>
+                     <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={handlePrint}>
+                            <Printer className="mr-2" /> Print
+                        </Button>
+                         <Button variant="outline" size="sm" onClick={handleEmail}>
+                            <Mail className="mr-2" /> Email
+                        </Button>
+                        <Badge variant={event.transactionType === 'inbound' ? 'secondary' : 'outline'} className="capitalize text-base">{event.transactionType}</Badge>
+                     </div>
                 </div>
             </CardHeader>
             <CardContent>
