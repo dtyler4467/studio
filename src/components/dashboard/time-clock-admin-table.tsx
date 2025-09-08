@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react"
@@ -11,8 +12,9 @@ import {
   getPaginationRowModel,
   useReactTable,
   SortingState,
+  ColumnFiltersState,
 } from "@tanstack/react-table"
-import { format, differenceInMinutes, formatDistanceStrict } from "date-fns"
+import { format, differenceInMinutes, formatDistanceStrict, isSameDay } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -31,6 +33,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { getSortedRowModel } from "@tanstack/react-table"
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils"
+import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover"
+import { Calendar } from "../ui/calendar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 
 type TimeCardEntry = {
     employee: Employee;
@@ -60,7 +65,7 @@ export function TimeClockAdminTable() {
     const { timeClockEvents, employees, updateTimeClockStatus } = useSchedule()
     const { toast } = useToast()
     const [sorting, setSorting] = React.useState<SortingState>([{ id: 'clockIn', desc: true }])
-    const [globalFilter, setGlobalFilter] = React.useState('')
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
     const timeCardEntries = React.useMemo(() => {
         const entries: TimeCardEntry[] = [];
@@ -107,7 +112,8 @@ export function TimeClockAdminTable() {
 
     const columns: ColumnDef<TimeCardEntry>[] = [
       {
-        accessorKey: "employee.name",
+        accessorFn: (row) => row.employee.name,
+        id: "employeeName",
         header: "Employee",
       },
       {
@@ -115,6 +121,10 @@ export function TimeClockAdminTable() {
         accessorKey: "clockIn.timestamp",
         header: "Clock In",
         cell: ({ row }) => <ClientFormattedDate date={row.original.clockIn.timestamp} />,
+        filterFn: (row, id, value) => {
+            const rowDate = new Date(row.getValue(id) as string);
+            return isSameDay(rowDate, value);
+        },
       },
        {
         id: 'clockOut',
@@ -176,26 +186,58 @@ export function TimeClockAdminTable() {
         data: timeCardEntries,
         columns,
         onSortingChange: setSorting,
-        onGlobalFilterChange: setGlobalFilter,
+        onColumnFiltersChange: setColumnFilters,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         state: {
             sorting,
-            globalFilter,
+            columnFilters,
         }
     })
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4">
-                <Input
-                placeholder="Search all entries..."
-                value={globalFilter ?? ""}
-                onChange={(event) => setGlobalFilter(event.target.value)}
-                className="max-w-sm"
-                />
+            <div className="flex items-center py-4 gap-2">
+                <Select
+                    value={(table.getColumn('employeeName')?.getFilterValue() as string) ?? ''}
+                    onValueChange={(value) => table.getColumn('employeeName')?.setFilterValue(value === 'all' ? '' : value)}
+                >
+                    <SelectTrigger className="w-[240px]">
+                        <SelectValue placeholder="Filter by employee..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Employees</SelectItem>
+                        {employees.map(emp => (
+                            <SelectItem key={emp.id} value={emp.name}>{emp.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                            <span>{table.getColumn('clockIn')?.getFilterValue() ? format(table.getColumn('clockIn')?.getFilterValue() as Date, "PPP") : 'Filter by date...'}</span>
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={table.getColumn('clockIn')?.getFilterValue() as Date}
+                            onSelect={(date) => table.getColumn('clockIn')?.setFilterValue(date)}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+                 {(table.getColumn('employeeName')?.getFilterValue() || table.getColumn('clockIn')?.getFilterValue()) && (
+                    <Button
+                        variant="ghost"
+                        onClick={() => table.resetColumnFilters()}
+                    >
+                        Reset
+                        <X className="ml-2 h-4 w-4" />
+                    </Button>
+                 )}
             </div>
             <div className="rounded-md border">
                 <Table>
