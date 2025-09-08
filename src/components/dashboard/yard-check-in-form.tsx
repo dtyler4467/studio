@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, User } from "lucide-react";
+import { format } from "date-fns";
 
 const formSchema = z.object({
   transactionType: z.enum(["inbound", "outbound"], {
@@ -39,6 +40,9 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+// In a real app, this would come from the authenticated user's session
+const currentClerk = { name: "Admin User" };
 
 export function YardCheckInForm() {
   const { toast } = useToast();
@@ -66,6 +70,8 @@ export function YardCheckInForm() {
         assignmentDetails += `: ${data.assignmentValue}`;
     }
 
+    const submissionTime = new Date();
+
     toast({
       title: `${direction} Event Logged`,
       description: (
@@ -74,15 +80,26 @@ export function YardCheckInForm() {
           <p><strong>Carrier:</strong> {data.carrier} (SCAC: {data.scac || 'N/A'})</p>
           <p><strong>Driver:</strong> {data.driverName}</p>
           <p className="capitalize"><strong>Assignment:</strong> {assignmentDetails}</p>
+          <p><strong>Clerk:</strong> {currentClerk.name} at {format(submissionTime, 'p')}</p>
         </div>
       ),
     });
+    // In a real app, you'd send `data` along with `currentClerk.name` and `submissionTime` to your backend.
     form.reset();
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+         <div className="flex justify-between items-center bg-muted p-3 rounded-md">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span>Clerk: <span className="font-semibold text-foreground">{currentClerk.name}</span></span>
+            </div>
+             <div className="text-sm text-muted-foreground">
+                {format(new Date(), 'PPP p')}
+            </div>
+        </div>
         <FormField
           control={form.control}
           name="transactionType"
