@@ -15,6 +15,7 @@ import {
   ColumnFiltersState,
 } from "@tanstack/react-table"
 import { format, differenceInMinutes, formatDistanceStrict, isSameDay } from "date-fns"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -64,6 +65,7 @@ const ClientFormattedDate = ({ date }: { date: Date | string }) => {
 export function TimeClockAdminTable() {
     const { timeClockEvents, employees, updateTimeClockStatus } = useSchedule()
     const { toast } = useToast()
+    const router = useRouter()
     const [sorting, setSorting] = React.useState<SortingState>([{ id: 'clockIn', desc: true }])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
@@ -82,9 +84,10 @@ export function TimeClockAdminTable() {
                     if (clockOut) {
                          const start = new Date(clockIn.timestamp);
                          const end = new Date(clockOut.timestamp);
-                         hours = formatDistanceStrict(end, start, { unit: 'hour' });
-                         // To move to the next pair
-                         i++;
+                         const diffMinutes = differenceInMinutes(end, start);
+                         const totalHours = Math.floor(diffMinutes / 60);
+                         const remainingMinutes = diffMinutes % 60;
+                         hours = `${totalHours}h ${remainingMinutes}m`;
                     }
 
                     entries.push({
@@ -94,6 +97,10 @@ export function TimeClockAdminTable() {
                         hours,
                         status: clockIn.status || 'Pending'
                     })
+
+                    if (clockOut) {
+                         i++;
+                    }
                 }
             }
         });
@@ -158,12 +165,12 @@ export function TimeClockAdminTable() {
             return (
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                             <span className="sr-only">Open menu</span>
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                          <DropdownMenuItem disabled={!isComplete} onClick={() => handleStatusChange(entry.clockIn.id, 'Approved')}>
                             <Check className="mr-2" /> Approve
@@ -263,11 +270,17 @@ export function TimeClockAdminTable() {
                     {table.getRowModel().rows?.length ? (
                     table.getRowModel().rows.map((row) => (
                         <TableRow
-                        key={row.original.clockIn.id}
-                        data-state={row.getIsSelected() && "selected"}
+                            key={row.original.clockIn.id}
+                            data-state={row.getIsSelected() && "selected"}
+                            className="cursor-pointer"
+                            onClick={() => router.push(`/dashboard/administration/time-clock/${row.original.employee.id}`)}
                         >
                         {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
+                            <TableCell key={cell.id} onClick={(e) => {
+                                if (cell.column.id === 'actions') {
+                                    e.stopPropagation();
+                                }
+                            }}>
                             {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext()
