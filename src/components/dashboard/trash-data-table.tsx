@@ -29,7 +29,8 @@ import { Undo2 } from "lucide-react"
 const getDeletedItemDescription = (item: DeletionLog) => {
     switch (item.itemType) {
         case 'Shift':
-            return `Shift for ${item.originalData.employeeName} on ${format(new Date(item.originalData.date), 'PPP')}`;
+            // Add time to treat it as local to avoid timezone shift from the string
+            return `Shift for ${item.originalData.employeeName} on ${format(new Date(`${item.originalData.date}T00:00:00`), 'PPP')}`;
         case 'User':
             return `User: ${item.originalData.name} (${item.originalData.email})`;
         default:
