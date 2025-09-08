@@ -77,6 +77,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
+  { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
   { 
     href: '#', 
@@ -85,7 +86,6 @@ const navItems: NavItem[] = [
     roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
     subItems: [
         { href: '/dashboard/schedule', icon: Calendar, label: 'My Schedule', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-        { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
         { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
         { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
@@ -117,7 +117,6 @@ export function SidebarNav() {
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
-        pathname.startsWith('/dashboard/time-clock') ||
         pathname.startsWith('/dashboard/time-off') ||
         pathname.startsWith('/dashboard/resources')
     );
