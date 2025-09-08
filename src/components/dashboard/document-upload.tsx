@@ -25,75 +25,78 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
   const { toast } = useToast();
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const stopStream = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
-  }, [stream]);
+  }, []);
   
-  const getCameraPermission = useCallback(async (deviceId?: string) => {
-    stopStream(); // Stop any existing stream
+  const startStream = useCallback(async (deviceId?: string) => {
+    stopStream();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setHasCameraPermission(false);
-      return;
+        setHasCameraPermission(false);
+        toast({
+            variant: 'destructive',
+            title: 'Camera Not Available',
+            description: 'Your browser does not support camera access.',
+        });
+        return;
     }
+
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      setCameras(videoDevices);
-
-      const constraints: MediaStreamConstraints = { 
-        video: deviceId ? { deviceId: { exact: deviceId } } : true 
-      };
-      
-      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      if (videoRef.current) {
-        videoRef.current.srcObject = newStream;
-      }
-      setStream(newStream);
-      setHasCameraPermission(true);
-      if (videoDevices.length > 0 && !deviceId) {
-        setSelectedCameraId(videoDevices[0].deviceId);
-      } else if (deviceId) {
-        setSelectedCameraId(deviceId);
-      }
-
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      setHasCameraPermission(false);
-      toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings.',
-      });
-    }
-  }, [toast, stopStream]);
-
-  useEffect(() => {
-    if (activeTab === "camera" && !stream) {
-        getCameraPermission(selectedCameraId || undefined);
-    }
-
-    return () => {
-        if(activeTab !== "camera") {
-            stopStream();
+        const videoDevices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+        setCameras(videoDevices);
+        
+        if (videoDevices.length === 0) {
+             setHasCameraPermission(false);
+             return;
         }
-    }
-  }, [activeTab, getCameraPermission, selectedCameraId, stream, stopStream]);
 
-  // Cleanup on unmount
+        const currentDeviceId = deviceId || videoDevices[0]?.deviceId;
+        if (currentDeviceId) {
+            setSelectedCameraId(currentDeviceId);
+        }
+        
+        const constraints: MediaStreamConstraints = { 
+            video: currentDeviceId ? { deviceId: { exact: currentDeviceId } } : true 
+        };
+
+        const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        if (videoRef.current) {
+            videoRef.current.srcObject = newStream;
+        }
+        streamRef.current = newStream;
+        setHasCameraPermission(true);
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings.',
+        });
+    }
+  }, [stopStream, toast]);
+
   useEffect(() => {
+    if (activeTab === "camera") {
+        startStream(selectedCameraId || undefined);
+    } else {
+        stopStream();
+    }
+    // Cleanup function to stop stream when component unmounts or tab changes
     return () => {
         stopStream();
     }
-  }, [stopStream]);
+  }, [activeTab, startStream, stopStream, selectedCameraId]);
 
   const handleCameraChange = (deviceId: string) => {
     setSelectedCameraId(deviceId);
-    getCameraPermission(deviceId);
+    // The useEffect will handle restarting the stream
   }
 
   const handleCapture = () => {
