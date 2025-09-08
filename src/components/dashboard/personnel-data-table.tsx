@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
+import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable, ColumnFiltersState } from "@tanstack/react-table"
 import { MoreHorizontal, Trash2, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 
@@ -47,6 +48,8 @@ export function PersonnelDataTable() {
     const { employees, currentUser, updateEmployeeRole, deleteEmployee } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+
 
     const handleRoleChange = (employeeId: string, role: Employee['role']) => {
         if (currentUser?.id === employeeId && role !== 'Admin') {
@@ -189,10 +192,25 @@ export function PersonnelDataTable() {
     data: employees,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+        columnFilters,
+    }
   })
 
   return (
     <div className="w-full">
+      <div className="flex items-center py-4">
+        <Input
+          placeholder="Filter by name..."
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("name")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
