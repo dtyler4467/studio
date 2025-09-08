@@ -25,7 +25,6 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
 import { Undo2 } from "lucide-react"
-import { Input } from "../ui/input"
 
 const getDeletedItemDescription = (item: DeletionLog) => {
     switch (item.itemType) {
@@ -41,7 +40,6 @@ const getDeletedItemDescription = (item: DeletionLog) => {
 export function TrashDataTable() {
     const { deletionLogs, employees, restoreDeletedItem } = useSchedule()
     const { toast } = useToast()
-    const [globalFilter, setGlobalFilter] = React.useState('')
 
     const handleRestore = (logId: string) => {
         restoreDeletedItem(logId);
@@ -88,25 +86,13 @@ export function TrashDataTable() {
     const table = useReactTable({
         data: deletionLogs,
         columns,
-        onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        state: {
-            globalFilter,
-        },
     })
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4">
-                <Input
-                    placeholder="Search all deleted items..."
-                    value={globalFilter ?? ''}
-                    onChange={(event) => setGlobalFilter(event.target.value)}
-                    className="max-w-sm"
-                />
-            </div>
             <div className="rounded-md border">
                 <Table>
                 <TableHeader>
