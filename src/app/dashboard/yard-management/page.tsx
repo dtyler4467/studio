@@ -66,8 +66,10 @@ export default function YardManagementOverviewPage() {
                     <Truck className="mr-2" /> Inbound/Outbound Processing
                 </Link>
             </Button>
-             <Button variant="secondary">
-                <BarChart className="mr-2" /> View Yard Report
+             <Button variant="secondary" asChild>
+                <Link href="/dashboard/yard-management/history">
+                    <BarChart className="mr-2" /> View Yard History
+                </Link>
             </Button>
           </CardContent>
         </Card>

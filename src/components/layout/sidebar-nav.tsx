@@ -49,6 +49,7 @@ const navItems = [
     subItems: [
         { href: '/dashboard/yard-management', label: 'Overview' },
         { href: '/dashboard/yard-management/check-in', label: 'Inbound/Outbound' },
+        { href: '/dashboard/yard-management/history', label: 'Yard History' },
     ]
   },
   { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch' },
