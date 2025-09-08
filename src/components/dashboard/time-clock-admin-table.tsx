@@ -181,7 +181,10 @@ export function TimeClockAdminTable() {
 
     const openExportDialog = (type: 'approved' | 'not-approved') => {
         setExportType(type);
-        setExportDateRange(undefined);
+        setExportDateRange({
+            from: new Date('2025-09-01'),
+            to: new Date('2025-09-08'),
+        });
         setIsExportDialogOpen(true);
     };
 
@@ -193,15 +196,14 @@ export function TimeClockAdminTable() {
         header: "Employee",
         cell: ({ row }) => (
             <div>
-                <span className="font-medium">{row.original.employee.name}</span>
-                <div className="text-sm text-muted-foreground">{row.original.employee.personnelId}</div>
+                <span className="font-medium">{row.original.employee.personnelId} - {row.original.employee.name}</span>
             </div>
         )
       },
       {
         id: 'workLocation',
         header: "Work Location",
-        accessorFn: (row) => row.employee.workLocation,
+        accessorFn: (row) => row.original.employee.workLocation || 'N/A',
       },
       {
         id: 'clockIn',
@@ -325,7 +327,7 @@ export function TimeClockAdminTable() {
                             format((table.getColumn("clockIn")?.getFilterValue() as DateRange).from!, "LLL dd, y")
                         )
                         ) : (
-                        <span>Filter by date range...</span>
+                        <span>Filter by date...</span>
                         )}
                     </Button>
                     </PopoverTrigger>
