@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -293,6 +294,31 @@ export function SidebarNav() {
                 );
             }
              
+            if (item.href === '/dashboard/load-board-hub') {
+                 return (
+                    <SidebarMenuItem key={item.href}>
+                        <div className="flex items-center gap-1 w-full">
+                            <SidebarMenuButton
+                                asChild
+                                isActive={pathname === item.href}
+                                tooltip={item.label}
+                                className="justify-start group flex-grow"
+                            >
+                                <Link href={item.href}>
+                                    <item.icon />
+                                    <span>{item.label}</span>
+                                </Link>
+                            </SidebarMenuButton>
+                            <div className="flex group-data-[collapsible=icon]:hidden">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" disabled>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </SidebarMenuItem>
+                 )
+            }
+
             return (
                 <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
