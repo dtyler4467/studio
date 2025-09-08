@@ -127,23 +127,23 @@ const EditLoadBoardDialog = ({ board, onOpenChange, isOpen }: { board: LocalLoad
     const { updateLocalLoadBoard } = useSchedule();
     const { toast } = useToast();
     const [name, setName] = useState(board?.name || '');
-    const [number, setNumber] = useState(board?.number.toString() || '');
+    const [number, setNumber] = useState(board?.number?.toString() || '');
 
     useEffect(() => {
         if (board) {
             setName(board.name);
-            setNumber(board.number.toString());
+            setNumber(board.number?.toString() || '');
         }
     }, [board]);
 
     const handleSave = () => {
         if (board) {
             const num = parseInt(number, 10);
-            if (isNaN(num)) {
+            if (number && isNaN(num)) {
                 toast({ variant: 'destructive', title: 'Invalid Number', description: 'Please enter a valid number for the board.' });
                 return;
             }
-            updateLocalLoadBoard(board.id, name, num);
+            updateLocalLoadBoard(board.id, name, isNaN(num) ? undefined : num);
             toast({ title: 'Load Board Updated', description: 'The load board has been successfully updated.' });
             onOpenChange(false);
         }
@@ -165,10 +165,12 @@ const EditLoadBoardDialog = ({ board, onOpenChange, isOpen }: { board: LocalLoad
                         <Label htmlFor="name" className="text-right">Name</Label>
                         <Input id="name" value={name} onChange={e => setName(e.target.value)} className="col-span-3" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="number" className="text-right">Number</Label>
-                        <Input id="number" type="number" value={number} onChange={e => setNumber(e.target.value)} className="col-span-3" />
-                    </div>
+                    {board.number !== undefined && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="number" className="text-right">Number</Label>
+                            <Input id="number" type="number" value={number} onChange={e => setNumber(e.target.value)} className="col-span-3" />
+                        </div>
+                    )}
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -181,7 +183,7 @@ const EditLoadBoardDialog = ({ board, onOpenChange, isOpen }: { board: LocalLoad
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard } = useSchedule();
+  const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, loadBoardHub, updateLoadBoardHubName } = useSchedule();
   const { state } = useSidebar();
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
@@ -301,16 +303,16 @@ export function SidebarNav() {
                             <SidebarMenuButton
                                 asChild
                                 isActive={pathname === item.href}
-                                tooltip={item.label}
+                                tooltip={loadBoardHub.name}
                                 className="justify-start group flex-grow"
                             >
                                 <Link href={item.href}>
                                     <item.icon />
-                                    <span>{item.label}</span>
+                                    <span>{loadBoardHub.name}</span>
                                 </Link>
                             </SidebarMenuButton>
                             <div className="flex group-data-[collapsible=icon]:hidden">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" disabled>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditDialog(loadBoardHub)}>
                                     <Pencil className="h-4 w-4" />
                                 </Button>
                             </div>
