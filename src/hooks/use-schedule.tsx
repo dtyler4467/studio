@@ -59,6 +59,17 @@ export type YardEvent = {
     documentDataUri?: string | null;
 }
 
+export type ExpenseReport = {
+    id: string
+    employeeName: string
+    date: string
+    description: string
+    category: "Food" | "Fuel" | "Utilities" | "Insurance" | "Supplies" | "Repairs" | "Accidents" | "Payroll" | "Lease" | "Other"
+    amount: number
+    status: "Pending" | "Approved" | "Denied"
+    documentDataUri?: string | null;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -67,6 +78,7 @@ type ScheduleContextType = {
   timeOffRequests: TimeOffRequest[];
   registrations: Registration[];
   yardEvents: YardEvent[];
+  expenseReports: ExpenseReport[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
@@ -80,6 +92,8 @@ type ScheduleContextType = {
   deleteEmployee: (employeeId: string) => void;
   getYardEventById: (id: string) => YardEvent | null;
   addYardEvent: (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => void;
+  getExpenseReportById: (id: string) => ExpenseReport | null;
+  setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
 };
 
 const initialShifts: Shift[] = [
@@ -128,6 +142,17 @@ const initialYardEvents: YardEvent[] = [
     { id: 'EVT005', transactionType: 'inbound', trailerId: 'TR53789', carrier: 'Werner', scac: 'WERN', driverName: 'Chris Brown', clerkName: 'Admin User', loadNumber: 'LD127', assignmentType: 'bobtail', timestamp: new Date('2024-07-26T11:20:00Z'), documentDataUri: "https://picsum.photos/seed/doc/800/1100" },
 ];
 
+const initialExpenseReports: ExpenseReport[] = [
+    { id: "EXP001", employeeName: "John Doe", date: "2024-07-25", description: "Fuel stop in Nevada", category: "Fuel", amount: 150.75, status: "Approved", documentDataUri: "https://picsum.photos/seed/fuel/800/1100" },
+    { id: "EXP002", employeeName: "Jane Doe", date: "2024-07-26", description: "Hotel stay in Denver", category: "Other", amount: 120.00, status: "Approved" },
+    { id: "EXP003", employeeName: "Mike Smith", date: "2024-07-27", description: "Dinner with client", category: "Food", amount: 85.50, status: "Pending", documentDataUri: "https://picsum.photos/seed/food/800/1100" },
+    { id: "EXP004", employeeName: "John Doe", date: "2024-07-28", description: "Oil change and tire rotation", category: "Repairs", amount: 220.00, status: "Pending" },
+    { id: "EXP005", employeeName: "Emily Jones", date: "2024-07-29", description: "Tolls and parking", category: "Other", amount: 45.25, status: "Denied" },
+    { id: "EXP006", employeeName: "Admin", date: "2024-07-30", description: "Monthly vehicle lease", category: "Lease", amount: 550.00, status: "Approved" },
+    { id: "EXP007", employeeName: "Jane Doe", date: "2024-07-30", description: "Office supplies", category: "Supplies", amount: 75.00, status: "Pending" },
+    { id: "EXP008", employeeName: "HR", date: "2024-07-31", description: "Monthly payroll", category: "Payroll", amount: 15000.00, status: "Approved" },
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -137,6 +162,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>(initialTimeOffRequests);
   const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
   const [yardEvents, setYardEvents] = useState<YardEvent[]>(initialYardEvents);
+  const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
 
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
@@ -215,10 +241,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         };
         setYardEvents(prev => [newEvent, ...prev]);
     };
+    
+    const getExpenseReportById = (id: string) => {
+        return expenseReports.find(report => report.id === id) || null;
+    }
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports }}>
       {children}
     </ScheduleContext.Provider>
   );

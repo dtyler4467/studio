@@ -17,6 +17,7 @@ import {
 import { ArrowUpDown, ChevronDown, Download, MoreHorizontal, Upload } from "lucide-react"
 import { format } from "date-fns"
 import * as XLSX from "xlsx"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -42,38 +43,19 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-
-type ExpenseReport = {
-  id: string
-  employeeName: string
-  date: string
-  description: string
-  category: "Food" | "Fuel" | "Utilities" | "Insurance" | "Supplies" | "Repairs" | "Accidents" | "Payroll" | "Lease" | "Other"
-  amount: number
-  status: "Pending" | "Approved" | "Denied"
-}
-
-const mockData: ExpenseReport[] = [
-    { id: "EXP001", employeeName: "John Doe", date: "2024-07-25", description: "Fuel stop in Nevada", category: "Fuel", amount: 150.75, status: "Approved" },
-    { id: "EXP002", employeeName: "Jane Doe", date: "2024-07-26", description: "Hotel stay in Denver", category: "Other", amount: 120.00, status: "Approved" },
-    { id: "EXP003", employeeName: "Mike Smith", date: "2024-07-27", description: "Dinner with client", category: "Food", amount: 85.50, status: "Pending" },
-    { id: "EXP004", employeeName: "John Doe", date: "2024-07-28", description: "Oil change and tire rotation", category: "Repairs", amount: 220.00, status: "Pending" },
-    { id: "EXP005", employeeName: "Emily Jones", date: "2024-07-29", description: "Tolls and parking", category: "Other", amount: 45.25, status: "Denied" },
-    { id: "EXP006", employeeName: "Admin", date: "2024-07-30", description: "Monthly vehicle lease", category: "Lease", amount: 550.00, status: "Approved" },
-    { id: "EXP007", employeeName: "Jane Doe", date: "2024-07-30", description: "Office supplies", category: "Supplies", amount: 75.00, status: "Pending" },
-    { id: "EXP008", employeeName: "HR", date: "2024-07-31", description: "Monthly payroll", category: "Payroll", amount: 15000.00, status: "Approved" },
-];
+import { useSchedule, ExpenseReport } from "@/hooks/use-schedule"
 
 const categories: ExpenseReport['category'][] = ["Food", "Fuel", "Utilities", "Insurance", "Supplies", "Repairs", "Accidents", "Payroll", "Lease", "Other"];
 const validStatuses: ExpenseReport['status'][] = ["Pending", "Approved", "Denied"];
 
 export function ExpenseReportDataTable() {
-    const [data, setData] = React.useState<ExpenseReport[]>(mockData);
+    const { expenseReports, setExpenseReports } = useSchedule();
+    const router = useRouter();
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleStatusChange = (id: string, status: ExpenseReport['status']) => {
-        setData(currentData => currentData.map(expense => expense.id === id ? { ...expense, status } : expense));
+        setExpenseReports(currentData => currentData.map(expense => expense.id === id ? { ...expense, status } : expense));
         toast({
             title: `Expense ${status}`,
             description: `Expense report ${id} has been marked as ${status.toLowerCase()}.`,
@@ -154,7 +136,7 @@ export function ExpenseReportDataTable() {
                     };
                 }).filter(expense => expense.id && expense.employeeName); // Filter out empty rows
 
-                setData(currentData => [...currentData, ...newExpenses]);
+                setExpenseReports(currentData => [...currentData, ...newExpenses]);
 
                 toast({
                     title: "Import Successful",
@@ -264,7 +246,7 @@ export function ExpenseReportDataTable() {
             return (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                       <span className="sr-only">Open menu</span>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
@@ -278,7 +260,9 @@ export function ExpenseReportDataTable() {
                       Deny
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push(`/dashboard/administration/expense-report/${expense.id}`)}>
+                        View Details
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
             )
@@ -293,7 +277,7 @@ export function ExpenseReportDataTable() {
   const [rowSelection, setRowSelection] = React.useState({})
 
   const table = useReactTable({
-    data,
+    data: expenseReports,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -347,7 +331,7 @@ export function ExpenseReportDataTable() {
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                accept=".xlsx, .xls"
+                accept=".xlsx, .xls, .csv"
                 onChange={handleFileImport}
             />
             <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
@@ -412,9 +396,15 @@ export function ExpenseReportDataTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => router.push(`/dashboard/administration/expense-report/${row.original.id}`)}
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} onClick={(e) => {
+                        if (cell.column.id === 'actions' || cell.column.id === 'select') {
+                            e.stopPropagation();
+                        }
+                    }}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
