@@ -43,6 +43,8 @@ export type Registration = {
     id: string;
     name: string;
     email: string;
+    phoneNumber: string;
+    role: EmployeeRole;
     status: 'Pending' | 'Approved' | 'Denied';
 }
 
@@ -189,8 +191,8 @@ const initialTimeOffRequests: TimeOffRequest[] = [
 ];
 
 const initialRegistrations: Registration[] = [
-    { id: 'REG001', name: 'New User 1', email: 'new.user1@example.com', status: 'Pending' },
-    { id: 'REG002', name: 'New User 2', email: 'new.user2@example.com', status: 'Pending' },
+    { id: 'REG001', name: 'New User 1', email: 'new.user1@example.com', phoneNumber: '555-888-1111', role: 'Driver', status: 'Pending' },
+    { id: 'REG002', name: 'New User 2', email: 'new.user2@example.com', phoneNumber: '555-888-2222', role: 'Dispatcher', status: 'Pending' },
 ]
 
 const initialYardEvents: YardEvent[] = [
@@ -398,9 +400,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             id: `USR${Date.now()}`,
             name: registration.name,
             email: registration.email,
-            role: 'Driver', // Default role
+            role: registration.role,
             personnelId: `TEMP-${Math.floor(100 + Math.random() * 900)}`,
-            phoneNumber: 'N/A'
+            phoneNumber: registration.phoneNumber
         };
         setEmployees(prev => [...prev, newEmployee]);
     }
@@ -516,7 +518,17 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
         switch (logEntry.itemType) {
             case 'Shift':
-                setShifts(prev => [...prev, logEntry.originalData]);
+                // The `originalData` for a shift might not have the full employee object.
+                // We just restore what we have.
+                const shiftToRestore = {
+                    id: logEntry.originalData.id,
+                    date: logEntry.originalData.date,
+                    employeeId: logEntry.originalData.employeeId,
+                    title: logEntry.originalData.title,
+                    startTime: logEntry.originalData.startTime,
+                    endTime: logEntry.originalData.endTime,
+                }
+                setShifts(prev => [...prev, shiftToRestore]);
                 break;
             case 'User':
                 setEmployees(prev => [...prev, logEntry.originalData]);
