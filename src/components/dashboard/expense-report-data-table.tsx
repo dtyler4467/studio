@@ -14,8 +14,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, Download, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Download, MoreHorizontal, Upload } from "lucide-react"
 import { format } from "date-fns"
+import * as XLSX from "xlsx"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -64,10 +65,12 @@ const mockData: ExpenseReport[] = [
 ];
 
 const categories: ExpenseReport['category'][] = ["Food", "Fuel", "Utilities", "Insurance", "Supplies", "Repairs", "Accidents", "Payroll", "Lease", "Other"];
+const validStatuses: ExpenseReport['status'][] = ["Pending", "Approved", "Denied"];
 
 export function ExpenseReportDataTable() {
     const [data, setData] = React.useState<ExpenseReport[]>(mockData);
     const { toast } = useToast();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleStatusChange = (id: string, status: ExpenseReport['status']) => {
         setData(currentData => currentData.map(expense => expense.id === id ? { ...expense, status } : expense));
@@ -104,6 +107,74 @@ export function ExpenseReportDataTable() {
             title: "Export Successful",
             description: "The expense report data has been exported to a CSV file.",
         });
+    };
+
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const workbook = XLSX.read(e.target?.result, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+                const newExpenses: ExpenseReport[] = json.map((row: any) => {
+                    // Basic validation and type coercion
+                    const category = categories.includes(row.Category) ? row.Category : "Other";
+                    const status = validStatuses.includes(row.Status) ? row.Status : "Pending";
+                    const amount = parseFloat(row.Amount);
+                    
+                    if (isNaN(amount)) {
+                        throw new Error(`Invalid amount for row with ID ${row.ID}`);
+                    }
+
+                    // Handle Excel date serial number format
+                    let date = row.Date;
+                    if (typeof date === 'number') {
+                        // Excel stores dates as serial numbers since 1900 or 1904.
+                        // This formula converts it to a JS Date.
+                        const jsDate = new Date(Math.round((date - 25569) * 86400 * 1000));
+                        date = format(jsDate, 'yyyy-MM-dd');
+                    } else if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                        // Attempt to parse other common date formats or throw error
+                         throw new Error(`Invalid date format for row with ID ${row.ID}. Expected YYYY-MM-DD.`);
+                    }
+
+                    return {
+                        id: String(row.ID),
+                        employeeName: String(row['Employee Name']),
+                        date,
+                        description: String(row.Description),
+                        category,
+                        amount,
+                        status,
+                    };
+                }).filter(expense => expense.id && expense.employeeName); // Filter out empty rows
+
+                setData(currentData => [...currentData, ...newExpenses]);
+
+                toast({
+                    title: "Import Successful",
+                    description: `${newExpenses.length} expense(s) imported successfully.`,
+                });
+
+            } catch (error) {
+                console.error("Failed to import Excel file:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Import Failed",
+                    description: error instanceof Error ? error.message : "An unknown error occurred during import.",
+                });
+            } finally {
+                 if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                 }
+            }
+        };
+        reader.readAsBinaryString(file);
     };
 
     const columns: ColumnDef<ExpenseReport>[] = [
@@ -272,9 +343,20 @@ export function ExpenseReportDataTable() {
             </SelectContent>
         </Select>
         <div className="ml-auto flex gap-2">
+            <Input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".xlsx, .xls"
+                onChange={handleFileImport}
+            />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2" />
+                Import
+            </Button>
             <Button variant="outline" onClick={exportToCsv}>
                 <Download className="mr-2" />
-                Export to CSV
+                Export
             </Button>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -381,5 +463,3 @@ export function ExpenseReportDataTable() {
     </div>
   )
 }
-
-  
