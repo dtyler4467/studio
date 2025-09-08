@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { useSchedule, YardEvent } from '@/hooks/use-schedule';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Truck, PlusCircle, ParkingCircle } from 'lucide-react';
+import { Truck, PlusCircle, ParkingCircle, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '../ui/button';
@@ -72,6 +72,7 @@ const AddLocationDialog = ({ onAdd }: { onAdd: (id: string) => void }) => {
 export function ParkingLaneManager() {
     const { yardEvents, parkingLanes, addParkingLane } = useSchedule();
     const { toast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
 
     const currentAssignments = useMemo(() => {
         const assignments: Record<string, YardEvent> = {};
@@ -93,6 +94,25 @@ export function ParkingLaneManager() {
         
         return assignments;
     }, [yardEvents]);
+
+    const filteredLanes = useMemo(() => {
+        if (!searchTerm.trim()) {
+            return parkingLanes;
+        }
+
+        const lowercasedSearch = searchTerm.toLowerCase();
+
+        return parkingLanes.filter(laneId => {
+            const event = currentAssignments[laneId];
+            if (!event) return false; // Only show occupied lanes when searching
+
+            return (
+                event.trailerId.toLowerCase().includes(lowercasedSearch) ||
+                event.carrier.toLowerCase().includes(lowercasedSearch) ||
+                event.loadNumber.toLowerCase().includes(lowercasedSearch)
+            );
+        });
+    }, [parkingLanes, currentAssignments, searchTerm]);
 
     const handleAddLane = (id: string) => {
         try {
@@ -147,12 +167,28 @@ export function ParkingLaneManager() {
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+                <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search lanes..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
                 <AddLocationDialog onAdd={handleAddLane} />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
-                {parkingLanes.map(renderLocation)}
-            </div>
+            {filteredLanes.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
+                    {filteredLanes.map(renderLocation)}
+                </div>
+             ) : (
+                <div className="flex flex-col items-center justify-center rounded-md border border-dashed h-64 text-center">
+                    <p className="text-lg font-medium text-muted-foreground">No matching lanes found.</p>
+                    <p className="text-sm text-muted-foreground">Try a different search term.</p>
+                </div>
+             )}
         </div>
     );
 }
