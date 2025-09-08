@@ -39,6 +39,7 @@ import { Badge } from "../ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Calendar } from "../ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Skeleton } from "../ui/skeleton"
 
 type YardEvent = {
     id: string;
@@ -69,6 +70,20 @@ const filterableColumns = [
     { id: "assignmentType", name: "Assignment" },
     { id: "timestamp", name: "Date" },
 ];
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "Pp"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[120px]" />;
+    }
+
+    return <div>{formattedDate}</div>;
+}
 
 
 export function YardHistoryTable() {
@@ -340,7 +355,7 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void): Col
                 <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
         ),
-        cell: ({ row }) => <div>{format(row.getValue("timestamp"), "Pp")}</div>,
+        cell: ({ row }) => <ClientFormattedDate date={row.getValue("timestamp")} />,
         filterFn: (row, id, value) => {
             return isSameDay(row.getValue(id), value);
         }

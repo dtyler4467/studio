@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
+import { Skeleton } from '../ui/skeleton';
 
 type Activity = {
     id: string;
@@ -19,6 +20,21 @@ const initialActivities: Activity[] = [
     { id: 'ACT002', type: 'Outbound', trailerId: 'TR48991', carrier: 'J.B. Hunt', timestamp: new Date(new Date().getTime() - 30 * 60000) },
     { id: 'ACT003', type: 'Inbound', trailerId: 'TR53456', carrier: 'Schneider', timestamp: new Date(new Date().getTime() - 45 * 60000) },
 ];
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        setFormattedDate(format(date, 'p'));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[60px]" />;
+    }
+
+    return <>{formattedDate}</>;
+}
+
 
 export function YardActivityLog() {
     const [activities, setActivities] = useState<Activity[]>([]);
@@ -51,7 +67,7 @@ export function YardActivityLog() {
                                 <TableCell className="font-medium">{activity.trailerId}</TableCell>
                                 <TableCell>{activity.carrier}</TableCell>
                                 <TableCell className="text-right text-muted-foreground">
-                                    {format(activity.timestamp, 'p')}
+                                    <ClientFormattedDate date={activity.timestamp} />
                                 </TableCell>
                             </TableRow>
                         ))
