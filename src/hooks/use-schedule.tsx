@@ -118,6 +118,14 @@ export type DeletionLog = {
     originalData: any;
 }
 
+export type TimeClockEvent = {
+    id: string;
+    employeeId: string;
+    timestamp: string; // ISO string
+    type: 'in' | 'out';
+    notes?: string;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -133,6 +141,7 @@ type ScheduleContextType = {
   warehouseDoors: string[];
   parkingLanes: string[];
   deletionLogs: DeletionLog[];
+  timeClockEvents: TimeClockEvent[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string, deletedBy: string) => void;
@@ -160,6 +169,7 @@ type ScheduleContextType = {
   addWarehouseDoor: (doorId: string) => void;
   addParkingLane: (laneId: string) => void;
   restoreDeletedItem: (logId: string) => void;
+  addTimeClockEvent: (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -325,6 +335,15 @@ const initialDeletionLogs: DeletionLog[] = [
     }
 ];
 
+const initialTimeClockEvents: TimeClockEvent[] = [
+    { id: 'TC001', employeeId: 'USR001', timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), type: 'in' },
+    { id: 'TC002', employeeId: 'USR001', timestamp: new Date(Date.now() - 1 * 60 * 1000).toISOString(), type: 'out', notes: 'Left early' },
+    { id: 'TC003', employeeId: 'USR002', timestamp: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(), type: 'in' },
+    { id: 'TC004', employeeId: 'USR002', timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), type: 'out' },
+    { id: 'TC005', employeeId: 'USR003', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), type: 'in' },
+];
+
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -341,6 +360,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [warehouseDoors, setWarehouseDoors] = useState<string[]>(initialWarehouseDoors);
   const [parkingLanes, setParkingLanes] = useState<string[]>(initialParkingLanes);
   const [deletionLogs, setDeletionLogs] = useState<DeletionLog[]>(initialDeletionLogs);
+  const [timeClockEvents, setTimeClockEvents] = useState<TimeClockEvent[]>(initialTimeClockEvents);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -571,9 +591,18 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setDeletionLogs(prev => prev.filter(log => log.id !== logId));
     };
 
+    const addTimeClockEvent = (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => {
+        const newEvent: TimeClockEvent = {
+            ...event,
+            id: `TC${Date.now()}`,
+            timestamp: new Date().toISOString(),
+        };
+        setTimeClockEvents(prev => [...prev, newEvent]);
+    }
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent }}>
       {children}
     </ScheduleContext.Provider>
   );

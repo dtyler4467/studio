@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Clock, LogIn, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, differenceInHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
+import { useSchedule } from '@/hooks/use-schedule';
 
 export function TimeClock() {
     const { toast } = useToast();
+    const { addTimeClockEvent, timeClockEvents, currentUser } = useSchedule();
     const [time, setTime] = useState(new Date());
-    const [isClockedIn, setIsClockedIn] = useState(false);
-    const [lastClockIn, setLastClockIn] = useState<Date | null>(null);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -21,35 +21,42 @@ export function TimeClock() {
         return () => clearInterval(timer);
     }, []);
 
+    const lastEvent = timeClockEvents
+        .filter(e => e.employeeId === currentUser?.id)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+    const isClockedIn = lastEvent?.type === 'in';
+    const lastClockInTime = isClockedIn ? new Date(lastEvent.timestamp) : null;
+
     const handleClockIn = () => {
-        setIsClockedIn(true);
-        const now = new Date();
-        setLastClockIn(now);
+        if (!currentUser) return;
+        addTimeClockEvent({ employeeId: currentUser.id, type: 'in' });
         toast({
             title: "Clocked In",
-            description: `You clocked in at ${format(now, 'p')}.`,
+            description: `You clocked in at ${format(new Date(), 'p')}.`,
         });
     };
 
     const handleClockOut = () => {
-        setIsClockedIn(false);
+        if (!currentUser || !lastClockInTime) return;
+        
         const now = new Date();
+        addTimeClockEvent({ employeeId: currentUser.id, type: 'out' });
+
+        const hours = differenceInHours(now, lastClockInTime);
+        const minutes = differenceInMinutes(now, lastClockInTime) % 60;
+        
         let duration = 'a few moments';
-        if (lastClockIn) {
-            const diff = now.getTime() - lastClockIn.getTime();
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            if (hours > 0) {
-                 duration = `${hours} hour(s) and ${minutes} minute(s)`;
-            } else if (minutes > 0) {
-                 duration = `${minutes} minute(s)`;
-            }
+        if (hours > 0) {
+             duration = `${hours} hour(s) and ${minutes} minute(s)`;
+        } else if (minutes > 0) {
+             duration = `${minutes} minute(s)`;
         }
+
         toast({
             title: "Clocked Out",
             description: `You clocked out at ${format(now, 'p')}. You were clocked in for ${duration}.`,
         });
-        setLastClockIn(null);
     };
 
     return (
@@ -74,9 +81,9 @@ export function TimeClock() {
                         <LogOut className="mr-2" /> Clock Out
                     </Button>
                 </div>
-                 {isClockedIn && lastClockIn && (
+                 {isClockedIn && lastClockInTime && (
                     <div className="mt-4 text-sm text-muted-foreground">
-                        Clocked in at <span className="font-semibold text-foreground">{format(lastClockIn, 'p')}</span>
+                        Clocked in at <span className="font-semibold text-foreground">{format(lastClockInTime, 'p')}</span>
                     </div>
                 )}
             </CardContent>
