@@ -46,6 +46,7 @@ import {
   MinusCircle,
   PlusCircle,
   Library,
+  CalendarPlus,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -76,6 +77,7 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Dispatcher'],
     subItems: [
         { href: '/dashboard/yard-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/appointment', label: 'Appointment', icon: CalendarPlus, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/check-in', label: 'Check In/Out', roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/dock-doors', label: 'Dock Doors', icon: Warehouse, roles: ['Admin', 'Dispatcher'] },
@@ -187,7 +189,7 @@ const EditLoadBoardDialog = ({ board, onOpenChange, isOpen }: { board: LocalLoad
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, loadBoardHub, updateLoadBoardHubName } = useSchedule();
+  const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, loadBoardHub, updateLocalLoadBoard } = useSchedule();
   const { state } = useSidebar();
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
