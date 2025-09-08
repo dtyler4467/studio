@@ -104,6 +104,15 @@ export type TrainingAssignment = {
     completedDate?: Date;
 }
 
+export type DeletionLog = {
+    id: string;
+    deletedItemId: string;
+    itemType: 'Shift' | 'User';
+    deletedBy: string; // User ID
+    deletedAt: Date;
+    originalData: any;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -118,9 +127,10 @@ type ScheduleContextType = {
   trainingAssignments: TrainingAssignment[];
   warehouseDoors: string[];
   parkingLanes: string[];
+  deletionLogs: DeletionLog[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
-  deleteShift: (shiftId: string) => void;
+  deleteShift: (shiftId: string, deletedBy: string) => void;
   addTimeOffRequest: (request: Omit<TimeOffRequest, 'id' | 'status' | 'employeeId'>) => void;
   approveTimeOffRequest: (requestId: string) => void;
   denyTimeOffRequest: (requestId: string) => void;
@@ -128,7 +138,7 @@ type ScheduleContextType = {
   approveRegistration: (registrationId: string) => void;
   denyRegistration: (registrationId: string) => void;
   updateEmployeeRole: (employeeId: string, role: EmployeeRole) => void;
-  deleteEmployee: (employeeId: string) => void;
+  deleteEmployee: (employeeId: string, deletedBy: string) => void;
   getYardEventById: (id: string) => YardEvent | null;
   addYardEvent: (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => void;
   getExpenseReportById: (id: string) => ExpenseReport | null;
@@ -137,6 +147,7 @@ type ScheduleContextType = {
   assignTraining: (employeeId: string, programId: string) => void;
   addWarehouseDoor: (doorId: string) => void;
   addParkingLane: (laneId: string) => void;
+  restoreDeletedItem: (logId: string) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -298,6 +309,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [trainingAssignments, setTrainingAssignments] = useState<TrainingAssignment[]>(initialTrainingAssignments);
   const [warehouseDoors, setWarehouseDoors] = useState<string[]>(initialWarehouseDoors);
   const [parkingLanes, setParkingLanes] = useState<string[]>(initialParkingLanes);
+  const [deletionLogs, setDeletionLogs] = useState<DeletionLog[]>([]);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -316,8 +328,21 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     setShifts(prev => prev.map(shift => shift.id === updatedShift.id ? updatedShift : shift));
   };
 
-  const deleteShift = (shiftId: string) => {
-    setShifts(prev => prev.filter(shift => shift.id !== shiftId));
+  const deleteShift = (shiftId: string, deletedBy: string) => {
+    const shiftToDelete = shifts.find(s => s.id === shiftId);
+    if (shiftToDelete) {
+        const employee = employees.find(e => e.id === shiftToDelete.employeeId);
+        const logEntry: DeletionLog = {
+            id: `LOG${Date.now()}`,
+            deletedItemId: shiftId,
+            itemType: 'Shift',
+            deletedBy,
+            deletedAt: new Date(),
+            originalData: { ...shiftToDelete, employeeName: employee?.name || 'Unknown' }
+        };
+        setDeletionLogs(prev => [logEntry, ...prev]);
+        setShifts(prev => prev.filter(shift => shift.id !== shiftId));
+    }
   }
 
   // Assuming the current user is USR001 for now
@@ -362,11 +387,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setEmployees(prev => prev.map(emp => emp.id === employeeId ? { ...emp, role } : emp));
     };
 
-    const deleteEmployee = (employeeId: string) => {
-        setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-        // Also remove their shifts, time off requests etc.
-        setShifts(prev => prev.filter(s => s.employeeId !== employeeId));
-        setTimeOffRequests(prev => prev.filter(t => t.employeeId !== employeeId));
+    const deleteEmployee = (employeeId: string, deletedBy: string) => {
+        const userToDelete = employees.find(e => e.id === employeeId);
+        if (userToDelete) {
+             const logEntry: DeletionLog = {
+                id: `LOG${Date.now()}`,
+                deletedItemId: employeeId,
+                itemType: 'User',
+                deletedBy,
+                deletedAt: new Date(),
+                originalData: userToDelete,
+            };
+            setDeletionLogs(prev => [logEntry, ...prev]);
+            setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+            // Also remove their shifts, time off requests etc.
+            setShifts(prev => prev.filter(s => s.employeeId !== employeeId));
+            setTimeOffRequests(prev => prev.filter(t => t.employeeId !== employeeId));
+        }
     };
 
     const getYardEventById = (id: string) => {
@@ -428,9 +465,27 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setParkingLanes(prev => [...prev, laneId.trim().toUpperCase()]);
     };
 
+    const restoreDeletedItem = (logId: string) => {
+        const logEntry = deletionLogs.find(log => log.id === logId);
+        if (!logEntry) return;
+
+        switch (logEntry.itemType) {
+            case 'Shift':
+                setShifts(prev => [...prev, logEntry.originalData]);
+                break;
+            case 'User':
+                setEmployees(prev => [...prev, logEntry.originalData]);
+                break;
+            default:
+                break;
+        }
+
+        setDeletionLogs(prev => prev.filter(log => log.id !== logId));
+    };
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem }}>
       {children}
     </ScheduleContext.Provider>
   );

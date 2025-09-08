@@ -25,7 +25,7 @@ type Shift = {
 };
 
 export function ShiftManagementCalendar() {
-    const { shifts, employees, holidays, addShift, updateShift, deleteShift, timeOffRequests } = useSchedule();
+    const { shifts, employees, holidays, addShift, updateShift, deleteShift, timeOffRequests, currentUser } = useSchedule();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [editingShift, setEditingShift] = useState<Shift | Omit<Shift, 'id'> | null>(null);
@@ -86,7 +86,7 @@ export function ShiftManagementCalendar() {
     };
 
     const handleDeleteShift = (shiftId: string) => {
-        deleteShift(shiftId);
+        deleteShift(shiftId, currentUser?.id || 'system');
         setDialogOpen(false);
         setEditingShift(null);
     }

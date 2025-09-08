@@ -60,8 +60,8 @@ export function PersonnelDataTable() {
         });
     };
 
-    const handleDelete = (employeeId: string) => {
-        if (currentUser?.id === employeeId) {
+    const handleDelete = (employee: Employee) => {
+        if (currentUser?.id === employee.id) {
              toast({
                 variant: "destructive",
                 title: "Action Forbidden",
@@ -69,11 +69,11 @@ export function PersonnelDataTable() {
             });
             return;
         }
-        deleteEmployee(employeeId);
+        deleteEmployee(employee.id, currentUser?.id || 'system');
         toast({
             variant: "destructive",
             title: "User Deleted",
-            description: "The user has been removed from the system.",
+            description: `${employee.name} has been moved to the trash.`,
         });
     };
 
@@ -144,7 +144,7 @@ export function PersonnelDataTable() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(employee.id)}>Delete</AlertDialogAction>
+                        <AlertDialogAction onClick={() => handleDelete(employee)}>Delete</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                  </AlertDialog>
