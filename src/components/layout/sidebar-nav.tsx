@@ -34,6 +34,7 @@ import {
   Printer,
   CalendarCog,
   Users,
+  Upload,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -51,11 +52,12 @@ const navItems = [
         { href: '/dashboard/yard-management', label: 'Overview' },
         { href: '/dashboard/yard-management/check-in', label: 'Inbound/Outbound' },
         { href: '/dashboard/yard-management/history', label: 'Yard History' },
+        { href: '/dashboard/yard-management/upload', label: 'Upload Documents' },
+        { href: '/dashboard/dispatch', label: 'Dispatch', icon: Send },
+        { href: '/dashboard/tracking', label: 'Tracking', icon: MapPin },
     ]
   },
-  { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch' },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board' },
-  { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking' },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts' },
   { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule' },
   { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off' },
@@ -74,8 +76,17 @@ const adminNavItems = [
 export function SidebarNav() {
   const pathname = usePathname();
   const { state } = useSidebar();
-  const [isYardManagementOpen, setIsYardManagementOpen] = useState(pathname.startsWith('/dashboard/yard-management'));
+  const [isYardManagementOpen, setIsYardManagementOpen] = useState(pathname.startsWith('/dashboard/yard-management') || pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/tracking'));
   const [isAdminOpen, setIsAdminOpen] = useState(pathname.startsWith('/dashboard/administration'));
+
+  // Function to determine if a sub-item is active
+  const isSubItemActive = (href: string) => {
+    if (href === '/dashboard/yard-management') return pathname === href;
+    return pathname.startsWith(href);
+  }
+
+  const isYardManagementActive = pathname.startsWith('/dashboard/yard-management') || pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/tracking');
+
 
   return (
     <Sidebar>
@@ -88,12 +99,12 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-             item.href === '/dashboard/yard-management' ? (
+             item.subItems ? (
                  <Collapsible key={item.href} asChild open={isYardManagementOpen} onOpenChange={setIsYardManagementOpen}>
                      <SidebarMenuItem>
                          <CollapsibleTrigger asChild>
                              <SidebarMenuButton
-                                 isActive={pathname.startsWith(item.href)}
+                                 isActive={isYardManagementActive}
                                  tooltip={item.label}
                                  className="justify-start w-full group"
                              >
@@ -109,15 +120,19 @@ export function SidebarNav() {
                          {item.subItems && (
                              <CollapsibleContent>
                                  <SidebarMenuSub>
-                                     {item.subItems.map((subItem) => (
+                                     {item.subItems.map((subItem) => {
+                                        const Icon = subItem.icon ? subItem.icon : subItem.href.endsWith('upload') ? Upload : subItem.href.endsWith('history') ? 'div' : 'div'
+                                        return (
                                          <SidebarMenuSubItem key={subItem.href}>
-                                             <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                                             <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
                                                  <Link href={subItem.href}>
+                                                     {subItem.icon && <subItem.icon />}
                                                      <span>{subItem.label}</span>
                                                  </Link>
                                              </SidebarMenuSubButton>
                                          </SidebarMenuSubItem>
-                                     ))}
+                                     )}
+                                     )}
                                  </SidebarMenuSub>
                              </CollapsibleContent>
                          )}
