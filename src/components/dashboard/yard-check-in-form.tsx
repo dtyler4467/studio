@@ -31,8 +31,11 @@ const formSchema = z.object({
   }),
   trailerId: z.string().min(3, "Trailer ID must be at least 3 characters."),
   carrier: z.string().min(2, "Carrier name is required."),
+  scac: z.string().length(4, "SCAC must be 4 letters.").optional().or(z.literal("")),
   driverName: z.string().min(2, "Driver name is required."),
   loadNumber: z.string().optional(),
+  assignmentType: z.enum(["bobtail", "empty", "material", "door_assignment", "lane_assignment"]),
+  assignmentValue: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,20 +49,31 @@ export function YardCheckInForm() {
       transactionType: "inbound",
       trailerId: "",
       carrier: "",
+      scac: "",
       driverName: "",
       loadNumber: "",
+      assignmentType: "empty",
+      assignmentValue: "",
     },
   });
 
+  const assignmentType = form.watch("assignmentType");
+
   function onSubmit(data: FormValues) {
     const direction = data.transactionType === 'inbound' ? 'Inbound' : 'Outbound';
+    let assignmentDetails = data.assignmentType.replace('_', ' ');
+    if (data.assignmentValue) {
+        assignmentDetails += `: ${data.assignmentValue}`;
+    }
+
     toast({
       title: `${direction} Event Logged`,
       description: (
-        <div className="text-sm">
+        <div className="text-sm space-y-1">
           <p><strong>Trailer:</strong> {data.trailerId}</p>
-          <p><strong>Carrier:</strong> {data.carrier}</p>
+          <p><strong>Carrier:</strong> {data.carrier} (SCAC: {data.scac || 'N/A'})</p>
           <p><strong>Driver:</strong> {data.driverName}</p>
+          <p className="capitalize"><strong>Assignment:</strong> {assignmentDetails}</p>
         </div>
       ),
     });
@@ -79,9 +93,9 @@ export function YardCheckInForm() {
                 <RadioGroup
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  className="flex flex-col space-y-1"
+                  className="flex items-center space-x-4"
                 >
-                  <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormItem className="flex items-center space-x-2 space-y-0">
                     <FormControl>
                       <RadioGroupItem value="inbound" />
                     </FormControl>
@@ -89,7 +103,7 @@ export function YardCheckInForm() {
                       Inbound (Arrival)
                     </FormLabel>
                   </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormItem className="flex items-center space-x-2 space-y-0">
                     <FormControl>
                       <RadioGroupItem value="outbound" />
                     </FormControl>
@@ -103,33 +117,63 @@ export function YardCheckInForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="trailerId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Trailer ID</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. 53123" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="carrier"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Carrier</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Swift Logistics" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="trailerId"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Trailer ID</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. 53123" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="loadNumber"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Load/BOL Number (Optional)</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. LD004, BOL12345" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="carrier"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Carrier</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. Swift Logistics" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+                control={form.control}
+                name="scac"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>SCAC</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g. SWFT" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+         <FormField
           control={form.control}
           name="driverName"
           render={({ field }) => (
@@ -142,19 +186,48 @@ export function YardCheckInForm() {
             </FormItem>
           )}
         />
-         <FormField
-          control={form.control}
-          name="loadNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Load/BOL Number (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. LD004, BOL12345" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="assignmentType"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Assignment</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select an assignment type" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="bobtail">Bobtail</SelectItem>
+                        <SelectItem value="empty">Empty</SelectItem>
+                        <SelectItem value="material">Material</SelectItem>
+                        <SelectItem value="door_assignment">Door Assignment</SelectItem>
+                        <SelectItem value="lane_assignment">Lane Assignment</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+             {(assignmentType === 'door_assignment' || assignmentType === 'lane_assignment') && (
+                <FormField
+                control={form.control}
+                name="assignmentValue"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>{assignmentType === 'door_assignment' ? "Door Number" : "Lane Number"}</FormLabel>
+                    <FormControl>
+                        <Input placeholder={assignmentType === 'door_assignment' ? "e.g. 42" : "e.g. B3"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+             )}
+        </div>
+       
         <Button type="submit" className="w-full">
             <ArrowLeftRight className="mr-2" />
             Submit Gate Record
