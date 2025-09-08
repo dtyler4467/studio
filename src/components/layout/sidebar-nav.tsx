@@ -98,6 +98,7 @@ const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration/time-off', icon: CalendarCheck, label: 'Time Off Requests', roles: ['Admin'] },
     { href: '/dashboard/administration/registrations', icon: UserPlus, label: 'Registrations', roles: ['Admin'] },
     { href: '/dashboard/administration/personnel', icon: Users, label: 'Personnel', roles: ['Admin'] },
+    { href: '/dashboard/administration/time-clock', icon: Clock, label: 'Time Clock', roles: ['Admin'] },
     { href: '/dashboard/administration/expense-report', icon: CreditCard, label: 'Expense Reports', roles: ['Admin'] },
     { href: '/dashboard/administration/training', icon: GraduationCap, label: 'Training Management', roles: ['Admin'] },
     { href: '/dashboard/administration/trash', icon: Trash2, label: 'Trash', roles: ['Admin'] },
