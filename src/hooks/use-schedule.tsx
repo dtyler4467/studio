@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -92,6 +93,17 @@ export type TrainingProgram = {
     modules: TrainingModule[];
 };
 
+export type TrainingAssignmentStatus = 'Not Started' | 'In Progress' | 'Completed';
+
+export type TrainingAssignment = {
+    id: string;
+    employeeId: string;
+    programId: string;
+    status: TrainingAssignmentStatus;
+    assignedDate: Date;
+    completedDate?: Date;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -102,6 +114,7 @@ type ScheduleContextType = {
   yardEvents: YardEvent[];
   expenseReports: ExpenseReport[];
   trainingPrograms: TrainingProgram[];
+  trainingAssignments: TrainingAssignment[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
@@ -118,6 +131,7 @@ type ScheduleContextType = {
   getExpenseReportById: (id: string) => ExpenseReport | null;
   setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
   getTrainingModuleById: (id: string) => TrainingModule | null;
+  assignTraining: (employeeId: string, programId: string) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -255,6 +269,13 @@ Be wary of emails that:
     }
 ];
 
+const initialTrainingAssignments: TrainingAssignment[] = [
+    { id: 'TA001', employeeId: 'USR001', programId: 'PROG001', status: 'Not Started', assignedDate: new Date() },
+    { id: 'TA002', employeeId: 'USR002', programId: 'PROG001', status: 'In Progress', assignedDate: new Date() },
+    { id: 'TA003', employeeId: 'USR004', programId: 'PROG002', status: 'Completed', assignedDate: new Date(), completedDate: new Date() },
+];
+
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -266,6 +287,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [yardEvents, setYardEvents] = useState<YardEvent[]>(initialYardEvents);
   const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
   const [trainingPrograms, setTrainingPrograms] = useState<TrainingProgram[]>(initialTrainingPrograms);
+  const [trainingAssignments, setTrainingAssignments] = useState<TrainingAssignment[]>(initialTrainingAssignments);
 
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
@@ -357,9 +379,25 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return null;
     }
 
+    const assignTraining = (employeeId: string, programId: string) => {
+        const alreadyAssigned = trainingAssignments.find(a => a.employeeId === employeeId && a.programId === programId);
+        if (alreadyAssigned) {
+            throw new Error("This training program is already assigned to this employee.");
+        }
+
+        const newAssignment: TrainingAssignment = {
+            id: `TA${Date.now()}`,
+            employeeId,
+            programId,
+            status: 'Not Started',
+            assignedDate: new Date(),
+        };
+        setTrainingAssignments(prev => [...prev, newAssignment]);
+    };
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining }}>
       {children}
     </ScheduleContext.Provider>
   );

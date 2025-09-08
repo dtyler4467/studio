@@ -37,6 +37,7 @@ import {
   Search,
   History,
   CreditCard,
+  GraduationCap,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -73,6 +74,7 @@ const adminNavItems = [
     { href: '/dashboard/administration/registrations', icon: UserPlus, label: 'Registrations' },
     { href: '/dashboard/administration/personnel', icon: Users, label: 'Personnel' },
     { href: '/dashboard/administration/expense-report', icon: CreditCard, label: 'Expense Reports' },
+    { href: '/dashboard/administration/training', icon: GraduationCap, label: 'Training Management' },
     { href: '/dashboard/administration/print', icon: Printer, label: 'Print/Email' },
 ];
 
