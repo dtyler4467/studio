@@ -35,13 +35,8 @@ export default function LandingPage() {
             className="absolute top-0 left-0 w-full h-full object-cover z-0 opacity-40"
             poster="https://picsum.photos/seed/matrix/1920/1080"
         >
-            {/* 
-                NOTE: This is a placeholder video.
-                You should replace this with a URL to your own hosted video file.
-                For example, you could upload a video to Firebase Storage.
-                A good free option can be found at: https://www.pexels.com/video/a-digital-matrix-3052494/
-            */}
             <source src="https://videos.pexels.com/video-files/3052494/3052494-hd_1920_1080_25fps.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
         </video>
 
       <div className={cn(
