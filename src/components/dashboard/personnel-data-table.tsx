@@ -4,7 +4,7 @@
 import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
 import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable } from "@tanstack/react-table"
-import { MoreHorizontal, Trash2, FileText, Pencil, PlusCircle } from "lucide-react"
+import { MoreHorizontal, Trash2, FileText, Pencil, PlusCircle, KeyRound } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -200,6 +200,13 @@ export function PersonnelDataTable() {
             description: "The user's role has been successfully changed.",
         });
     };
+    
+    const handlePasswordReset = (employee: Employee) => {
+        toast({
+            title: "Password Reset Sent",
+            description: `A password reset link has been sent to ${employee.email}.`,
+        })
+    };
 
     const handleDelete = (employee: Employee) => {
         if (currentUser?.id === employee.id) {
@@ -295,6 +302,9 @@ export function PersonnelDataTable() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleOpenEdit(employee)} className="flex items-center gap-2">
                            <Pencil className="w-4 h-4" /> Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePasswordReset(employee)} className="flex items-center gap-2">
+                            <KeyRound className="w-4 h-4" /> Reset Password
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => navigator.clipboard.writeText(employee.email || '')}>
                           Copy email
