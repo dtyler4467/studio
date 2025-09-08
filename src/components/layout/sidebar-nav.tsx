@@ -76,6 +76,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
+  { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
   { 
     href: '#', 
@@ -84,7 +85,6 @@ const navItems: NavItem[] = [
     roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
     subItems: [
         { href: '/dashboard/schedule', icon: Calendar, label: 'My Schedule', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-        { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
         { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
         { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
@@ -94,16 +94,16 @@ const navItems: NavItem[] = [
 const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration', icon: Shield, label: 'Overview', roles: ['Admin'] },
     { 
-        href: '/dashboard/administration/time-clock', 
+        href: '#', 
         icon: Clock, 
         label: 'Time & Attendance',
         roles: ['Admin'],
         subItems: [
             { href: '/dashboard/administration/time-clock', icon: Clock, label: 'Time Clock', roles: ['Admin'] },
             { href: '/dashboard/administration/shifts', icon: CalendarCog, label: 'Shift Management', roles: ['Admin'] },
+            { href: '/dashboard/administration/time-off', icon: CalendarCheck, label: 'Time Off Requests', roles: ['Admin'] },
         ]
     },
-    { href: '/dashboard/administration/time-off', icon: CalendarCheck, label: 'Time Off Requests', roles: ['Admin'] },
     { href: '/dashboard/administration/registrations', icon: UserPlus, label: 'Registrations', roles: ['Admin'] },
     { href: '/dashboard/administration/personnel', icon: Users, label: 'Personnel', roles: ['Admin'] },
     { href: '/dashboard/administration/expense-report', icon: CreditCard, label: 'Expense Reports', roles: ['Admin'] },
@@ -126,7 +126,6 @@ export function SidebarNav() {
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
-        pathname.startsWith('/dashboard/time-clock') ||
         pathname.startsWith('/dashboard/time-off') ||
         pathname.startsWith('/dashboard/resources')
     );
