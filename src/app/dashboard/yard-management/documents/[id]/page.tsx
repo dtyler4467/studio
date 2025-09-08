@@ -12,6 +12,8 @@ import { format } from "date-fns";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { FileQuestion } from "lucide-react";
 
 const DetailItem = ({ label, value }: { label: string, value: string | undefined }) => (
     <div>
@@ -101,32 +103,28 @@ export default function DocumentViewerPage() {
                                 <DetailItem label="Assignment" value={assignmentDetails} />
                             </CardContent>
                         </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">Associated Documents</CardTitle>
-                            </CardHeader>
-                             <CardContent>
-                                <p className="text-sm text-muted-foreground">Click to view document.</p>
-                                <div className="mt-2 space-y-2">
-                                    <Button variant="outline" className="w-full justify-start">Bill of Lading (BOL)</Button>
-                                    <Button variant="outline" className="w-full justify-start">Gate Pass</Button>
-                                </div>
-                            </CardContent>
-                        </Card>
                     </div>
 
                     <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Document Preview</h3>
+                        <h3 className="text-lg font-semibold">Attached Document</h3>
                         <div className="border rounded-md p-2 bg-muted h-[600px] flex items-center justify-center">
-                            <Image
-                                src="https://picsum.photos/seed/bol/800/1100"
-                                alt="Bill of Lading Document"
-                                width={800}
-                                height={1100}
-                                className="object-contain max-h-full max-w-full rounded-md"
-                                data-ai-hint="document bill lading"
-                             />
+                            {event.documentDataUri ? (
+                                <Image
+                                    src={event.documentDataUri}
+                                    alt="Attached document"
+                                    width={800}
+                                    height={1100}
+                                    className="object-contain max-h-full max-w-full rounded-md"
+                                />
+                            ) : (
+                                <Alert variant="default" className="max-w-sm mx-auto">
+                                    <FileQuestion className="h-4 w-4" />
+                                    <AlertTitle>No Document Attached</AlertTitle>
+                                    <AlertDescription>
+                                        There was no document uploaded for this gate event.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                         </div>
                     </div>
                 </div>

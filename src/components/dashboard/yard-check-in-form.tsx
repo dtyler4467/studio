@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useToast } from "@/hooks/use-toast";
 import { ArrowLeftRight, User } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
@@ -41,7 +40,11 @@ const formSchema = z.object({
   assignmentValue: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+export type FormValues = z.infer<typeof formSchema>;
+
+type YardCheckInFormProps = {
+    onFormSubmit: (data: FormValues) => void;
+}
 
 // In a real app, this would come from the authenticated user's session
 const currentClerk = { name: "Admin User" };
@@ -62,9 +65,7 @@ const ClientFormattedDate = () => {
     return <>{format(date, 'PPP p')}</>
 }
 
-export function YardCheckInForm() {
-  const { toast } = useToast();
-
+export function YardCheckInForm({ onFormSubmit }: YardCheckInFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -81,34 +82,14 @@ export function YardCheckInForm() {
 
   const assignmentType = form.watch("assignmentType");
 
-  function onSubmit(data: FormValues) {
-    const direction = data.transactionType === 'inbound' ? 'Inbound' : 'Outbound';
-    let assignmentDetails = data.assignmentType.replace('_', ' ');
-    if (data.assignmentValue) {
-        assignmentDetails += `: ${data.assignmentValue}`;
-    }
-
-    const submissionTime = new Date();
-
-    toast({
-      title: `${direction} Event Logged`,
-      description: (
-        <div className="text-sm space-y-1">
-          <p><strong>Trailer:</strong> {data.trailerId}</p>
-          <p><strong>Carrier:</strong> {data.carrier} (SCAC: {data.scac || 'N/A'})</p>
-          <p><strong>Driver:</strong> {data.driverName}</p>
-          <p className="capitalize"><strong>Assignment:</strong> {assignmentDetails}</p>
-          <p><strong>Clerk:</strong> {currentClerk.name} at {format(submissionTime, 'p')}</p>
-        </div>
-      ),
-    });
-    // In a real app, you'd send `data` along with `currentClerk.name` and `submissionTime` to your backend.
+  const handleSubmit = (data: FormValues) => {
+    onFormSubmit(data);
     form.reset();
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
          <div className="flex justify-between items-center bg-muted p-3 rounded-md">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />
