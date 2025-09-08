@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Camera, FileUp, Upload, Videotape, Trash2 } from 'lucide-react';
+import { Camera, FileUp, Videotape, Trash2, SwitchCamera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type DocumentUploadProps = {
     onDocumentChange: (dataUri: string | null) => void;
@@ -22,18 +23,44 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
-  const getCameraPermission = useCallback(async () => {
+  const stopStream = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  }, [stream]);
+  
+  const getCameraPermission = useCallback(async (deviceId?: string) => {
+    stopStream(); // Stop any existing stream
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setHasCameraPermission(false);
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      setCameras(videoDevices);
+
+      const constraints: MediaStreamConstraints = { 
+        video: deviceId ? { deviceId: { exact: deviceId } } : true 
+      };
+      
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        videoRef.current.srcObject = newStream;
       }
+      setStream(newStream);
       setHasCameraPermission(true);
+      if (videoDevices.length > 0 && !deviceId) {
+        setSelectedCameraId(videoDevices[0].deviceId);
+      } else if (deviceId) {
+        setSelectedCameraId(deviceId);
+      }
+
     } catch (error) {
       console.error('Error accessing camera:', error);
       setHasCameraPermission(false);
@@ -43,20 +70,31 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
           description: 'Please enable camera permissions in your browser settings.',
       });
     }
-  }, [toast]);
+  }, [toast, stopStream]);
 
   useEffect(() => {
-    if (activeTab === "camera") {
-        getCameraPermission();
+    if (activeTab === "camera" && !stream) {
+        getCameraPermission(selectedCameraId || undefined);
     }
 
     return () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
+        if(activeTab !== "camera") {
+            stopStream();
         }
     }
-  }, [activeTab, getCameraPermission]);
+  }, [activeTab, getCameraPermission, selectedCameraId, stream, stopStream]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+        stopStream();
+    }
+  }, [stopStream]);
+
+  const handleCameraChange = (deviceId: string) => {
+    setSelectedCameraId(deviceId);
+    getCameraPermission(deviceId);
+  }
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -134,9 +172,28 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
                         {hasCameraPermission && (
                             <>
                                 <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
-                                <Button onClick={handleCapture} className="w-full">
-                                    <Camera className="mr-2" /> Capture Document
-                                </Button>
+                                <div className="flex gap-2">
+                                    {cameras.length > 1 && (
+                                        <div className="flex-1">
+                                            <Select value={selectedCameraId} onValueChange={handleCameraChange}>
+                                                <SelectTrigger>
+                                                    <SwitchCamera className="mr-2"/>
+                                                    <SelectValue placeholder="Select camera" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {cameras.map(camera => (
+                                                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                                                            {camera.label || `Camera ${cameras.indexOf(camera) + 1}`}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                    <Button onClick={handleCapture} className="flex-1">
+                                        <Camera className="mr-2" /> Capture Document
+                                    </Button>
+                                </div>
                             </>
                         )}
                          <canvas ref={canvasRef} style={{ display: 'none' }} />
