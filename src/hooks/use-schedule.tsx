@@ -301,14 +301,14 @@ const initialParkingLanes = Array.from({ length: 20 }, (_, i) => `L${i + 1}`);
 
 const initialDeletionLogs: DeletionLog[] = [
     {
-        id: 'LOG' + Date.now(),
+        id: 'LOG1725792480000',
         deletedItemId: 'SH005',
         itemType: 'Shift',
         deletedBy: 'USR004',
-        deletedAt: new Date(),
+        deletedAt: new Date('2025-09-08T12:08:00Z'),
         originalData: {
             id: 'SH005',
-            date: formatISO(addDays(new Date(), 5), { representation: 'date' }),
+            date: '2025-09-13',
             employeeId: 'USR002',
             employeeName: 'Jane Doe',
             title: 'Night Shift',
