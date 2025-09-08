@@ -18,7 +18,7 @@ import {
 import {
   LayoutDashboard,
   Warehouse,
-  Send,
+  Tv,
   ClipboardList,
   MapPin,
   AlertTriangle,
@@ -73,7 +73,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History, roles: ['Admin', 'Dispatcher'] },
     ]
   },
-  { href: '/dashboard/dispatch', icon: Send, label: 'O.T.R. Load Board', roles: ['Admin', 'Dispatcher'] },
+  { href: '/dashboard/dispatch', icon: Tv, label: 'O.T.R. Load Board', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
