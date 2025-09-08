@@ -1,18 +1,23 @@
+
 import { Header } from '@/components/layout/header';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from '@/components/ui/card';
 import {
   Activity,
   AlertTriangle,
+  Clock,
   Truck,
   Warehouse,
 } from 'lucide-react';
 import { Overview } from '@/components/dashboard/overview';
 import { RecentAlerts } from '@/components/dashboard/recent-alerts';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   return (
@@ -77,7 +82,23 @@ export default function DashboardPage() {
             <Card className="xl:col-span-2">
                 <Overview />
             </Card>
-            <RecentAlerts />
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Quick Access</CardTitle>
+                     <CardDescription>Common tasks for your role.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild className="w-full">
+                        <Link href="/dashboard/time-clock">
+                            <Clock className="mr-2" />
+                            Go to Time Clock
+                        </Link>
+                    </Button>
+                </CardContent>
+              </Card>
+              <RecentAlerts />
+            </div>
         </div>
       </main>
     </div>
