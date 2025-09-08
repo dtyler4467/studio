@@ -1,7 +1,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { CreditCard } from 'lucide-react';
+import { ExpenseReportDataTable } from '@/components/dashboard/expense-report-data-table';
 
 export default function AdminExpenseReportPage() {
   return (
@@ -16,11 +16,7 @@ export default function AdminExpenseReportPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="flex flex-col items-center justify-center rounded-md border border-dashed h-96 text-center">
-                    <CreditCard className="w-16 h-16 text-muted-foreground mb-4" />
-                    <p className="text-lg font-medium text-muted-foreground">Expense Report Management Coming Soon</p>
-                    <p className="text-sm text-muted-foreground">This area will allow you to track and manage all employee expenses.</p>
-                </div>
+                 <ExpenseReportDataTable />
             </CardContent>
         </Card>
       </main>
