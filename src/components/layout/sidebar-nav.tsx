@@ -14,7 +14,6 @@ import {
   SidebarFooter,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -41,6 +40,7 @@ import {
   ParkingCircle,
   Trash2,
   Clock,
+  Briefcase,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -77,10 +77,18 @@ const navItems: NavItem[] = [
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
-  { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-  { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-  { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-  { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { 
+    href: '#', 
+    icon: Briefcase, 
+    label: 'My Workspace',
+    roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+    subItems: [
+        { href: '/dashboard/schedule', icon: Calendar, label: 'My Schedule', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+    ]
+  },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -100,11 +108,18 @@ export function SidebarNav() {
   const { currentUser } = useSchedule();
   const { state } = useSidebar();
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   useEffect(() => {
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
+    setIsWorkspaceOpen(
+        pathname.startsWith('/dashboard/schedule') ||
+        pathname.startsWith('/dashboard/time-clock') ||
+        pathname.startsWith('/dashboard/time-off') ||
+        pathname.startsWith('/dashboard/resources')
+    );
   }, [pathname]);
 
   if (!currentUser) {
@@ -121,8 +136,6 @@ export function SidebarNav() {
     }
     return pathname.startsWith(href);
   }
-
-  const isYardManagementActive = pathname.startsWith('/dashboard/yard-management');
   
   const filteredNavItems = navItems.filter(item => item.roles.includes(role));
   const filteredAdminNavItems = adminNavItems.filter(item => item.roles.includes(role));
@@ -142,12 +155,15 @@ export function SidebarNav() {
             const filteredSubItems = item.subItems?.filter(sub => sub.roles.includes(role));
 
             if (item.subItems && filteredSubItems && filteredSubItems.length > 0) {
+                 const isOpen = item.label === 'Yard Management' ? isYardManagementOpen : isWorkspaceOpen;
+                 const setIsOpen = item.label === 'Yard Management' ? setIsYardManagementOpen : setIsWorkspaceOpen;
+
                  return (
-                 <Collapsible key={item.href} asChild open={isYardManagementOpen} onOpenChange={setIsYardManagementOpen}>
+                 <Collapsible key={item.href} asChild open={isOpen} onOpenChange={setIsOpen}>
                      <SidebarMenuItem>
                          <CollapsibleTrigger asChild>
                              <SidebarMenuButton
-                                 isActive={isYardManagementActive}
+                                 isActive={isSubItemActive(item.href)}
                                  tooltip={item.label}
                                  className="justify-start w-full group"
                              >
@@ -156,7 +172,7 @@ export function SidebarNav() {
                                          <item.icon />
                                          <span>{item.label}</span>
                                      </div>
-                                     <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isYardManagementOpen && "rotate-180")} />
+                                     <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isOpen && "rotate-180")} />
                                  </div>
                              </SidebarMenuButton>
                          </CollapsibleTrigger>
