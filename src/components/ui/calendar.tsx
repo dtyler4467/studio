@@ -3,13 +3,10 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker, DropdownProps } from "react-day-picker"
-import { getYear, getMonth } from "date-fns"
+import { DayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
-import { ScrollArea } from "./scroll-area"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -27,8 +24,8 @@ function Calendar({
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium hidden",
-        caption_dropdowns: "flex gap-1",
+        caption_label: "text-sm font-medium",
+        caption_dropdowns: "flex justify-center gap-1",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -61,56 +58,6 @@ function Calendar({
       components={{
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-        Caption: ({ displayMonth }) => {
-          const fromYear = props.fromYear || getYear(new Date()) - 100;
-          const toYear = props.toYear || getYear(new Date());
-          const years = Array.from({ length: toYear - fromYear + 1 }, (_, i) => fromYear + i);
-          const months = [
-              "January", "February", "March", "April", "May", "June", 
-              "July", "August", "September", "October", "November", "December"
-          ];
-
-          return (
-            <div className="flex justify-center gap-2">
-                <Select
-                    value={String(getMonth(displayMonth))}
-                    onValueChange={(value) => {
-                         const newDate = new Date(displayMonth);
-                         newDate.setMonth(parseInt(value));
-                         props.onMonthChange?.(newDate);
-                    }}
-                >
-                    <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Select month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                         {months.map((month, index) => (
-                           <SelectItem key={month} value={String(index)}>{month}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                 <Select
-                    value={String(getYear(displayMonth))}
-                    onValueChange={(value) => {
-                         const newDate = new Date(displayMonth);
-                         newDate.setFullYear(parseInt(value));
-                         props.onMonthChange?.(newDate);
-                    }}
-                >
-                    <SelectTrigger className="w-[100px]">
-                        <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <ScrollArea className="h-48">
-                            {years.map((year) => (
-                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                            ))}
-                        </ScrollArea>
-                    </SelectContent>
-                </Select>
-            </div>
-          )
-        },
       }}
       {...props}
     />
