@@ -52,7 +52,6 @@ const navItems = [
         { href: '/dashboard/yard-management', label: 'Overview' },
         { href: '/dashboard/yard-management/check-in', label: 'Inbound/Outbound' },
         { href: '/dashboard/yard-management/history', label: 'Yard History' },
-        { href: '/dashboard/yard-management/upload', label: 'Upload Documents' },
         { href: '/dashboard/dispatch', label: 'Dispatch', icon: Send },
         { href: '/dashboard/tracking', label: 'Tracking', icon: MapPin },
     ]
