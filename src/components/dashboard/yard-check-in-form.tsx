@@ -1,10 +1,8 @@
 
 "use client";
 
-import { useForm, useFormContext } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -22,12 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeftRight, User } from "lucide-react";
+import { User } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
 
-const formSchema = z.object({
+export const formSchema = z.object({
   transactionType: z.enum(["inbound", "outbound"], {
     required_error: "You need to select a transaction type.",
   }),
@@ -43,7 +41,7 @@ const formSchema = z.object({
 export type FormValues = z.infer<typeof formSchema>;
 
 type YardCheckInFormProps = {
-    onFormSubmit: (data: FormValues) => void;
+    form: UseFormReturn<FormValues>;
 }
 
 // In a real app, this would come from the authenticated user's session
@@ -65,31 +63,13 @@ const ClientFormattedDate = () => {
     return <>{format(date, 'PPP p')}</>
 }
 
-export function YardCheckInForm({ onFormSubmit }: YardCheckInFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      transactionType: "inbound",
-      trailerId: "",
-      carrier: "",
-      scac: "",
-      driverName: "",
-      loadNumber: "",
-      assignmentType: "empty",
-      assignmentValue: "",
-    },
-  });
+export function YardCheckInForm({ form }: YardCheckInFormProps) {
 
   const assignmentType = form.watch("assignmentType");
 
-  const handleSubmit = (data: FormValues) => {
-    onFormSubmit(data);
-    form.reset();
-  }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form id="yard-check-in-form" className="space-y-6">
          <div className="flex justify-between items-center bg-muted p-3 rounded-md">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="w-4 h-4" />
@@ -243,11 +223,6 @@ export function YardCheckInForm({ onFormSubmit }: YardCheckInFormProps) {
                 />
              )}
         </div>
-       
-        <Button type="submit" className="w-full">
-            <ArrowLeftRight className="mr-2" />
-            Submit Gate Record
-        </Button>
       </form>
     </Form>
   );

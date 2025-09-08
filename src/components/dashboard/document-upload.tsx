@@ -98,7 +98,7 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
         <Card>
             <CardContent className="p-4 space-y-4">
                 <p className="text-sm font-medium">Document Preview:</p>
-                <img src={currentDocument} alt="Attached document" className="rounded-md border max-h-96 w-auto mx-auto" />
+                <img src={currentDocument} alt="Attached document" className="rounded-md border max-h-80 w-auto mx-auto" />
                 <Button variant="destructive" onClick={clearDocument} className="w-full">
                     <Trash2 className="mr-2" /> Remove Document
                 </Button>
@@ -118,7 +118,7 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
                 <Card>
                     <CardContent className="p-4 space-y-4">
                         {hasCameraPermission === null && (
-                            <div className="flex items-center justify-center h-64 rounded-md border border-dashed">
+                            <div className="flex items-center justify-center h-48 rounded-md border border-dashed">
                                 <p>Requesting camera permission...</p>
                             </div>
                         )}

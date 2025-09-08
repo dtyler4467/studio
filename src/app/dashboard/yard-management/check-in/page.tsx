@@ -2,19 +2,37 @@
 "use client";
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { YardCheckInForm, FormValues } from '@/components/dashboard/yard-check-in-form';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { YardCheckInForm, FormValues, formSchema } from '@/components/dashboard/yard-check-in-form';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { Separator } from '@/components/ui/separator';
 import { useSchedule } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { ArrowLeftRight } from 'lucide-react';
 
 export default function YardCheckInPage() {
     const { addYardEvent } = useSchedule();
     const { toast } = useToast();
     const [documentDataUri, setDocumentDataUri] = useState<string | null>(null);
+
+     const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            transactionType: "inbound",
+            trailerId: "",
+            carrier: "",
+            scac: "",
+            driverName: "",
+            loadNumber: "",
+            assignmentType: "empty",
+            assignmentValue: "",
+        },
+     });
 
     const handleFormSubmit = (data: FormValues) => {
         addYardEvent(data, documentDataUri);
@@ -40,6 +58,7 @@ export default function YardCheckInPage() {
         });
         
         setDocumentDataUri(null); // Reset after submission
+        form.reset();
     };
 
 
@@ -55,7 +74,7 @@ export default function YardCheckInPage() {
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <YardCheckInForm onFormSubmit={handleFormSubmit} />
+            <YardCheckInForm form={form} />
             <Separator className="my-8" />
             <div>
                 <h3 className="text-lg font-medium mb-2">Attach Documents (Optional)</h3>
@@ -65,6 +84,12 @@ export default function YardCheckInPage() {
                 <DocumentUpload onDocumentChange={setDocumentDataUri} currentDocument={documentDataUri} />
             </div>
         </CardContent>
+        <CardFooter>
+            <Button type="submit" form="yard-check-in-form" className="w-full" onClick={form.handleSubmit(handleFormSubmit)}>
+                <ArrowLeftRight className="mr-2" />
+                Submit Gate Record
+            </Button>
+        </CardFooter>
         </Card>
       </main>
     </div>
