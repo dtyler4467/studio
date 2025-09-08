@@ -16,6 +16,7 @@ import {
 } from "@tanstack/react-table"
 import { format, differenceInMinutes, formatDistanceStrict, isSameDay } from "date-fns"
 import { useRouter } from "next/navigation"
+import * as XLSX from "xlsx"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -29,10 +30,10 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
 import { Input } from "../ui/input"
-import { MoreHorizontal, Pencil, Check, X } from "lucide-react"
+import { MoreHorizontal, Pencil, Check, X, Download } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "../ui/dropdown-menu"
 import { getSortedRowModel } from "@tanstack/react-table"
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "../ui/skeleton"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover"
 import { Calendar } from "../ui/calendar"
@@ -116,6 +117,42 @@ export function TimeClockAdminTable() {
             description: `The time entry has been marked as ${status.toLowerCase()}.`
         })
     }
+    
+    const handleExport = (statusFilter: 'approved' | 'not-approved') => {
+        const filteredData = timeCardEntries.filter(entry => {
+            if (statusFilter === 'approved') return entry.status === 'Approved';
+            return entry.status !== 'Approved';
+        });
+
+        if (filteredData.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: 'No Data to Export',
+                description: `There are no ${statusFilter.replace('-', ' ')} time card entries to export.`,
+            });
+            return;
+        }
+
+        const dataToExport = filteredData.map(entry => ({
+            'Employee Name': entry.employee.name,
+            'Clock In': format(new Date(entry.clockIn.timestamp), 'yyyy-MM-dd HH:mm:ss'),
+            'Clock Out': entry.clockOut ? format(new Date(entry.clockOut.timestamp), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
+            'Hours': entry.hours,
+            'Status': entry.status,
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Time Clock Report");
+
+        XLSX.writeFile(workbook, `Time_Clock_Report_${statusFilter}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+
+        toast({
+            title: 'Export Successful',
+            description: `Successfully exported ${filteredData.length} entries.`,
+        });
+    };
+
 
     const columns: ColumnDef<TimeCardEntry>[] = [
       {
@@ -206,12 +243,12 @@ export function TimeClockAdminTable() {
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4 gap-2">
+            <div className="flex items-center flex-wrap py-4 gap-2">
                 <Select
                     value={(table.getColumn('employeeName')?.getFilterValue() as string) ?? ''}
                     onValueChange={(value) => table.getColumn('employeeName')?.setFilterValue(value === 'all' ? '' : value)}
                 >
-                    <SelectTrigger className="w-[240px]">
+                    <SelectTrigger className="w-full sm:w-[240px]">
                         <SelectValue placeholder="Filter by employee..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -223,7 +260,7 @@ export function TimeClockAdminTable() {
                 </Select>
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                        <Button variant="outline" className="w-full sm:w-[240px] justify-start text-left font-normal">
                             <span>{table.getColumn('clockIn')?.getFilterValue() ? format(table.getColumn('clockIn')?.getFilterValue() as Date, "PPP") : 'Filter by date...'}</span>
                         </Button>
                     </PopoverTrigger>
@@ -245,6 +282,15 @@ export function TimeClockAdminTable() {
                         <X className="ml-2 h-4 w-4" />
                     </Button>
                  )}
+                 <div className="flex-grow"></div>
+                 <div className="flex gap-2">
+                     <Button variant="outline" onClick={() => handleExport('approved')}>
+                        <Download className="mr-2" /> Export Approved
+                    </Button>
+                     <Button variant="outline" onClick={() => handleExport('not-approved')}>
+                        <Download className="mr-2" /> Export Not Approved
+                    </Button>
+                 </div>
             </div>
             <div className="rounded-md border">
                 <Table>
@@ -323,3 +369,4 @@ export function TimeClockAdminTable() {
         </div>
     )
 }
+
