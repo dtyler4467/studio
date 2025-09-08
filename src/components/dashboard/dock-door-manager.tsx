@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { useSchedule, YardEvent } from '@/hooks/use-schedule';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Truck, PlusCircle, Warehouse } from 'lucide-react';
+import { Truck, PlusCircle, Warehouse, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '../ui/button';
@@ -72,6 +72,7 @@ const AddLocationDialog = ({ onAdd }: { onAdd: (id: string) => void }) => {
 export function DockDoorManager() {
     const { yardEvents, warehouseDoors, addWarehouseDoor } = useSchedule();
     const { toast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
 
     const currentAssignments = useMemo(() => {
         const assignments: Record<string, YardEvent> = {};
@@ -93,6 +94,25 @@ export function DockDoorManager() {
         
         return assignments;
     }, [yardEvents]);
+
+    const filteredDoors = useMemo(() => {
+        if (!searchTerm.trim()) {
+            return warehouseDoors;
+        }
+
+        const lowercasedSearch = searchTerm.toLowerCase();
+
+        return warehouseDoors.filter(doorId => {
+            const event = currentAssignments[doorId];
+            if (!event) return false; // Only show occupied doors when searching
+
+            return (
+                event.trailerId.toLowerCase().includes(lowercasedSearch) ||
+                event.carrier.toLowerCase().includes(lowercasedSearch) ||
+                event.loadNumber.toLowerCase().includes(lowercasedSearch)
+            );
+        });
+    }, [warehouseDoors, currentAssignments, searchTerm]);
 
     const handleAddDoor = (id: string) => {
         try {
@@ -147,12 +167,28 @@ export function DockDoorManager() {
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+                <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search doors..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
                 <AddLocationDialog onAdd={handleAddDoor} />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
-                {warehouseDoors.map(renderLocation)}
-            </div>
+            {filteredDoors.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
+                    {filteredDoors.map(renderLocation)}
+                </div>
+            ) : (
+                 <div className="flex flex-col items-center justify-center rounded-md border border-dashed h-64 text-center">
+                    <p className="text-lg font-medium text-muted-foreground">No matching doors found.</p>
+                    <p className="text-sm text-muted-foreground">Try a different search term.</p>
+                </div>
+            )}
         </div>
     );
 }
