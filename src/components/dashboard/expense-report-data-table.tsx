@@ -15,7 +15,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, Download, MoreHorizontal, Upload } from "lucide-react"
-import { format } from "date-fns"
+import { format, isSameDay } from "date-fns"
 import * as XLSX from "xlsx"
 import { useRouter } from "next/navigation"
 
@@ -44,23 +44,32 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useSchedule, ExpenseReport } from "@/hooks/use-schedule"
+import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover"
+import { Calendar } from "../ui/calendar"
 
 const categories: ExpenseReport['category'][] = ["Food", "Fuel", "Utilities", "Insurance", "Supplies", "Repairs", "Accidents", "Payroll", "Lease", "Other"];
 const validStatuses: ExpenseReport['status'][] = ["Pending", "Approved", "Denied"];
 
 const filterableColumns = [
+    { id: 'date', name: 'Date' },
     { id: 'employeeName', name: 'Employee' },
     { id: 'description', name: 'Description' },
     { id: 'category', name: 'Category' },
+    { id: 'amount', name: 'Amount' },
     { id: 'status', name: 'Status' },
 ];
 
 export function ExpenseReportDataTable() {
-    const { expenseReports, setExpenseReports } = useSchedule();
+    const { expenseReports, setExpenseReports, employees } = useSchedule();
     const router = useRouter();
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [filterBy, setFilterBy] = React.useState<string>('employeeName');
+
+    const employeeNames = React.useMemo(() => {
+        const names = new Set(expenseReports.map(e => e.employeeName));
+        return Array.from(names);
+    }, [expenseReports]);
 
     const handleStatusChange = (id: string, status: ExpenseReport['status']) => {
         setExpenseReports(currentData => currentData.map(expense => expense.id === id ? { ...expense, status } : expense));
@@ -205,7 +214,11 @@ export function ExpenseReportDataTable() {
             const dateString = row.getValue("date") as string;
             // Add time to treat it as local to avoid timezone shift
             return format(new Date(`${dateString}T00:00:00`), "PPP");
-        }
+        },
+        filterFn: (row, id, value) => {
+            const rowDate = new Date(`${row.getValue(id) as string}T00:00:00`);
+            return isSameDay(rowDate, value);
+        },
       },
       {
         accessorKey: "description",
@@ -303,7 +316,7 @@ export function ExpenseReportDataTable() {
     },
   })
 
-  const handleFilterChange = (value: string) => {
+  const handleFilterChange = (value: any) => {
     // Reset other filters when changing the filter column
     table.getAllColumns().forEach(column => {
         if(column.getCanFilter() && column.id !== filterBy) {
@@ -314,15 +327,48 @@ export function ExpenseReportDataTable() {
   }
 
   const FilterComponent = () => {
-    const filterValue = (table.getColumn(filterBy)?.getFilterValue() as string) ?? "";
+    const filterValue = table.getColumn(filterBy)?.getFilterValue() ?? "";
     switch (filterBy) {
+        case 'date':
+             return (
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                            <span>{filterValue ? format(filterValue as Date, "PPP") : 'Filter by date...'}</span>
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={filterValue as Date}
+                            onSelect={(date) => handleFilterChange(date)}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+            );
+        case 'employeeName':
+            return (
+                <Select
+                    value={filterValue as string}
+                    onValueChange={(value) => handleFilterChange(value === 'all' ? '' : value)}
+                >
+                    <SelectTrigger className="w-[240px]">
+                        <SelectValue placeholder="Filter by employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Employees</SelectItem>
+                        {employeeNames.map(name => (
+                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            );
         case 'category':
             return (
                 <Select
-                    value={filterValue}
-                    onValueChange={(value) => {
-                        handleFilterChange(value === 'all' ? '' : value);
-                    }}
+                    value={filterValue as string}
+                    onValueChange={(value) => handleFilterChange(value === 'all' ? '' : value)}
                 >
                     <SelectTrigger className="w-[240px]">
                         <SelectValue placeholder="Filter by category" />
@@ -338,10 +384,8 @@ export function ExpenseReportDataTable() {
         case 'status':
             return (
                  <Select
-                    value={filterValue}
-                    onValueChange={(value) => {
-                        handleFilterChange(value === 'all' ? '' : value);
-                    }}
+                    value={filterValue as string}
+                    onValueChange={(value) => handleFilterChange(value === 'all' ? '' : value)}
                 >
                     <SelectTrigger className="w-[240px]">
                         <SelectValue placeholder="Filter by status" />
@@ -354,11 +398,21 @@ export function ExpenseReportDataTable() {
                     </SelectContent>
                 </Select>
             );
+        case 'amount':
+            return (
+                <Input
+                  type="number"
+                  placeholder={`Filter by amount...`}
+                  value={filterValue as string}
+                  onChange={(event) => handleFilterChange(event.target.value)}
+                  className="max-w-sm"
+                />
+            );
         default:
             return (
                 <Input
                   placeholder={`Filter by ${filterableColumns.find(f => f.id === filterBy)?.name.toLowerCase()}...`}
-                  value={filterValue}
+                  value={filterValue as string}
                   onChange={(event) => handleFilterChange(event.target.value)}
                   className="max-w-sm"
                 />
@@ -511,3 +565,5 @@ export function ExpenseReportDataTable() {
     </div>
   )
 }
+
+    
