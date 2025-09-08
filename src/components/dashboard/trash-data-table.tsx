@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -25,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
 import { Undo2 } from "lucide-react"
+import { Skeleton } from "../ui/skeleton"
 
 const getDeletedItemDescription = (item: DeletionLog) => {
     switch (item.itemType) {
@@ -36,6 +38,20 @@ const getDeletedItemDescription = (item: DeletionLog) => {
         default:
             return `Item ID: ${item.deletedItemId}`;
     }
+}
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "PPP p"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[150px]" />;
+    }
+
+    return <>{formattedDate}</>;
 }
 
 export function TrashDataTable() {
@@ -64,7 +80,7 @@ export function TrashDataTable() {
       {
         accessorKey: "deletedAt",
         header: "Date Deleted",
-        cell: ({ row }) => format(new Date(row.original.deletedAt), "PPP p"),
+        cell: ({ row }) => <ClientFormattedDate date={new Date(row.original.deletedAt)} />,
       },
       {
         accessorKey: "deletedBy",
