@@ -70,6 +70,28 @@ export type ExpenseReport = {
     documentDataUri?: string | null;
 }
 
+export type TrainingQuestion = {
+    question: string;
+    options: string[];
+    correctAnswer: string;
+};
+
+export type TrainingModule = {
+    id: string;
+    title: string;
+    description: string;
+    type: 'video' | 'document';
+    content: string; // URL for video, or markdown content for document
+    exam?: TrainingQuestion[];
+};
+
+export type TrainingProgram = {
+    id: string;
+    title: string;
+    description: string;
+    modules: TrainingModule[];
+};
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -79,6 +101,7 @@ type ScheduleContextType = {
   registrations: Registration[];
   yardEvents: YardEvent[];
   expenseReports: ExpenseReport[];
+  trainingPrograms: TrainingProgram[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
@@ -94,6 +117,7 @@ type ScheduleContextType = {
   addYardEvent: (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => void;
   getExpenseReportById: (id: string) => ExpenseReport | null;
   setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
+  getTrainingModuleById: (id: string) => TrainingModule | null;
 };
 
 const initialShifts: Shift[] = [
@@ -153,6 +177,84 @@ const initialExpenseReports: ExpenseReport[] = [
     { id: "EXP008", employeeName: "HR", date: "2024-07-31", description: "Monthly payroll", category: "Payroll", amount: 15000.00, status: "Approved" },
 ];
 
+const initialTrainingPrograms: TrainingProgram[] = [
+    {
+        id: 'PROG001',
+        title: 'New Driver Onboarding',
+        description: 'Complete these modules to finalize your onboarding process.',
+        modules: [
+            {
+                id: 'MOD001',
+                title: 'Welcome to LogiFlow',
+                description: 'An introduction to our company culture, values, and mission.',
+                type: 'video',
+                content: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Placeholder video
+            },
+            {
+                id: 'MOD002',
+                title: 'Safety Procedures',
+                description: 'Review our standard safety protocols for vehicle operation and site conduct.',
+                type: 'document',
+                content: `
+# Vehicle Safety Checklist
+
+- **Pre-Trip Inspection:** Always perform a full walk-around inspection before starting your route.
+- **Hours of Service:** Adhere strictly to all HOS regulations.
+- **Defensive Driving:** Maintain safe following distances and be aware of your surroundings.
+
+# Warehouse Safety
+
+- Wear high-visibility clothing at all times.
+- Follow all posted speed limits and traffic signs.
+- Report any spills or hazards immediately.
+                `,
+                exam: [
+                    {
+                        question: 'What is the first step in the vehicle safety checklist?',
+                        options: ['Check the radio', 'Pre-Trip Inspection', 'Adjust mirrors', 'Start the engine'],
+                        correctAnswer: 'Pre-Trip Inspection'
+                    },
+                    {
+                        question: 'What should you do if you see a spill in the warehouse?',
+                        options: ['Ignore it', 'Clean it up yourself', 'Report it immediately', 'Drive around it'],
+                        correctAnswer: 'Report it immediately'
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'PROG002',
+        title: 'Annual Compliance Training',
+        description: 'Required annual training for all personnel.',
+        modules: [
+             {
+                id: 'MOD003',
+                title: 'Cybersecurity Awareness',
+                description: 'Learn how to identify phishing attempts and protect company data.',
+                type: 'document',
+                content: `
+# Phishing Scams
+
+Be wary of emails that:
+
+- Create a sense of urgency.
+- Ask for personal information or passwords.
+- Contain suspicious links or attachments.
+- Come from unknown or unexpected senders.
+                `,
+                 exam: [
+                    {
+                        question: 'Which of the following is a sign of a phishing email?',
+                        options: ['A monthly newsletter you subscribed to', 'An email from your manager', 'An email creating a sense of urgency', 'A calendar invite from a coworker'],
+                        correctAnswer: 'An email creating a sense of urgency'
+                    }
+                ]
+            }
+        ]
+    }
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -163,6 +265,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
   const [yardEvents, setYardEvents] = useState<YardEvent[]>(initialYardEvents);
   const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
+  const [trainingPrograms, setTrainingPrograms] = useState<TrainingProgram[]>(initialTrainingPrograms);
 
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
@@ -246,9 +349,17 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return expenseReports.find(report => report.id === id) || null;
     }
 
+    const getTrainingModuleById = (id: string) => {
+        for (const program of trainingPrograms) {
+            const module = program.modules.find(m => m.id === id);
+            if (module) return module;
+        }
+        return null;
+    }
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById }}>
       {children}
     </ScheduleContext.Provider>
   );
