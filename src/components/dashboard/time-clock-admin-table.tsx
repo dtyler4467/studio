@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react"
@@ -43,7 +42,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "../ui/label"
 
 type TimeCardEntry = {
-    employee: Employee;
+    employee?: Employee;
     clockIn: TimeClockEvent;
     clockOut?: TimeClockEvent;
     hours: string;
@@ -77,17 +76,30 @@ export function TimeClockAdminTable() {
     const [exportType, setExportType] = React.useState<'approved' | 'not-approved' | null>(null);
 
 
-    const timeCardEntries = React.useMemo(() => {
-        const entries: TimeCardEntry[] = [];
-        const sortedEvents = [...timeClockEvents].sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+     const timeCardEntries = React.useMemo(() => {
+        const entriesMap = new Map<string, { clockIn: TimeClockEvent, clockOut?: TimeClockEvent }>();
+        
+        // Group clock-ins and clock-outs by employee
+        const eventsByEmployee = timeClockEvents.reduce((acc, event) => {
+            if (!acc[event.employeeId]) {
+                acc[event.employeeId] = [];
+            }
+            acc[event.employeeId].push(event);
+            return acc;
+        }, {} as Record<string, TimeClockEvent[]>);
 
-        employees.forEach(employee => {
-            const employeeEvents = sortedEvents.filter(e => e.employeeId === employee.id);
+        const entries: TimeCardEntry[] = [];
+
+        // Process events for each employee
+        for (const employeeId in eventsByEmployee) {
+            const employeeEvents = eventsByEmployee[employeeId].sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+            const employee = employees.find(e => e.id === employeeId);
+
             for (let i = 0; i < employeeEvents.length; i++) {
                 if (employeeEvents[i].type === 'in') {
                     const clockIn = employeeEvents[i];
-                    const clockOut = employeeEvents[i+1]?.type === 'out' ? employeeEvents[i+1] : undefined;
-                    
+                    const clockOut = (i + 1 < employeeEvents.length && employeeEvents[i + 1].type === 'out') ? employeeEvents[i + 1] : undefined;
+
                     let hours = 'In Progress';
                     if (clockOut) {
                          const start = new Date(clockIn.timestamp);
@@ -97,21 +109,21 @@ export function TimeClockAdminTable() {
                          const remainingMinutes = diffMinutes % 60;
                          hours = `${totalHours}h ${remainingMinutes}m`;
                     }
-
+                    
                     entries.push({
                         employee,
                         clockIn,
                         clockOut,
                         hours,
                         status: clockIn.status || 'Pending'
-                    })
+                    });
 
                     if (clockOut) {
-                         i++;
+                        i++; // Skip the clock-out event as it's already processed
                     }
                 }
             }
-        });
+        }
 
         return entries.sort((a,b) => new Date(b.clockIn.timestamp).getTime() - new Date(a.clockIn.timestamp).getTime());
 
@@ -155,9 +167,9 @@ export function TimeClockAdminTable() {
         }
 
         const dataToExport = filteredData.map(entry => ({
-            'Employee ID': entry.employee.personnelId,
-            'Employee Name': entry.employee.name,
-            'Work Location': entry.employee.workLocation || 'N/A',
+            'Employee ID': entry.employee?.personnelId || 'N/A',
+            'Employee Name': entry.employee?.name || 'Unknown Employee',
+            'Work Location': entry.employee?.workLocation || 'N/A',
             'Clock In': format(new Date(entry.clockIn.timestamp), 'yyyy-MM-dd HH:mm:ss'),
             'Clock Out': entry.clockOut ? format(new Date(entry.clockOut.timestamp), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
             'Hours': entry.hours,
@@ -182,8 +194,8 @@ export function TimeClockAdminTable() {
     const openExportDialog = (type: 'approved' | 'not-approved') => {
         setExportType(type);
         setExportDateRange({
-            from: new Date('2025-09-01'),
-            to: new Date('2025-09-08'),
+            from: new Date('2025-09-01T00:00:00'),
+            to: new Date('2025-09-08T23:59:59'),
         });
         setIsExportDialogOpen(true);
     };
@@ -191,19 +203,25 @@ export function TimeClockAdminTable() {
 
     const columns: ColumnDef<TimeCardEntry>[] = [
       {
-        accessorFn: (row) => row.employee.name,
+        accessorFn: (row) => row.employee?.name,
         id: "employeeName",
         header: "Employee",
-        cell: ({ row }) => (
-            <div>
-                <span className="font-medium">{row.original.employee.personnelId} - {row.original.employee.name}</span>
-            </div>
-        )
+        cell: ({ row }) => {
+            const { employee } = row.original;
+            if (!employee) {
+                return <span className="text-muted-foreground">Unknown Employee</span>
+            }
+            return (
+                <div>
+                    <span className="font-medium">{employee.personnelId} - {employee.name}</span>
+                </div>
+            )
+        }
       },
       {
         id: 'workLocation',
         header: "Work Location",
-        accessorFn: (row) => row.original.employee.workLocation || 'N/A',
+        accessorFn: (row) => row.employee?.workLocation || 'N/A',
       },
       {
         id: 'clockIn',
@@ -387,8 +405,12 @@ export function TimeClockAdminTable() {
                         <TableRow
                             key={row.original.clockIn.id}
                             data-state={row.getIsSelected() && "selected"}
-                            className="cursor-pointer"
-                            onClick={() => router.push(`/dashboard/administration/time-clock/${row.original.employee.id}`)}
+                            className={row.original.employee ? "cursor-pointer" : ""}
+                            onClick={() => {
+                                if (row.original.employee) {
+                                    router.push(`/dashboard/administration/time-clock/${row.original.employee.id}`)
+                                }
+                            }}
                         >
                         {row.getVisibleCells().map((cell) => (
                             <TableCell key={cell.id} onClick={(e) => {
@@ -478,6 +500,9 @@ export function TimeClockAdminTable() {
                                 selected={exportDateRange}
                                 onSelect={setExportDateRange}
                                 numberOfMonths={2}
+                                captionLayout="dropdown-nav"
+                                fromYear={2020}
+                                toYear={2030}
                             />
                             </PopoverContent>
                         </Popover>
@@ -497,3 +522,4 @@ export function TimeClockAdminTable() {
         </div>
     )
 }
+
