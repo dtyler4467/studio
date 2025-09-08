@@ -51,10 +51,10 @@ const navItems = [
         { href: '/dashboard/yard-management/check-in', label: 'Inbound/Outbound' },
         { href: '/dashboard/yard-management/history', label: 'Yard History' },
         { href: '/dashboard/dispatch', label: 'Dispatch' },
+        { href: '/dashboard/tracking', label: 'Tracking' },
     ]
   },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board' },
-  { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking' },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts' },
   { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule' },
   { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off' },
