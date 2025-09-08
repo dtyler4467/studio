@@ -48,11 +48,19 @@ import { useSchedule, ExpenseReport } from "@/hooks/use-schedule"
 const categories: ExpenseReport['category'][] = ["Food", "Fuel", "Utilities", "Insurance", "Supplies", "Repairs", "Accidents", "Payroll", "Lease", "Other"];
 const validStatuses: ExpenseReport['status'][] = ["Pending", "Approved", "Denied"];
 
+const filterableColumns = [
+    { id: 'employeeName', name: 'Employee' },
+    { id: 'description', name: 'Description' },
+    { id: 'category', name: 'Category' },
+    { id: 'status', name: 'Status' },
+];
+
 export function ExpenseReportDataTable() {
     const { expenseReports, setExpenseReports } = useSchedule();
     const router = useRouter();
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [filterBy, setFilterBy] = React.useState<string>('employeeName');
 
     const handleStatusChange = (id: string, status: ExpenseReport['status']) => {
         setExpenseReports(currentData => currentData.map(expense => expense.id === id ? { ...expense, status } : expense));
@@ -295,37 +303,87 @@ export function ExpenseReportDataTable() {
     },
   })
 
+  const handleFilterChange = (value: string) => {
+    // Reset other filters when changing the filter column
+    table.getAllColumns().forEach(column => {
+        if(column.getCanFilter() && column.id !== filterBy) {
+            column.setFilterValue('');
+        }
+    });
+    table.getColumn(filterBy)?.setFilterValue(value);
+  }
+
+  const FilterComponent = () => {
+    const filterValue = (table.getColumn(filterBy)?.getFilterValue() as string) ?? "";
+    switch (filterBy) {
+        case 'category':
+            return (
+                <Select
+                    value={filterValue}
+                    onValueChange={(value) => {
+                        handleFilterChange(value === 'all' ? '' : value);
+                    }}
+                >
+                    <SelectTrigger className="w-[240px]">
+                        <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map(category => (
+                            <SelectItem key={category} value={category}>{category}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            );
+        case 'status':
+            return (
+                 <Select
+                    value={filterValue}
+                    onValueChange={(value) => {
+                        handleFilterChange(value === 'all' ? '' : value);
+                    }}
+                >
+                    <SelectTrigger className="w-[240px]">
+                        <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        {validStatuses.map(status => (
+                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            );
+        default:
+            return (
+                <Input
+                  placeholder={`Filter by ${filterableColumns.find(f => f.id === filterBy)?.name.toLowerCase()}...`}
+                  value={filterValue}
+                  onChange={(event) => handleFilterChange(event.target.value)}
+                  className="max-w-sm"
+                />
+            );
+    }
+  }
+
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4 gap-2">
-        <Input
-          placeholder="Filter by employee name..."
-          value={(table.getColumn("employeeName")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("employeeName")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <Select
-            value={(table.getColumn('category')?.getFilterValue() as string) ?? 'all'}
-            onValueChange={(value) => {
-                if (value === 'all') {
-                    table.getColumn('category')?.setFilterValue(undefined);
-                } else {
-                    table.getColumn('category')?.setFilterValue(value);
-                }
-            }}
-        >
-            <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+            <Select value={filterBy} onValueChange={setFilterBy}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {filterableColumns.map(col => (
+                        <SelectItem key={col.id} value={col.id}>{col.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <FilterComponent />
+        </div>
+        
         <div className="ml-auto flex gap-2">
             <Input
                 type="file"
