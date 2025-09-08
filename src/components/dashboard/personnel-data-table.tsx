@@ -4,7 +4,7 @@
 import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
 import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable } from "@tanstack/react-table"
-import { MoreHorizontal, Trash2, FileText } from "lucide-react"
+import { MoreHorizontal, Trash2, FileText, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
+import { Label } from "../ui/label"
 
 type Employee = {
     id: string;
@@ -44,12 +46,74 @@ type Employee = {
     phoneNumber?: string;
 }
 
+const EditEmployeeDialog = ({ employee, isOpen, onOpenChange, onSave }: { employee: Employee | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (updatedEmployee: Employee) => void }) => {
+    const [editedEmployee, setEditedEmployee] = React.useState<Employee | null>(employee);
+
+    React.useEffect(() => {
+        setEditedEmployee(employee);
+    }, [employee]);
+
+    const handleSave = () => {
+        if (editedEmployee) {
+            onSave(editedEmployee);
+            onOpenChange(false);
+        }
+    };
+
+    if (!isOpen || !editedEmployee) return null;
+
+    return (
+         <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Personnel: {employee?.name}</DialogTitle>
+                    <DialogDescription>
+                        Make changes to the employee's details below.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">Name</Label>
+                        <Input id="name" value={editedEmployee.name} onChange={e => setEditedEmployee({...editedEmployee, name: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="email" className="text-right">Email</Label>
+                        <Input id="email" value={editedEmployee.email} onChange={e => setEditedEmployee({...editedEmployee, email: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="phone" className="text-right">Phone</Label>
+                        <Input id="phone" value={editedEmployee.phoneNumber} onChange={e => setEditedEmployee({...editedEmployee, phoneNumber: e.target.value})} className="col-span-3" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export function PersonnelDataTable() {
-    const { employees, currentUser, updateEmployeeRole, deleteEmployee } = useSchedule();
+    const { employees, currentUser, updateEmployeeRole, updateEmployee, deleteEmployee } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
     const [globalFilter, setGlobalFilter] = React.useState('');
+    const [isEditOpen, setIsEditOpen] = React.useState(false);
+    const [selectedEmployee, setSelectedEmployee] = React.useState<Employee | null>(null);
 
+    const handleOpenEdit = (employee: Employee) => {
+        setSelectedEmployee(employee);
+        setIsEditOpen(true);
+    };
+
+    const handleSaveEmployee = (updatedEmployee: Employee) => {
+        updateEmployee(updatedEmployee);
+        toast({
+            title: "Employee Updated",
+            description: `${updatedEmployee.name}'s details have been updated.`,
+        });
+    };
 
     const handleRoleChange = (employeeId: string, role: Employee['role']) => {
         if (currentUser?.id === employeeId && role !== 'Admin') {
@@ -157,9 +221,12 @@ export function PersonnelDataTable() {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={(e) => {e.stopPropagation(); navigator.clipboard.writeText(employee.email || '')}}>
+                        <DropdownMenuItem onClick={() => handleOpenEdit(employee)} className="flex items-center gap-2">
+                           <Pencil className="w-4 h-4" /> Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(employee.email || '')}>
                           Copy email
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -267,6 +334,12 @@ export function PersonnelDataTable() {
           </TableBody>
         </Table>
       </div>
+       <EditEmployeeDialog 
+            employee={selectedEmployee}
+            isOpen={isEditOpen}
+            onOpenChange={setIsEditOpen}
+            onSave={handleSaveEmployee}
+        />
     </div>
   )
 }
