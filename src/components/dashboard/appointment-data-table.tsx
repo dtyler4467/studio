@@ -15,7 +15,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, X } from "lucide-react"
-import { format, isWithinInterval } from "date-fns"
+import { format, isWithinInterval, isValid, parse } from "date-fns"
 import { DateRange } from "react-day-picker"
 
 import { Button } from "@/components/ui/button"
@@ -354,6 +354,27 @@ export function AppointmentDataTable() {
     },
   })
 
+  const dateRange = table.getColumn("appointmentTime")?.getFilterValue() as DateRange | undefined;
+
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'from' | 'to') => {
+        const { value } = e.target;
+        const parsedDate = parse(value, 'yyyy-MM-dd', new Date());
+        
+        if (isValid(parsedDate)) {
+            const currentRange = table.getColumn("appointmentTime")?.getFilterValue() as DateRange | undefined;
+            const newRange = { from: currentRange?.from, to: currentRange?.to };
+
+            if (field === 'from') {
+                newRange.from = parsedDate;
+            } else {
+                newRange.to = parsedDate;
+            }
+            
+            table.getColumn("appointmentTime")?.setFilterValue(newRange);
+        }
+    };
+
+
   return (
     <div className="w-full">
       <div className="flex flex-wrap items-center py-4 gap-2">
@@ -370,18 +391,18 @@ export function AppointmentDataTable() {
                 variant={"outline"}
                 className={cn(
                 "w-[300px] justify-start text-left font-normal",
-                !table.getColumn("appointmentTime")?.getFilterValue() && "text-muted-foreground"
+                !dateRange && "text-muted-foreground"
                 )}
             >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {(table.getColumn("appointmentTime")?.getFilterValue() as DateRange)?.from ? (
-                (table.getColumn("appointmentTime")?.getFilterValue() as DateRange)?.to ? (
+                {dateRange?.from ? (
+                dateRange.to ? (
                     <>
-                    {format((table.getColumn("appointmentTime")?.getFilterValue() as DateRange).from!, "LLL dd, y")} -{" "}
-                    {format((table.getColumn("appointmentTime")?.getFilterValue() as DateRange).to!, "LLL dd, y")}
+                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                    {format(dateRange.to, "LLL dd, y")}
                     </>
                 ) : (
-                    format((table.getColumn("appointmentTime")?.getFilterValue() as DateRange).from!, "LLL dd, y")
+                    format(dateRange.from, "LLL dd, y")
                 )
                 ) : (
                 <span>Filter by date range...</span>
@@ -389,17 +410,39 @@ export function AppointmentDataTable() {
             </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
+             <div className="flex items-center space-x-2 p-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="from" className="text-xs">From</Label>
+                    <Input
+                        id="from"
+                        type="date"
+                        value={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : ''}
+                        onChange={(e) => handleDateInputChange(e, 'from')}
+                        className="w-full"
+                    />
+                </div>
+                <div className="grid gap-2">
+                     <Label htmlFor="to" className="text-xs">To</Label>
+                    <Input
+                        id="to"
+                        type="date"
+                        value={dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : ''}
+                        onChange={(e) => handleDateInputChange(e, 'to')}
+                        className="w-full"
+                    />
+                </div>
+            </div>
             <Calendar
                 initialFocus
                 mode="range"
-                defaultMonth={(table.getColumn("appointmentTime")?.getFilterValue() as DateRange)?.from}
-                selected={table.getColumn("appointmentTime")?.getFilterValue() as DateRange}
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
                 onSelect={(range) => table.getColumn("appointmentTime")?.setFilterValue(range)}
                 numberOfMonths={2}
             />
             </PopoverContent>
         </Popover>
-        {table.getColumn("appointmentTime")?.getFilterValue() && (
+        {dateRange && (
                 <Button
                 variant="ghost"
                 onClick={() => table.getColumn("appointmentTime")?.setFilterValue(undefined)}
@@ -519,5 +562,3 @@ export function AppointmentDataTable() {
     </div>
   )
 }
-
-    
