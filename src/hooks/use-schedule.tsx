@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { addDays, formatISO } from 'date-fns';
 
-type Shift = {
+export type Shift = {
     id: string;
     date: string; // ISO date string
     employeeId: string;
@@ -13,21 +13,21 @@ type Shift = {
     endTime: string;
 };
 
-type EmployeeRole = 'Admin' | 'Dispatcher' | 'Driver';
+export type EmployeeRole = 'Admin' | 'Dispatcher' | 'Driver';
 
-type Employee = {
+export type Employee = {
     id: string;
     name: string;
     email?: string;
     role: EmployeeRole;
 }
 
-type Holiday = {
+export type Holiday = {
     date: Date;
     name: string;
 }
 
-type TimeOffRequest = {
+export type TimeOffRequest = {
     id: string;
     employeeId: string;
     startDate: Date;
@@ -36,12 +36,27 @@ type TimeOffRequest = {
     status: 'Pending' | 'Approved' | 'Denied';
 }
 
-type Registration = {
+export type Registration = {
     id: string;
     name: string;
     email: string;
     status: 'Pending' | 'Approved' | 'Denied';
 }
+
+export type YardEvent = {
+    id: string;
+    transactionType: 'inbound' | 'outbound';
+    trailerId: string;
+    carrier: string;
+    scac: string;
+    driverName: string;
+    clerkName: string;
+    loadNumber: string;
+    assignmentType: "bobtail" | "empty" | "material" | "door_assignment" | "lane_assignment";
+    assignmentValue?: string;
+    timestamp: Date;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -49,6 +64,7 @@ type ScheduleContextType = {
   holidays: Holiday[];
   timeOffRequests: TimeOffRequest[];
   registrations: Registration[];
+  yardEvents: YardEvent[];
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string) => void;
@@ -60,6 +76,7 @@ type ScheduleContextType = {
   denyRegistration: (registrationId: string) => void;
   updateEmployeeRole: (employeeId: string, role: EmployeeRole) => void;
   deleteEmployee: (employeeId: string) => void;
+  getYardEventById: (id: string) => YardEvent | null;
 };
 
 const initialShifts: Shift[] = [
@@ -100,6 +117,14 @@ const initialRegistrations: Registration[] = [
     { id: 'REG002', name: 'New User 2', email: 'new.user2@example.com', status: 'Pending' },
 ]
 
+const initialYardEvents: YardEvent[] = [
+    { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD123', assignmentType: 'door_assignment', assignmentValue: 'D42', timestamp: new Date('2024-07-28T08:15:00Z') },
+    { id: 'EVT002', transactionType: 'outbound', trailerId: 'TR48991', carrier: 'J.B. Hunt', scac: 'JBHT', driverName: 'Jane Smith', clerkName: 'Admin User', loadNumber: 'LD124', assignmentType: 'empty', timestamp: new Date('2024-07-28T09:30:00Z') },
+    { id: 'EVT003', transactionType: 'inbound', trailerId: 'TR53456', carrier: 'Schneider', scac: 'SNDR', driverName: 'Mike Johnson', clerkName: 'Jane Clerk', loadNumber: 'LD125', assignmentType: 'lane_assignment', assignmentValue: 'L12', timestamp: new Date('2024-07-27T14:00:00Z') },
+    { id: 'EVT004', transactionType: 'outbound', trailerId: 'TR53123', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'Emily Davis', clerkName: 'Jane Clerk', loadNumber: 'LD126', assignmentType: 'material', timestamp: new Date('2024-07-27T16:45:00Z') },
+    { id: 'EVT005', transactionType: 'inbound', trailerId: 'TR53789', carrier: 'Werner', scac: 'WERN', driverName: 'Chris Brown', clerkName: 'Admin User', loadNumber: 'LD127', assignmentType: 'bobtail', timestamp: new Date('2024-07-26T11:20:00Z') },
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -108,6 +133,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>(initialTimeOffRequests);
   const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
+  const [yardEvents, setYardEvents] = useState<YardEvent[]>(initialYardEvents);
+
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
     const newShift = { ...shift, id: `SH${Date.now()}` };
@@ -171,9 +198,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setTimeOffRequests(prev => prev.filter(t => t.employeeId !== employeeId));
     };
 
+    const getYardEventById = (id: string) => {
+        return yardEvents.find(event => event.id === id) || null;
+    }
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee }}>
+    <ScheduleContext.Provider value={{ shifts, employees, holidays, timeOffRequests, registrations, yardEvents, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById }}>
       {children}
     </ScheduleContext.Provider>
   );
@@ -186,3 +217,5 @@ export const useSchedule = () => {
   }
   return context;
 };
+
+    
