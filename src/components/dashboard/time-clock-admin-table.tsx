@@ -14,9 +14,10 @@ import {
   SortingState,
   ColumnFiltersState,
 } from "@tanstack/react-table"
-import { format, differenceInMinutes, formatDistanceStrict, isSameDay } from "date-fns"
+import { format, differenceInMinutes, formatDistanceStrict, isSameDay, isWithinInterval } from "date-fns"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
+import { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button"
 import {
@@ -30,7 +31,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
 import { Input } from "../ui/input"
-import { MoreHorizontal, Pencil, Check, X, Download } from "lucide-react"
+import { MoreHorizontal, Pencil, Check, X, Download, CalendarIcon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "../ui/dropdown-menu"
 import { getSortedRowModel } from "@tanstack/react-table"
 import { Skeleton } from "../ui/skeleton"
@@ -38,6 +39,8 @@ import { cn } from "@/lib/utils"
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover"
 import { Calendar } from "../ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
+import { Label } from "../ui/label"
 
 type TimeCardEntry = {
     employee: Employee;
@@ -69,6 +72,10 @@ export function TimeClockAdminTable() {
     const router = useRouter()
     const [sorting, setSorting] = React.useState<SortingState>([{ id: 'clockIn', desc: true }])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+    const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
+    const [exportDateRange, setExportDateRange] = React.useState<DateRange | undefined>();
+    const [exportType, setExportType] = React.useState<'approved' | 'not-approved' | null>(null);
+
 
     const timeCardEntries = React.useMemo(() => {
         const entries: TimeCardEntry[] = [];
@@ -118,8 +125,22 @@ export function TimeClockAdminTable() {
         })
     }
     
-    const handleExport = (statusFilter: 'approved' | 'not-approved') => {
+     const handleExport = (statusFilter: 'approved' | 'not-approved', dateRange?: DateRange) => {
+        if (!dateRange?.from || !dateRange?.to) {
+             toast({
+                variant: 'destructive',
+                title: 'Date Range Required',
+                description: 'Please select a start and end date for the export.',
+            });
+            return;
+        }
+
         const filteredData = timeCardEntries.filter(entry => {
+            const entryDate = new Date(entry.clockIn.timestamp);
+            const isInRange = isWithinInterval(entryDate, { start: dateRange.from!, end: dateRange.to! });
+            
+            if (!isInRange) return false;
+
             if (statusFilter === 'approved') return entry.status === 'Approved';
             return entry.status !== 'Approved';
         });
@@ -128,7 +149,7 @@ export function TimeClockAdminTable() {
             toast({
                 variant: 'destructive',
                 title: 'No Data to Export',
-                description: `There are no ${statusFilter.replace('-', ' ')} time card entries to export.`,
+                description: `There are no ${statusFilter.replace('-', ' ')} time card entries in the selected date range.`,
             });
             return;
         }
@@ -153,6 +174,15 @@ export function TimeClockAdminTable() {
             title: 'Export Successful',
             description: `Successfully exported ${filteredData.length} entries.`,
         });
+        
+        // Close dialog after export
+        setIsExportDialogOpen(false);
+    };
+
+    const openExportDialog = (type: 'approved' | 'not-approved') => {
+        setExportType(type);
+        setExportDateRange(undefined);
+        setIsExportDialogOpen(true);
     };
 
 
@@ -297,10 +327,10 @@ export function TimeClockAdminTable() {
                  )}
                  <div className="flex-grow"></div>
                  <div className="flex gap-2">
-                     <Button variant="outline" onClick={() => handleExport('approved')}>
+                     <Button variant="outline" onClick={() => openExportDialog('approved')}>
                         <Download className="mr-2" /> Export Approved
                     </Button>
-                     <Button variant="outline" onClick={() => handleExport('not-approved')}>
+                     <Button variant="outline" onClick={() => openExportDialog('not-approved')}>
                         <Download className="mr-2" /> Export Not Approved
                     </Button>
                  </div>
@@ -379,6 +409,65 @@ export function TimeClockAdminTable() {
                     Next
                 </Button>
             </div>
+
+            <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Select Export Date Range</DialogTitle>
+                        <DialogDescription>
+                            Please select a date range for the time clock report.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !exportDateRange && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {exportDateRange?.from ? (
+                                exportDateRange.to ? (
+                                    <>
+                                    {format(exportDateRange.from, "LLL dd, y")} -{" "}
+                                    {format(exportDateRange.to, "LLL dd, y")}
+                                    </>
+                                ) : (
+                                    format(exportDateRange.from, "LLL dd, y")
+                                )
+                                ) : (
+                                <span>Pick a date range</span>
+                                )}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={exportDateRange?.from}
+                                selected={exportDateRange}
+                                onSelect={setExportDateRange}
+                                numberOfMonths={2}
+                            />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>Cancel</Button>
+                        <Button 
+                            onClick={() => handleExport(exportType!, exportDateRange)}
+                            disabled={!exportDateRange?.from || !exportDateRange?.to}
+                        >
+                            <Download className="mr-2" />
+                            Export Report
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
