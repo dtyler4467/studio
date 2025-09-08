@@ -74,6 +74,7 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard/dispatch', icon: Tv, label: 'O.T.R. Load Board', roles: ['Admin', 'Dispatcher'] },
+  { href: '/dashboard/local-loads', icon: ClipboardList, label: 'Local Load board', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
