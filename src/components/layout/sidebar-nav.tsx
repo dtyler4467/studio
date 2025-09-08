@@ -38,7 +38,7 @@ import {
   History,
   CreditCard,
   GraduationCap,
-  Map,
+  ParkingCircle,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -56,7 +56,8 @@ const navItems = [
         { href: '/dashboard/yard-management', label: 'Overview' },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search },
         { href: '/dashboard/yard-management/check-in', label: 'Check In/Out' },
-        { href: '/dashboard/yard-management/lane-manager', label: 'Lane Manager', icon: Map },
+        { href: '/dashboard/yard-management/dock-doors', label: 'Dock Doors', icon: Warehouse },
+        { href: '/dashboard/yard-management/parking-lanes', label: 'Parking Lanes', icon: ParkingCircle },
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History },
     ]
   },

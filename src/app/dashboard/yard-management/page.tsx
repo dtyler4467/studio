@@ -1,7 +1,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { BarChart, Truck, Warehouse, History } from 'lucide-react';
+import { BarChart, Truck, Warehouse, History, Map } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { YardActivityLog } from '@/components/dashboard/yard-activity-log';
@@ -54,28 +54,38 @@ export default function YardManagementOverviewPage() {
           </Card>
         </div>
         
-        <div className="grid gap-4 lg:grid-cols-2 lg:gap-8">
-            <Card>
+        <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
             <CardHeader>
                 <CardTitle className="font-headline">Quick Actions</CardTitle>
                 <CardDescription>
                 Start common yard management tasks.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-4">
-                <Button asChild>
+            <CardContent className="grid grid-cols-1 gap-4">
+                <Button asChild size="lg">
                     <Link href="/dashboard/yard-management/check-in">
                         <Truck className="mr-2" /> Inbound/Outbound Processing
                     </Link>
                 </Button>
                 <Button variant="secondary" asChild>
+                    <Link href="/dashboard/yard-management/dock-doors">
+                        <Warehouse className="mr-2" /> View Dock Doors
+                    </Link>
+                </Button>
+                 <Button variant="secondary" asChild>
+                    <Link href="/dashboard/yard-management/parking-lanes">
+                        <Map className="mr-2" /> View Parking Lanes
+                    </Link>
+                </Button>
+                <Button variant="outline" asChild>
                     <Link href="/dashboard/yard-management/history">
-                        <BarChart className="mr-2" /> View Yard History
+                        <History className="mr-2" /> View Full Yard History
                     </Link>
                 </Button>
             </CardContent>
             </Card>
-             <Card>
+             <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle className="font-headline">Recent Gate Activity</CardTitle>
                 <CardDescription>
