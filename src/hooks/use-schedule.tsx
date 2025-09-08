@@ -134,6 +134,20 @@ export type LocalLoadBoard = {
   number?: number;
 };
 
+export type Appointment = {
+    id: string;
+    status: 'Scheduled' | 'Arrived' | 'Departed' | 'Missed';
+    type: 'Inbound' | 'Outbound';
+    carrier: string;
+    scac: string;
+    bolNumber: string;
+    poNumber: string;
+    sealNumber: string;
+    driverName: string;
+    appointmentTime: Date;
+    door?: string;
+};
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -152,6 +166,7 @@ type ScheduleContextType = {
   timeClockEvents: TimeClockEvent[];
   localLoadBoards: LocalLoadBoard[];
   loadBoardHub: LocalLoadBoard;
+  appointments: Appointment[];
   updateLoadBoardHubName: (name: string) => void;
   addLocalLoadBoard: () => void;
   deleteLocalLoadBoard: (id: string) => void;
@@ -185,6 +200,8 @@ type ScheduleContextType = {
   restoreDeletedItem: (logId: string) => void;
   addTimeClockEvent: (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => void;
   updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'status'>) => void;
+  updateAppointmentStatus: (appointmentId: string, status: Appointment['status']) => void;
 };
 
 const initialShifts: Shift[] = [
@@ -364,6 +381,14 @@ const initialLocalLoadBoards: LocalLoadBoard[] = [
 
 const initialLoadBoardHub: LocalLoadBoard = { id: 'hub-1', name: 'Load board hub' };
 
+const initialAppointments: Appointment[] = [
+    { id: 'APP001', status: 'Scheduled', type: 'Inbound', carrier: 'Knight-Swift', scac: 'KNX', bolNumber: 'BOL123', poNumber: 'PO456', sealNumber: 'S123', driverName: 'John Doe', appointmentTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), door: 'D4' },
+    { id: 'APP002', status: 'Arrived', type: 'Inbound', carrier: 'J.B. Hunt', scac: 'JBHT', bolNumber: 'BOL456', poNumber: 'PO789', sealNumber: 'S456', driverName: 'Jane Smith', appointmentTime: new Date(new Date().getTime() - 1 * 60 * 60 * 1000), door: 'D2' },
+    { id: 'APP003', status: 'Scheduled', type: 'Outbound', carrier: 'Schneider', scac: 'SNDR', bolNumber: 'BOL789', poNumber: 'PO123', sealNumber: 'S789', driverName: 'Mike Johnson', appointmentTime: new Date(new Date().getTime() + 4 * 60 * 60 * 1000) },
+    { id: 'APP004', status: 'Departed', type: 'Outbound', carrier: 'Werner', scac: 'WERN', bolNumber: 'BOL101', poNumber: 'PO112', sealNumber: 'S101', driverName: 'Emily Davis', appointmentTime: new Date(new Date().getTime() - 24 * 60 * 60 * 1000) },
+    { id: 'APP005', status: 'Missed', type: 'Inbound', carrier: 'Swift Logistics', scac: 'SWFT', bolNumber: 'BOL112', poNumber: 'PO113', sealNumber: 'S112', driverName: 'Chris Brown', appointmentTime: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000) },
+]
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -383,6 +408,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [timeClockEvents, setTimeClockEvents] = useState<TimeClockEvent[]>(initialTimeClockEvents);
   const [localLoadBoards, setLocalLoadBoards] = useState<LocalLoadBoard[]>(initialLocalLoadBoards);
   const [loadBoardHub, setLoadBoardHub] = useState<LocalLoadBoard>(initialLoadBoardHub);
+  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -657,11 +683,24 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     
     const updateLoadBoardHubName = (name: string) => {
         setLoadBoardHub(prev => ({...prev, name}));
-    }
+    };
+
+    const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) => {
+        const newAppointment: Appointment = {
+            ...appointment,
+            id: `APP${Date.now()}`,
+            status: 'Scheduled',
+        };
+        setAppointments(prev => [newAppointment, ...prev]);
+    };
+
+    const updateAppointmentStatus = (appointmentId: string, status: Appointment['status']) => {
+        setAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
+    };
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
