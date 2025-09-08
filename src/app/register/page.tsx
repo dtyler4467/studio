@@ -26,6 +26,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<EmployeeRole>('Driver');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [activationCode, setActivationCode] = useState('');
   const router = useRouter();
   const { toast } = useToast();
   const { registerUser } = useSchedule();
@@ -44,7 +45,7 @@ export default function RegisterPage() {
       registerUser({ name, email, phoneNumber, role });
       toast({
         title: 'Registration Submitted',
-        description: "Your registration is pending administrator approval.",
+        description: `Your registration is pending administrator approval. Your activation code has been received.`,
       });
       router.push('/');
     } catch (error: any) {
@@ -70,6 +71,17 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="activationCode">Activation Code</Label>
+              <Input
+                id="activationCode"
+                type="text"
+                placeholder="Enter company activation code"
+                value={activationCode}
+                onChange={(e) => setActivationCode(e.target.value)}
+                required
+              />
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
