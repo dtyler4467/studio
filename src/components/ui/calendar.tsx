@@ -4,6 +4,7 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker, DropdownProps } from "react-day-picker"
+import { getYear, getMonth } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -60,47 +61,58 @@ function Calendar({
       components={{
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-        Dropdown: ({ value, onChange, children, ...props }) => {
-          const options = React.Children.toArray(
-            children
-          ) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[]
-          const selected = options.find((child) => child.props.value === value)
-          const handleChange = (value: string) => {
-            const changeEvent = {
-              target: { value },
-            } as React.ChangeEvent<HTMLSelectElement>
-            onChange?.(changeEvent)
-          }
+        Caption: ({ displayMonth }) => {
+          const fromYear = props.fromYear || getYear(new Date()) - 100;
+          const toYear = props.toYear || getYear(new Date());
+          const years = Array.from({ length: toYear - fromYear + 1 }, (_, i) => fromYear + i);
+          const months = [
+              "January", "February", "March", "April", "May", "June", 
+              "July", "August", "September", "October", "November", "December"
+          ];
+
           return (
-            <Select
-              value={value?.toString()}
-              onValueChange={(value) => {
-                handleChange(value)
-              }}
-            >
-              <SelectTrigger className="pr-1.5 focus:ring-0">
-                <SelectValue>{selected?.props?.children}</SelectValue>
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <ScrollArea className="h-80">
-                  {options.map((option, id: number) => (
-                    <SelectItem
-                      key={`${option.props.value}-${id}`}
-                      value={option.props.value?.toString() ?? ""}
-                    >
-                      {option.props.children}
-                    </SelectItem>
-                  ))}
-                </ScrollArea>
-              </SelectContent>
-            </Select>
+            <div className="flex justify-center gap-2">
+                <Select
+                    value={String(getMonth(displayMonth))}
+                    onValueChange={(value) => {
+                         const newDate = new Date(displayMonth);
+                         newDate.setMonth(parseInt(value));
+                         props.onMonthChange?.(newDate);
+                    }}
+                >
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Select month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                         {months.map((month, index) => (
+                           <SelectItem key={month} value={String(index)}>{month}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <Select
+                    value={String(getYear(displayMonth))}
+                    onValueChange={(value) => {
+                         const newDate = new Date(displayMonth);
+                         newDate.setFullYear(parseInt(value));
+                         props.onMonthChange?.(newDate);
+                    }}
+                >
+                    <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <ScrollArea className="h-48">
+                            {years.map((year) => (
+                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                            ))}
+                        </ScrollArea>
+                    </SelectContent>
+                </Select>
+            </div>
           )
         },
       }}
       {...props}
-      captionLayout={props.captionLayout || 'dropdown-buttons'}
-      fromYear={props.fromYear || new Date().getFullYear() - 100}
-      toYear={props.toYear || new Date().getFullYear()}
     />
   )
 }
