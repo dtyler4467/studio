@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -77,7 +76,6 @@ const navItems: NavItem[] = [
   { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
-  { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
   { 
     href: '#', 
@@ -86,6 +84,7 @@ const navItems: NavItem[] = [
     roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
     subItems: [
         { href: '/dashboard/schedule', icon: Calendar, label: 'My Schedule', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
         { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
         { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
@@ -94,11 +93,19 @@ const navItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration', icon: Shield, label: 'Overview', roles: ['Admin'] },
-    { href: '/dashboard/administration/shifts', icon: CalendarCog, label: 'Shift Management', roles: ['Admin'] },
+    { 
+        href: '/dashboard/administration/time-clock', 
+        icon: Clock, 
+        label: 'Time & Attendance',
+        roles: ['Admin'],
+        subItems: [
+            { href: '/dashboard/administration/time-clock', icon: Clock, label: 'Time Clock', roles: ['Admin'] },
+            { href: '/dashboard/administration/shifts', icon: CalendarCog, label: 'Shift Management', roles: ['Admin'] },
+        ]
+    },
     { href: '/dashboard/administration/time-off', icon: CalendarCheck, label: 'Time Off Requests', roles: ['Admin'] },
     { href: '/dashboard/administration/registrations', icon: UserPlus, label: 'Registrations', roles: ['Admin'] },
     { href: '/dashboard/administration/personnel', icon: Users, label: 'Personnel', roles: ['Admin'] },
-    { href: '/dashboard/administration/time-clock', icon: Clock, label: 'Time Clock', roles: ['Admin'] },
     { href: '/dashboard/administration/expense-report', icon: CreditCard, label: 'Expense Reports', roles: ['Admin'] },
     { href: '/dashboard/administration/training', icon: GraduationCap, label: 'Training Management', roles: ['Admin'] },
     { href: '/dashboard/administration/trash', icon: Trash2, label: 'Trash', roles: ['Admin'] },
@@ -112,15 +119,26 @@ export function SidebarNav() {
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
+        pathname.startsWith('/dashboard/time-clock') ||
         pathname.startsWith('/dashboard/time-off') ||
         pathname.startsWith('/dashboard/resources')
     );
+     // Auto-open admin sub-menus if the current path is inside them
+     const newOpenAdminSubMenus: Record<string, boolean> = {};
+     adminNavItems.forEach(item => {
+         if (item.subItems) {
+            const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
+            newOpenAdminSubMenus[item.label] = isActive;
+         }
+     });
+     setOpenAdminSubMenus(newOpenAdminSubMenus);
   }, [pathname]);
 
   if (!currentUser) {
@@ -232,16 +250,47 @@ export function SidebarNav() {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                         <SidebarMenuSub>
-                            {filteredAdminNavItems.map((item) => (
-                                <SidebarMenuSubItem key={item.href}>
-                                    <SidebarMenuSubButton asChild isActive={isSubItemActive(item.href)}>
-                                        <Link href={item.href}>
-                                            <item.icon />
-                                            <span>{item.label}</span>
-                                        </Link>
-                                    </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                            ))}
+                             {filteredAdminNavItems.map((item) => {
+                                 if (item.subItems) {
+                                     const isOpen = openAdminSubMenus[item.label] || false;
+                                     const setIsOpen = (open: boolean) => setOpenAdminSubMenus(prev => ({...prev, [item.label]: open}));
+                                     return (
+                                         <Collapsible key={item.href} open={isOpen} onOpenChange={setIsOpen}>
+                                             <CollapsibleTrigger asChild>
+                                                 <SidebarMenuSubButton isActive={item.subItems.some(si => pathname.startsWith(si.href))}>
+                                                     <item.icon />
+                                                     <span>{item.label}</span>
+                                                     <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                                                 </SidebarMenuSubButton>
+                                             </CollapsibleTrigger>
+                                             <CollapsibleContent>
+                                                 <SidebarMenuSub>
+                                                     {item.subItems.map((subItem) => (
+                                                          <SidebarMenuSubItem key={subItem.href}>
+                                                            <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)} size="sm">
+                                                                <Link href={subItem.href}>
+                                                                    <subItem.icon />
+                                                                    <span>{subItem.label}</span>
+                                                                </Link>
+                                                            </SidebarMenuSubButton>
+                                                         </SidebarMenuSubItem>
+                                                     ))}
+                                                 </SidebarMenuSub>
+                                             </CollapsibleContent>
+                                         </Collapsible>
+                                     )
+                                 }
+                                 return (
+                                     <SidebarMenuSubItem key={item.href}>
+                                        <SidebarMenuSubButton asChild isActive={isSubItemActive(item.href)}>
+                                            <Link href={item.href}>
+                                                <item.icon />
+                                                <span>{item.label}</span>
+                                            </Link>
+                                        </SidebarMenuSubButton>
+                                     </SidebarMenuSubItem>
+                                 )
+                             })}
                         </SidebarMenuSub>
                     </CollapsibleContent>
                 </Collapsible>
