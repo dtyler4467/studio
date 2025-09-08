@@ -128,6 +128,12 @@ export type TimeClockEvent = {
     status?: 'Pending' | 'Approved' | 'Denied';
 }
 
+export type LocalLoadBoard = {
+  id: string;
+  name: string;
+  number: number;
+};
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -144,6 +150,10 @@ type ScheduleContextType = {
   parkingLanes: string[];
   deletionLogs: DeletionLog[];
   timeClockEvents: TimeClockEvent[];
+  localLoadBoards: LocalLoadBoard[];
+  addLocalLoadBoard: () => void;
+  deleteLocalLoadBoard: (id: string) => void;
+  updateLocalLoadBoard: (id: string, name: string, number: number) => void;
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (shift: Shift) => void;
   deleteShift: (shiftId: string, deletedBy: string) => void;
@@ -346,6 +356,10 @@ const initialTimeClockEvents: TimeClockEvent[] = [
     { id: 'TC005', employeeId: 'USR003', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), type: 'in', status: 'Denied' },
 ];
 
+const initialLocalLoadBoards: LocalLoadBoard[] = [
+    { id: 'llb-1', name: 'Local Load board', number: 1 },
+];
+
 
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -364,6 +378,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [parkingLanes, setParkingLanes] = useState<string[]>(initialParkingLanes);
   const [deletionLogs, setDeletionLogs] = useState<DeletionLog[]>(initialDeletionLogs);
   const [timeClockEvents, setTimeClockEvents] = useState<TimeClockEvent[]>(initialTimeClockEvents);
+  const [localLoadBoards, setLocalLoadBoards] = useState<LocalLoadBoard[]>(initialLocalLoadBoards);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -609,9 +624,32 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setTimeClockEvents(prev => prev.map(e => e.id === clockInId ? { ...e, status } : e));
     }
 
+    const addLocalLoadBoard = () => {
+        setLocalLoadBoards(prev => {
+            const nextNumber = prev.length > 0 ? Math.max(...prev.map(b => b.number)) + 1 : 1;
+            const newBoard: LocalLoadBoard = {
+                id: `llb-${Date.now()}`,
+                name: 'Local Load board',
+                number: nextNumber,
+            };
+            return [...prev, newBoard];
+        });
+    };
+
+    const deleteLocalLoadBoard = (id: string) => {
+        setLocalLoadBoards(prev => {
+            if (prev.length <= 1) return prev; // Don't delete the last one
+            return prev.filter(board => board.id !== id);
+        });
+    };
+
+    const updateLocalLoadBoard = (id: string, name: string, number: number) => {
+        setLocalLoadBoards(prev => prev.map(board => board.id === id ? { ...board, name, number } : board));
+    };
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
@@ -624,5 +662,3 @@ export const useSchedule = () => {
   }
   return context;
 };
-
-    

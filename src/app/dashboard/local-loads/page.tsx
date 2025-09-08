@@ -1,25 +1,28 @@
 
-import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { LoadsDataTable } from '@/components/dashboard/loads-data-table';
+"use client";
 
-export default function LocalLoadsPage() {
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSchedule } from '@/hooks/use-schedule';
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function LocalLoadsRedirectPage() {
+  const router = useRouter();
+  const { localLoadBoards } = useSchedule();
+
+  useEffect(() => {
+    // Redirect to the first available local load board
+    if (localLoadBoards.length > 0) {
+      router.replace(`/dashboard/local-loads/${localLoadBoards[0].id}`);
+    }
+  }, [router, localLoadBoards]);
+
   return (
-    <div className="flex flex-col w-full">
-      <Header pageTitle="Local Load Board" />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Local Loads</CardTitle>
-            <CardDescription>
-              Manage local routes, assign drivers, and track active shipments.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LoadsDataTable isEditable={true} />
-          </CardContent>
-        </Card>
-      </main>
+     <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-4 w-48" />
+        </div>
     </div>
   );
 }

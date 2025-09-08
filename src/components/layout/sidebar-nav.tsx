@@ -41,13 +41,21 @@ import {
   Trash2,
   Clock,
   Briefcase,
+  Pencil,
+  MinusCircle,
+  PlusCircle,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { useSchedule, EmployeeRole } from '@/hooks/use-schedule';
+import { useSchedule, EmployeeRole, LocalLoadBoard } from '@/hooks/use-schedule';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 type NavItem = {
     href: string;
@@ -74,7 +82,6 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard/dispatch', icon: Tv, label: 'O.T.R. Load Board', roles: ['Admin', 'Dispatcher'] },
-  { href: '/dashboard/local-loads', icon: ClipboardList, label: 'Local Load board', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
@@ -113,14 +120,78 @@ const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration/print', icon: Printer, label: 'Print/Email', roles: ['Admin'] },
 ];
 
+const EditLoadBoardDialog = ({ board, onOpenChange, isOpen }: { board: LocalLoadBoard | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
+    const { updateLocalLoadBoard } = useSchedule();
+    const { toast } = useToast();
+    const [name, setName] = useState(board?.name || '');
+    const [number, setNumber] = useState(board?.number.toString() || '');
+
+    useEffect(() => {
+        if (board) {
+            setName(board.name);
+            setNumber(board.number.toString());
+        }
+    }, [board]);
+
+    const handleSave = () => {
+        if (board) {
+            const num = parseInt(number, 10);
+            if (isNaN(num)) {
+                toast({ variant: 'destructive', title: 'Invalid Number', description: 'Please enter a valid number for the board.' });
+                return;
+            }
+            updateLocalLoadBoard(board.id, name, num);
+            toast({ title: 'Load Board Updated', description: 'The load board has been successfully updated.' });
+            onOpenChange(false);
+        }
+    }
+
+    if (!board) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Load Board</DialogTitle>
+                    <DialogDescription>
+                        Change the name and number for this load board.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">Name</Label>
+                        <Input id="name" value={name} onChange={e => setName(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="number" className="text-right">Number</Label>
+                        <Input id="number" type="number" value={number} onChange={e => setNumber(e.target.value)} className="col-span-3" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export function SidebarNav() {
   const pathname = usePathname();
-  const { currentUser } = useSchedule();
+  const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard } = useSchedule();
   const { state } = useSidebar();
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
+  const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<LocalLoadBoard | null>(null);
+  
+  const handleOpenEditDialog = (board: LocalLoadBoard) => {
+      setSelectedBoard(board);
+      setIsEditBoardOpen(true);
+  };
+
 
   useEffect(() => {
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
@@ -153,11 +224,15 @@ export function SidebarNav() {
     if (href === '/dashboard/yard-management' || href === '/dashboard/administration') {
         return pathname === href;
     }
+    if (href === '/dashboard/local-loads') {
+        return pathname.startsWith(href);
+    }
     return pathname.startsWith(href);
   }
   
   const filteredNavItems = navItems.filter(item => item.roles.includes(role));
   const filteredAdminNavItems = adminNavItems.filter(item => item.roles.includes(role));
+  const canManageLocalLoadBoards = role === 'Admin' || role === 'Dispatcher';
 
 
   return (
@@ -232,6 +307,42 @@ export function SidebarNav() {
                 </SidebarMenuItem>
              );
           })}
+
+          {canManageLocalLoadBoards && localLoadBoards.map(board => (
+              <SidebarMenuItem key={board.id}>
+                 <div className="flex items-center gap-1 w-full">
+                    <SidebarMenuButton
+                        asChild
+                        isActive={pathname === `/dashboard/local-loads/${board.id}`}
+                        tooltip={`${board.name} ${board.number}`}
+                        className="justify-start group flex-grow"
+                    >
+                        <Link href={`/dashboard/local-loads/${board.id}`}>
+                            <ClipboardList />
+                            <span>{`${board.name} ${board.number}`}</span>
+                        </Link>
+                    </SidebarMenuButton>
+                     <div className="flex group-data-[collapsible=icon]:hidden">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditDialog(board)}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteLocalLoadBoard(board.id)} disabled={localLoadBoards.length <= 1}>
+                            <MinusCircle className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+              </SidebarMenuItem>
+          ))}
+            {canManageLocalLoadBoards && (
+                 <SidebarMenuItem>
+                     <Button variant="outline" className="w-full justify-center group-data-[collapsible=icon]:justify-start" onClick={() => addLocalLoadBoard()}>
+                        <PlusCircle className="group-data-[collapsible=icon]:mx-auto" />
+                         <span className="group-data-[collapsible=icon]:hidden ml-2">Add Load Board</span>
+                    </Button>
+                </SidebarMenuItem>
+            )}
+
+
         </SidebarMenu>
         
         {filteredAdminNavItems.length > 0 && (
@@ -318,6 +429,7 @@ export function SidebarNav() {
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+       <EditLoadBoardDialog board={selectedBoard} isOpen={isEditBoardOpen} onOpenChange={setIsEditBoardOpen} />
     </Sidebar>
   );
 }
