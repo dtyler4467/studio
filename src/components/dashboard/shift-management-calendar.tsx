@@ -102,12 +102,15 @@ export function ShiftManagementCalendar() {
         }
 
         return (
-            <div className={cn("relative flex flex-col h-32 w-full p-1 border-t border-r", holiday && "bg-accent/10", dateApprovedTimeOff.length > 0 && "bg-destructive/5")}>
+            <div 
+                className={cn("relative flex flex-col h-32 w-full p-1 border-t border-r cursor-pointer transition-colors hover:bg-muted/50", holiday && "bg-accent/10", dateApprovedTimeOff.length > 0 && "bg-destructive/5")}
+                onClick={() => handleOpenDialogForNew(date)}
+            >
                 <div className="flex items-center justify-between text-sm font-medium">
                     <span className={cn(holiday && "text-accent-foreground font-bold")}>{format(date, 'd')}</span>
                      {holiday ? (
                         <Tooltip delayDuration={0}>
-                            <TooltipTrigger>
+                            <TooltipTrigger onClick={(e) => e.stopPropagation()}>
                                 <PartyPopper className="h-5 w-5 text-accent" />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -115,7 +118,7 @@ export function ShiftManagementCalendar() {
                             </TooltipContent>
                         </Tooltip>
                     ) : (
-                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleOpenDialogForNew(date)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={(e) => { e.stopPropagation(); handleOpenDialogForNew(date); }}>
                             <PlusCircle className="h-4 w-4" />
                         </Button>
                     )}
@@ -124,8 +127,8 @@ export function ShiftManagementCalendar() {
                     <div className="space-y-1 pr-2">
                          {dateApprovedTimeOff.map(req => (
                             <Tooltip key={req.id} delayDuration={0}>
-                                <TooltipTrigger asChild>
-                                    <div className="w-full text-left p-1.5 rounded-md bg-destructive/10 text-xs">
+                                <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <div className="w-full text-left p-1.5 rounded-md bg-destructive/10 text-xs cursor-default">
                                         <p className="font-semibold text-destructive truncate flex items-center gap-1.5"><Plane className="w-3 h-3" /> {employees.find(e => e.id === req.employeeId)?.name}</p>
                                     </div>
                                 </TooltipTrigger>
@@ -137,7 +140,7 @@ export function ShiftManagementCalendar() {
                         {dateShifts.map(shift => (
                             <button 
                                 key={shift.id} 
-                                onClick={() => handleOpenDialogForEdit(shift)}
+                                onClick={(e) => { e.stopPropagation(); handleOpenDialogForEdit(shift); }}
                                 className="w-full text-left p-1.5 rounded-md bg-muted text-xs transition-colors hover:bg-primary/10"
                             >
                                 <p className="font-semibold truncate">{employees.find(e => e.id === shift.employeeId)?.name}</p>
@@ -165,7 +168,7 @@ export function ShiftManagementCalendar() {
                         head_cell: 'w-full text-muted-foreground text-sm font-normal',
                         row: 'flex w-full',
                         cell: 'w-full',
-                        day: 'w-full h-auto',
+                        day: 'w-full h-auto p-0',
                     }}
                 />
             </div>
