@@ -13,7 +13,7 @@ import {
   SortingState,
   ColumnFiltersState,
 } from "@tanstack/react-table"
-import { format, differenceInMinutes, formatDistanceStrict, isSameDay, isWithinInterval } from "date-fns"
+import { format, differenceInMinutes, formatDistanceStrict, isSameDay, isWithinInterval, isValid, parse } from "date-fns"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 import { DateRange } from "react-day-picker";
@@ -306,6 +306,20 @@ export function TimeClockAdminTable() {
             columnFilters,
         }
     })
+    
+    const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'from' | 'to') => {
+        const { value } = e.target;
+        const parsedDate = parse(value, 'yyyy-MM-dd', new Date());
+        
+        if (isValid(parsedDate)) {
+            if (field === 'from') {
+                setExportDateRange(prev => ({ from: parsedDate, to: prev?.to }));
+            } else {
+                setExportDateRange(prev => ({ from: prev?.from, to: parsedDate }));
+            }
+        }
+    };
+
 
     return (
         <div className="w-full">
@@ -463,10 +477,30 @@ export function TimeClockAdminTable() {
                     <DialogHeader>
                         <DialogTitle>Select Export Date Range</DialogTitle>
                         <DialogDescription>
-                            Please select a date range for the time clock report.
+                            Please select a date range for the time clock report. You can also manually enter dates.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="from-date">From</Label>
+                                <Input 
+                                    id="from-date"
+                                    type="date"
+                                    value={exportDateRange?.from ? format(exportDateRange.from, 'yyyy-MM-dd') : ''}
+                                    onChange={(e) => handleDateInputChange(e, 'from')}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="to-date">To</Label>
+                                <Input 
+                                    id="to-date"
+                                    type="date"
+                                    value={exportDateRange?.to ? format(exportDateRange.to, 'yyyy-MM-dd') : ''}
+                                    onChange={(e) => handleDateInputChange(e, 'to')}
+                                />
+                            </div>
+                        </div>
                         <Popover>
                             <PopoverTrigger asChild>
                             <Button
@@ -501,8 +535,8 @@ export function TimeClockAdminTable() {
                                 onSelect={setExportDateRange}
                                 numberOfMonths={2}
                                 captionLayout="dropdown-nav"
-                                fromYear={2020}
-                                toYear={2030}
+                                fromYear={1900}
+                                toYear={2100}
                             />
                             </PopoverContent>
                         </Popover>
@@ -522,4 +556,3 @@ export function TimeClockAdminTable() {
         </div>
     )
 }
-
