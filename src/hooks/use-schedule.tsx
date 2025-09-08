@@ -299,6 +299,25 @@ const initialTrainingAssignments: TrainingAssignment[] = [
 const initialWarehouseDoors = Array.from({ length: 10 }, (_, i) => `D${i + 1}`);
 const initialParkingLanes = Array.from({ length: 20 }, (_, i) => `L${i + 1}`);
 
+const initialDeletionLogs: DeletionLog[] = [
+    {
+        id: 'LOG' + Date.now(),
+        deletedItemId: 'SH005',
+        itemType: 'Shift',
+        deletedBy: 'USR004',
+        deletedAt: new Date(),
+        originalData: {
+            id: 'SH005',
+            date: formatISO(addDays(new Date(), 5), { representation: 'date' }),
+            employeeId: 'USR002',
+            employeeName: 'Jane Doe',
+            title: 'Night Shift',
+            startTime: '22:00',
+            endTime: '06:00'
+        }
+    }
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -314,7 +333,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [trainingAssignments, setTrainingAssignments] = useState<TrainingAssignment[]>(initialTrainingAssignments);
   const [warehouseDoors, setWarehouseDoors] = useState<string[]>(initialWarehouseDoors);
   const [parkingLanes, setParkingLanes] = useState<string[]>(initialParkingLanes);
-  const [deletionLogs, setDeletionLogs] = useState<DeletionLog[]>([]);
+  const [deletionLogs, setDeletionLogs] = useState<DeletionLog[]>(initialDeletionLogs);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
