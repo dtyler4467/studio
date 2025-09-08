@@ -34,7 +34,7 @@ export const formSchema = z.object({
   carrier: z.string().min(2, "Carrier name is required."),
   scac: z.string().length(4, "SCAC must be 4 letters.").optional().or(z.literal("")),
   driverName: z.string().min(2, "Driver name is required."),
-  loadNumber: z.string().optional(),
+  loadNumber: z.string().min(1, "Load/BOL number is required."),
   assignmentType: z.enum(["bobtail", "empty", "material", "door_assignment", "lane_assignment"]),
   assignmentValue: z.string().optional(),
 });
@@ -188,7 +188,7 @@ export function YardCheckInForm({ form }: YardCheckInFormProps) {
             name="loadNumber"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Load/BOL Number (Optional)</FormLabel>
+                <FormLabel>Load/BOL Number</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g. LD004, BOL12345" {...field} />
                 </FormControl>

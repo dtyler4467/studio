@@ -51,7 +51,7 @@ const createPrintableHTML = (event: YardEvent) => {
             <tr><td>Carrier</td><td>${event.carrier} (SCAC: ${event.scac})</td></tr>
             <tr><td>Driver</td><td>${event.driverName}</td></tr>
             <tr><td>Clerk</td><td>${event.clerkName}</td></tr>
-            <tr><td>Load/BOL #</td><td>${event.loadNumber || 'N/A'}</td></tr>
+            <tr><td>Load/BOL #</td><td>${event.loadNumber}</td></tr>
             <tr><td>Assignment</td><td class="capitalize">${event.assignmentType.replace(/_/g, ' ')}${event.assignmentValue ? `: ${event.assignmentValue}` : ''}</td></tr>
           </table>
           ${event.documentDataUri ? `<h2>Attached Document</h2><img src="${event.documentDataUri}" alt="Attached Document" />` : '<h2>No Document Attached</h2>'}
