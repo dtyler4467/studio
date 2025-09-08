@@ -4,7 +4,7 @@
 import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
-import { MoreHorizontal, Trash2 } from "lucide-react"
+import { MoreHorizontal, Trash2, FileText } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -105,6 +105,23 @@ export function PersonnelDataTable() {
                         <SelectItem value="Driver">Driver</SelectItem>
                     </SelectContent>
                 </Select>
+            )
+        }
+      },
+      {
+        id: "documents",
+        header: "Documents",
+        cell: ({ row }) => {
+            const employee = row.original;
+            return (
+                 <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => alert(`Viewing documents for ${employee.name}`)}
+                 >
+                    <FileText className="mr-2" />
+                    View Docs
+                 </Button>
             )
         }
       },
