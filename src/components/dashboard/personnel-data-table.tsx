@@ -38,6 +38,8 @@ type Employee = {
     name: string;
     email?: string;
     role: 'Admin' | 'Dispatcher' | 'Driver';
+    personnelId?: string;
+    phoneNumber?: string;
 }
 
 export function PersonnelDataTable() {
@@ -79,12 +81,20 @@ export function PersonnelDataTable() {
 
     const columns: ColumnDef<Employee>[] = [
       {
+        accessorKey: "personnelId",
+        header: "Personnel ID #",
+      },
+      {
         accessorKey: "name",
         header: "Name",
       },
       {
         accessorKey: "email",
         header: "Email",
+      },
+       {
+        accessorKey: "phoneNumber",
+        header: "Phone Number",
       },
       {
         accessorKey: "role",
