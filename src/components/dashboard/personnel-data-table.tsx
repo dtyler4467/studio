@@ -47,14 +47,15 @@ const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, 
         name: '',
         email: '',
         phoneNumber: '',
-        role: 'Driver' as Employee['role']
+        role: 'Driver' as Employee['role'],
+        workLocation: 'Main Warehouse',
     });
 
     const handleSave = () => {
         if (newEmployee.name && newEmployee.email) {
             onSave(newEmployee);
             onOpenChange(false);
-            setNewEmployee({ name: '', email: '', phoneNumber: '', role: 'Driver' }); // Reset form
+            setNewEmployee({ name: '', email: '', phoneNumber: '', role: 'Driver', workLocation: 'Main Warehouse' }); // Reset form
         }
     };
 
@@ -79,6 +80,10 @@ const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, 
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="phone" className="text-right">Phone</Label>
                         <Input id="phone" value={newEmployee.phoneNumber} onChange={e => setNewEmployee({...newEmployee, phoneNumber: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="workLocation" className="text-right">Work Location</Label>
+                        <Input id="workLocation" value={newEmployee.workLocation} onChange={e => setNewEmployee({...newEmployee, workLocation: e.target.value})} className="col-span-3" />
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="role" className="text-right">Role</Label>
@@ -140,6 +145,10 @@ const EditEmployeeDialog = ({ employee, isOpen, onOpenChange, onSave }: { employ
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="phone" className="text-right">Phone</Label>
                         <Input id="phone" value={editedEmployee.phoneNumber} onChange={e => setEditedEmployee({...editedEmployee, phoneNumber: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="workLocation" className="text-right">Work Location</Label>
+                        <Input id="workLocation" value={editedEmployee.workLocation} onChange={e => setEditedEmployee({...editedEmployee, workLocation: e.target.value})} className="col-span-3" />
                     </div>
                 </div>
                 <DialogFooter>
@@ -223,13 +232,14 @@ export function PersonnelDataTable() {
     };
 
     const exportToCsv = () => {
-        const headers = ["Personnel ID", "Name", "Email", "Phone Number", "Role"];
+        const headers = ["Personnel ID", "Name", "Email", "Phone Number", "Role", "Work Location"];
         const rows = table.getRowModel().rows.map(row => row.original).map(emp => [
             emp.personnelId,
             `"${emp.name}"`,
             emp.email,
             emp.phoneNumber,
-            emp.role
+            emp.role,
+            emp.workLocation || 'N/A'
         ].join(','));
 
         const csvContent = "data:text/csv;charset=utf-8," 
@@ -266,6 +276,7 @@ export function PersonnelDataTable() {
                     const email = String(row['Email']);
                     const role = String(row['Role']) as Employee['role'];
                     const phoneNumber = String(row['Phone Number']);
+                    const workLocation = String(row['Work Location']);
 
                     if (!name || !email) {
                         throw new Error(`Row is missing required fields (Name, Email).`);
@@ -275,7 +286,7 @@ export function PersonnelDataTable() {
                          throw new Error(`Invalid role '${role}' for user ${name}. Valid roles are: ${validRoles.join(', ')}.`);
                     }
 
-                    return { name, email, phoneNumber, role };
+                    return { name, email, phoneNumber, role, workLocation };
                 });
 
                 bulkAddEmployees(newEmployees);
@@ -318,6 +329,11 @@ export function PersonnelDataTable() {
        {
         accessorKey: "phoneNumber",
         header: "Phone Number",
+      },
+      {
+        accessorKey: "workLocation",
+        header: "Work Location",
+        cell: ({ row }) => row.original.workLocation || 'N/A',
       },
       {
         accessorKey: "role",
@@ -506,5 +522,3 @@ export function PersonnelDataTable() {
     </div>
   )
 }
-
-    
