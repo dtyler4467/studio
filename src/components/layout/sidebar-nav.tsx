@@ -42,7 +42,15 @@ import { useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/yard-management', icon: Warehouse, label: 'Yard Management' },
+  { 
+    href: '/dashboard/yard-management', 
+    icon: Warehouse, 
+    label: 'Yard Management',
+    subItems: [
+        { href: '/dashboard/yard-management', label: 'Overview' },
+        { href: '/dashboard/yard-management/check-in', label: 'Inbound/Outbound' },
+    ]
+  },
   { href: '/dashboard/dispatch', icon: Send, label: 'Dispatch' },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board' },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking' },
@@ -66,8 +74,6 @@ export function SidebarNav() {
   const { state } = useSidebar();
   const [isAdminOpen, setIsAdminOpen] = useState(true);
 
-  const isAnyAdminActive = adminNavItems.some(item => pathname.startsWith(item.href));
-
   return (
     <Sidebar>
       <SidebarHeader>
@@ -79,18 +85,46 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.label}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+             <Collapsible key={item.href} asChild>
+                 <SidebarMenuItem>
+                 <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                        asChild={!item.subItems}
+                        isActive={pathname.startsWith(item.href) && (!item.subItems || item.subItems.length === 0)}
+                        tooltip={item.label}
+                        className="justify-start w-full group"
+                    >
+                        {item.subItems ? (
+                             <button className="w-full">
+                                <item.icon />
+                                <span>{item.label}</span>
+                                <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", "group-data-[state=open]:rotate-180")} />
+                             </button>
+                        ) : (
+                            <Link href={item.href}>
+                                <item.icon />
+                                <span>{item.label}</span>
+                            </Link>
+                        )}
+                    </SidebarMenuButton>
+                 </CollapsibleTrigger>
+                {item.subItems && (
+                     <CollapsibleContent>
+                        <SidebarMenuSub>
+                            {item.subItems.map((subItem) => (
+                                <SidebarMenuSubItem key={subItem.href}>
+                                    <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                                        <Link href={subItem.href}>
+                                            <span>{subItem.label}</span>
+                                        </Link>
+                                    </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                            ))}
+                        </SidebarMenuSub>
+                    </CollapsibleContent>
+                )}
+                </SidebarMenuItem>
+            </Collapsible>
           ))}
         </SidebarMenu>
         
@@ -100,7 +134,7 @@ export function SidebarNav() {
                      <SidebarMenuButton
                         variant="default"
                         className="justify-start w-full group"
-                        isActive={isAnyAdminActive}
+                        isActive={adminNavItems.some(item => pathname.startsWith(item.href))}
                         >
                         <Shield />
                         <span>Administration</span>
