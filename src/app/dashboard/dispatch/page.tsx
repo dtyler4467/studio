@@ -14,8 +14,8 @@ export default function DispatchPage() {
               <Image 
                   src="https://picsum.photos/seed/trucks/800/200"
                   alt="Truck on a highway"
-                  layout="fill"
-                  objectFit="cover"
+                  fill
+                  style={{objectFit: "cover"}}
                   data-ai-hint="truck highway"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
