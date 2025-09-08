@@ -53,7 +53,7 @@ export function TimeClock() {
     };
 
     return (
-        <Card>
+        <>
             <CardHeader className="text-center">
                 <Clock className="w-12 h-12 mx-auto text-primary" />
                 <CardTitle className="font-headline mt-2">Time Clock</CardTitle>
@@ -80,6 +80,6 @@ export function TimeClock() {
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </>
     );
 }

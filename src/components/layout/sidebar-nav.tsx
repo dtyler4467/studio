@@ -40,6 +40,7 @@ import {
   GraduationCap,
   ParkingCircle,
   Trash2,
+  Clock,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -57,7 +58,7 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver'] },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   { 
     href: '/dashboard/yard-management', 
     icon: Warehouse, 
@@ -76,9 +77,10 @@ const navItems: NavItem[] = [
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
-  { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule', roles: ['Driver'] },
-  { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off', roles: ['Driver'] },
-  { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher'] },
+  { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { href: '/dashboard/time-off', icon: CalendarCheck, label: 'Time Off', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
 ];
 
 const adminNavItems: NavItem[] = [

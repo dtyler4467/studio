@@ -42,36 +42,34 @@ export function Overview() {
 
 
   return (
-    <Card>
-      <CardHeader>
+    <CardHeader>
         <CardTitle className="font-headline">Shipments Overview</CardTitle>
         <CardDescription>An overview of shipments for the past week.</CardDescription>
-      </CardHeader>
-      <CardContent className="pl-2">
-        <ChartContainer config={chartConfig} className="h-[350px] w-full">
-          <BarChart data={chartData}>
-            <XAxis
-              dataKey="date"
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `${value}`}
-            />
-            <ChartTooltip
-              cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
-              content={<ChartTooltipContent />}
-            />
-            <Bar dataKey="shipments" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+        <CardContent className="pl-2">
+            <ChartContainer config={chartConfig} className="h-[350px] w-full">
+            <BarChart data={chartData}>
+                <XAxis
+                dataKey="date"
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                />
+                <YAxis
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}`}
+                />
+                <ChartTooltip
+                cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
+                content={<ChartTooltipContent />}
+                />
+                <Bar dataKey="shipments" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+            </ChartContainer>
+        </CardContent>
+    </CardHeader>
   );
 }
