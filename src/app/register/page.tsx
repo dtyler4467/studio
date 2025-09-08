@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -30,6 +31,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { registerUser } = useSchedule();
+  
+  const validRoles: EmployeeRole[] = ["Admin", "Dispatcher", "Driver", "Employee", "Forklift", "Laborer", "Manager", "Visitor", "Vendor"];
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,8 +125,9 @@ export default function RegisterPage() {
                         <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Driver">Driver</SelectItem>
-                        <SelectItem value="Dispatcher">Dispatcher</SelectItem>
+                        {validRoles.filter(r => r !== 'Admin').map(r => (
+                           <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>

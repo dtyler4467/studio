@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -39,7 +40,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Label } from "../ui/label"
 
-const validRoles: Employee['role'][] = ["Admin", "Dispatcher", "Driver"];
+const validRoles: Employee['role'][] = ["Admin", "Dispatcher", "Driver", "Employee", "Forklift", "Laborer", "Manager", "Visitor", "Vendor"];
 
 const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (newEmployee: Omit<Employee, 'id' | 'personnelId'>) => void }) => {
     const [newEmployee, setNewEmployee] = React.useState({
@@ -86,9 +87,9 @@ const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, 
                                 <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Admin">Admin</SelectItem>
-                                <SelectItem value="Dispatcher">Dispatcher</SelectItem>
-                                <SelectItem value="Driver">Driver</SelectItem>
+                                {validRoles.map(role => (
+                                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -332,9 +333,9 @@ export function PersonnelDataTable() {
                         <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="Dispatcher">Dispatcher</SelectItem>
-                        <SelectItem value="Driver">Driver</SelectItem>
+                        {validRoles.map(role => (
+                            <SelectItem key={role} value={role}>{role}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             )

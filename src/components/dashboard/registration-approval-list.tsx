@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useSchedule, Registration, EmployeeRole } from "@/hooks/use-schedule";
@@ -15,6 +16,8 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
+
+const validRoles: EmployeeRole[] = ["Admin", "Dispatcher", "Driver", "Employee", "Forklift", "Laborer", "Manager", "Visitor", "Vendor"];
 
 const EditRegistrationDialog = ({
     registration,
@@ -71,9 +74,9 @@ const EditRegistrationDialog = ({
                                 <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Admin">Admin</SelectItem>
-                                <SelectItem value="Dispatcher">Dispatcher</SelectItem>
-                                <SelectItem value="Driver">Driver</SelectItem>
+                                {validRoles.map(role => (
+                                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

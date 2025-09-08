@@ -14,7 +14,7 @@ export type Shift = {
     endTime: string;
 };
 
-export type EmployeeRole = 'Admin' | 'Dispatcher' | 'Driver';
+export type EmployeeRole = 'Admin' | 'Dispatcher' | 'Driver' | 'Employee' | 'Forklift' | 'Laborer' | 'Manager' | 'Visitor' | 'Vendor';
 
 export type Employee = {
     id: string;
