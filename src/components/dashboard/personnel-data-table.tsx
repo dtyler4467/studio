@@ -4,7 +4,7 @@
 import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
 import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable } from "@tanstack/react-table"
-import { MoreHorizontal, Trash2, FileText, Pencil } from "lucide-react"
+import { MoreHorizontal, Trash2, FileText, Pencil, PlusCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Label } from "../ui/label"
 
 type Employee = {
@@ -44,6 +44,67 @@ type Employee = {
     role: 'Admin' | 'Dispatcher' | 'Driver';
     personnelId?: string;
     phoneNumber?: string;
+}
+
+const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (newEmployee: Omit<Employee, 'id' | 'personnelId'>) => void }) => {
+    const [newEmployee, setNewEmployee] = React.useState({
+        name: '',
+        email: '',
+        phoneNumber: '',
+        role: 'Driver' as Employee['role']
+    });
+
+    const handleSave = () => {
+        if (newEmployee.name && newEmployee.email) {
+            onSave(newEmployee);
+            onOpenChange(false);
+            setNewEmployee({ name: '', email: '', phoneNumber: '', role: 'Driver' }); // Reset form
+        }
+    };
+
+    return (
+         <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Personnel</DialogTitle>
+                    <DialogDescription>
+                        Enter the details for the new employee.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">Name</Label>
+                        <Input id="name" value={newEmployee.name} onChange={e => setNewEmployee({...newEmployee, name: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="email" className="text-right">Email</Label>
+                        <Input id="email" type="email" value={newEmployee.email} onChange={e => setNewEmployee({...newEmployee, email: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="phone" className="text-right">Phone</Label>
+                        <Input id="phone" value={newEmployee.phoneNumber} onChange={e => setNewEmployee({...newEmployee, phoneNumber: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="role" className="text-right">Role</Label>
+                        <Select value={newEmployee.role} onValueChange={(value: Employee['role']) => setNewEmployee({...newEmployee, role: value})}>
+                             <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Admin">Admin</SelectItem>
+                                <SelectItem value="Dispatcher">Dispatcher</SelectItem>
+                                <SelectItem value="Driver">Driver</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Add Employee</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 const EditEmployeeDialog = ({ employee, isOpen, onOpenChange, onSave }: { employee: Employee | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (updatedEmployee: Employee) => void }) => {
@@ -95,11 +156,12 @@ const EditEmployeeDialog = ({ employee, isOpen, onOpenChange, onSave }: { employ
 }
 
 export function PersonnelDataTable() {
-    const { employees, currentUser, updateEmployeeRole, updateEmployee, deleteEmployee } = useSchedule();
+    const { employees, currentUser, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
     const [globalFilter, setGlobalFilter] = React.useState('');
     const [isEditOpen, setIsEditOpen] = React.useState(false);
+    const [isAddOpen, setIsAddOpen] = React.useState(false);
     const [selectedEmployee, setSelectedEmployee] = React.useState<Employee | null>(null);
 
     const handleOpenEdit = (employee: Employee) => {
@@ -114,6 +176,14 @@ export function PersonnelDataTable() {
             description: `${updatedEmployee.name}'s details have been updated.`,
         });
     };
+    
+    const handleAddEmployee = (newEmployee: Omit<Employee, 'id' | 'personnelId'>) => {
+        addEmployee(newEmployee);
+        toast({
+            title: "Employee Added",
+            description: `${newEmployee.name} has been added to personnel.`,
+        });
+    }
 
     const handleRoleChange = (employeeId: string, role: Employee['role']) => {
         if (currentUser?.id === employeeId && role !== 'Admin') {
@@ -268,7 +338,7 @@ export function PersonnelDataTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center justify-between py-4">
         <Input
           placeholder="Search by ID, name, email, or role..."
           value={globalFilter ?? ""}
@@ -277,6 +347,10 @@ export function PersonnelDataTable() {
           }
           className="max-w-sm"
         />
+        <Button onClick={() => setIsAddOpen(true)}>
+            <PlusCircle className="mr-2" />
+            Add Personnel
+        </Button>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -339,6 +413,11 @@ export function PersonnelDataTable() {
             isOpen={isEditOpen}
             onOpenChange={setIsEditOpen}
             onSave={handleSaveEmployee}
+        />
+        <AddEmployeeDialog
+            isOpen={isAddOpen}
+            onOpenChange={setIsAddOpen}
+            onSave={handleAddEmployee}
         />
     </div>
   )
