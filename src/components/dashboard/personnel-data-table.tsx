@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
-import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable, ColumnFiltersState, getGlobalFacetedRowModel } from "@tanstack/react-table"
+import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, useReactTable } from "@tanstack/react-table"
 import { MoreHorizontal, Trash2, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -194,7 +194,6 @@ export function PersonnelDataTable() {
     getCoreRowModel: getCoreRowModel(),
     onGlobalFilterChange: setGlobalFilter,
     getFilteredRowModel: getFilteredRowModel(),
-    getGlobalFacetedRowModel: getGlobalFacetedRowModel(),
     state: {
         globalFilter,
     }
