@@ -25,6 +25,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeftRight, User } from "lucide-react";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { Skeleton } from "../ui/skeleton";
 
 const formSchema = z.object({
   transactionType: z.enum(["inbound", "outbound"], {
@@ -43,6 +45,22 @@ type FormValues = z.infer<typeof formSchema>;
 
 // In a real app, this would come from the authenticated user's session
 const currentClerk = { name: "Admin User" };
+
+const ClientFormattedDate = () => {
+    const [date, setDate] = useState<Date | null>(null);
+
+    useEffect(() => {
+        setDate(new Date());
+        const timer = setInterval(() => setDate(new Date()), 1000 * 60); // Update every minute
+        return () => clearInterval(timer);
+    }, []);
+
+    if (!date) {
+        return <Skeleton className="h-4 w-[150px]" />;
+    }
+
+    return <>{format(date, 'PPP p')}</>
+}
 
 export function YardCheckInForm() {
   const { toast } = useToast();
@@ -97,7 +115,7 @@ export function YardCheckInForm() {
                 <span>Clerk: <span className="font-semibold text-foreground">{currentClerk.name}</span></span>
             </div>
              <div className="text-sm text-muted-foreground">
-                {format(new Date(), 'PPP p')}
+                <ClientFormattedDate />
             </div>
         </div>
         <FormField
