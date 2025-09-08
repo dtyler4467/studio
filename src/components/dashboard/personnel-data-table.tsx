@@ -5,6 +5,7 @@ import * as React from "react"
 import { useSchedule } from "@/hooks/use-schedule"
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table"
 import { MoreHorizontal, Trash2, FileText } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -45,6 +46,7 @@ type Employee = {
 export function PersonnelDataTable() {
     const { employees, currentUser, updateEmployeeRole, deleteEmployee } = useSchedule();
     const { toast } = useToast();
+    const router = useRouter();
 
     const handleRoleChange = (employeeId: string, role: Employee['role']) => {
         if (currentUser?.id === employeeId && role !== 'Admin') {
@@ -127,7 +129,10 @@ export function PersonnelDataTable() {
                  <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => alert(`Viewing documents for ${employee.name}`)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        alert(`Viewing documents for ${employee.name}`)
+                    }}
                  >
                     <FileText className="mr-2" />
                     View Docs
@@ -144,25 +149,25 @@ export function PersonnelDataTable() {
                  <AlertDialog>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(employee.email || '')}>
+                        <DropdownMenuItem onClick={(e) => {e.stopPropagation(); navigator.clipboard.writeText(employee.email || '')}}>
                           Copy email
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem className="text-destructive flex items-center gap-2" disabled={currentUser?.id === employee.id}>
+                            <DropdownMenuItem className="text-destructive flex items-center gap-2" disabled={currentUser?.id === employee.id} onSelect={(e) => e.preventDefault()}>
                                 <Trash2 className="w-4 h-4" /> Delete User
                             </DropdownMenuItem>
                          </AlertDialogTrigger>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <AlertDialogContent>
+                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                         <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -214,9 +219,15 @@ export function PersonnelDataTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => router.push(`/dashboard/administration/personnel/${row.original.id}`)}
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} onClick={(e) => {
+                        if (['actions', 'documents', 'role'].includes(cell.column.id)) {
+                             e.stopPropagation();
+                        }
+                    }}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

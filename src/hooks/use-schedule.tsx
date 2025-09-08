@@ -139,6 +139,7 @@ type ScheduleContextType = {
   registerUser: (user: Omit<Registration, 'id' | 'status'>) => void;
   approveRegistration: (registrationId: string) => void;
   denyRegistration: (registrationId: string) => void;
+  getEmployeeById: (id: string) => Employee | null;
   updateEmployeeRole: (employeeId: string, role: EmployeeRole) => void;
   deleteEmployee: (employeeId: string, deletedBy: string) => void;
   getYardEventById: (id: string) => YardEvent | null;
@@ -385,6 +386,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setRegistrations(prev => prev.map(reg => reg.id === registrationId ? { ...reg, status: 'Denied' as const } : reg).filter(r => r.id !== registrationId));
     }
 
+    const getEmployeeById = (id: string) => {
+        return employees.find(employee => employee.id === id) || null;
+    }
+
     const updateEmployeeRole = (employeeId: string, role: EmployeeRole) => {
         setEmployees(prev => prev.map(emp => emp.id === employeeId ? { ...emp, role } : emp));
     };
@@ -487,7 +492,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, getEmployeeById, updateEmployeeRole, deleteEmployee, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem }}>
       {children}
     </ScheduleContext.Provider>
   );
