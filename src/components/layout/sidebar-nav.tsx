@@ -83,7 +83,6 @@ const navItems: NavItem[] = [
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History, roles: ['Admin', 'Dispatcher'] },
     ]
   },
-  { href: '/dashboard/dispatch', icon: Tv, label: 'O.T.R. Load Board', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
@@ -122,6 +121,10 @@ const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration/trash', icon: Trash2, label: 'Trash', roles: ['Admin'] },
     { href: '/dashboard/administration/print', icon: Printer, label: 'Print/Email', roles: ['Admin'] },
 ];
+
+const loadBoardHubSubItems: NavItem[] = [
+    { href: '/dashboard/dispatch', icon: Tv, label: 'O.T.R. Load Board', roles: ['Admin', 'Dispatcher'] },
+]
 
 const EditLoadBoardDialog = ({ board, onOpenChange, isOpen }: { board: LocalLoadBoard | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
     const { updateLocalLoadBoard } = useSchedule();
@@ -188,6 +191,7 @@ export function SidebarNav() {
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<LocalLoadBoard | null>(null);
@@ -200,6 +204,7 @@ export function SidebarNav() {
 
   useEffect(() => {
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
+    setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
@@ -226,7 +231,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub') {
         return pathname === href;
     }
     if (href === '/dashboard/local-loads') {
@@ -252,6 +257,82 @@ export function SidebarNav() {
         <SidebarMenu>
           {filteredNavItems.map((item) => {
             const filteredSubItems = item.subItems?.filter(sub => sub.roles.includes(role));
+
+            if (item.href === '/dashboard/load-board-hub') {
+                const hubSubItems = loadBoardHubSubItems.filter(sub => sub.roles.includes(role));
+                return (
+                     <Collapsible key={item.href} asChild open={isLoadBoardHubOpen} onOpenChange={setIsLoadBoardHubOpen}>
+                         <SidebarMenuItem>
+                             <CollapsibleTrigger asChild>
+                                 <SidebarMenuButton
+                                     isActive={isSubItemActive(item.href)}
+                                     tooltip={loadBoardHub.name}
+                                     className="justify-start w-full group"
+                                 >
+                                     <div className="w-full flex items-center justify-between">
+                                         <div className="flex items-center gap-2">
+                                             <item.icon />
+                                             <span>{loadBoardHub.name}</span>
+                                         </div>
+                                         <div className="flex items-center">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 mr-1 group-data-[collapsible=icon]:hidden" onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleOpenEditDialog(loadBoardHub)}}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <ChevronDown className={cn("h-4 w-4 transition-transform", isLoadBoardHubOpen && "rotate-180")} />
+                                         </div>
+                                     </div>
+                                 </SidebarMenuButton>
+                             </CollapsibleTrigger>
+                             <CollapsibleContent>
+                                 <SidebarMenuSub>
+                                     {hubSubItems.map((subItem) => (
+                                         <SidebarMenuSubItem key={subItem.href}>
+                                             <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
+                                                 <Link href={subItem.href}>
+                                                     {subItem.icon && <subItem.icon />}
+                                                     <span>{subItem.label}</span>
+                                                 </Link>
+                                             </SidebarMenuSubButton>
+                                         </SidebarMenuSubItem>
+                                     ))}
+                                     {canManageLocalLoadBoards && localLoadBoards.map(board => (
+                                        <SidebarMenuSubItem key={board.id}>
+                                            <div className="flex items-center gap-1 w-full">
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={pathname === `/dashboard/local-loads/${board.id}`}
+                                                    className="justify-start group flex-grow"
+                                                >
+                                                    <Link href={`/dashboard/local-loads/${board.id}`}>
+                                                        <ClipboardList />
+                                                        <span>{`${board.name} ${board.number}`}</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                                <div className="flex group-data-[collapsible=icon]:hidden">
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(board)}}>
+                                                        <Pencil className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => {e.stopPropagation(); deleteLocalLoadBoard(board.id)}} disabled={localLoadBoards.length <= 1}>
+                                                        <MinusCircle className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </SidebarMenuSubItem>
+                                     ))}
+                                     {canManageLocalLoadBoards && (
+                                        <SidebarMenuSubItem>
+                                            <Button variant="outline" size="sm" className="w-full justify-center group-data-[collapsible=icon]:justify-start mt-1" onClick={() => addLocalLoadBoard()}>
+                                                <PlusCircle className="group-data-[collapsible=icon]:mx-auto h-4 w-4" />
+                                                <span className="group-data-[collapsible=icon]:hidden ml-2">Add Board</span>
+                                            </Button>
+                                        </SidebarMenuSubItem>
+                                    )}
+                                 </SidebarMenuSub>
+                             </CollapsibleContent>
+                         </SidebarMenuItem>
+                     </Collapsible>
+                );
+            }
 
             if (item.subItems && filteredSubItems && filteredSubItems.length > 0) {
                  const isOpen = item.label === 'Yard Management' ? isYardManagementOpen : isWorkspaceOpen;
@@ -296,30 +377,6 @@ export function SidebarNav() {
                 );
             }
              
-            if (item.href === '/dashboard/load-board-hub') {
-                 return (
-                    <SidebarMenuItem key={item.href}>
-                        <div className="flex items-center gap-1 w-full">
-                            <SidebarMenuButton
-                                asChild
-                                isActive={pathname === item.href}
-                                tooltip={loadBoardHub.name}
-                                className="justify-start group flex-grow"
-                            >
-                                <Link href={item.href}>
-                                    <item.icon />
-                                    <span>{loadBoardHub.name}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                            <div className="flex group-data-[collapsible=icon]:hidden">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditDialog(loadBoardHub)}>
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    </SidebarMenuItem>
-                 )
-            }
 
             return (
                 <SidebarMenuItem key={item.href}>
@@ -337,42 +394,6 @@ export function SidebarNav() {
                 </SidebarMenuItem>
              );
           })}
-
-          {canManageLocalLoadBoards && localLoadBoards.map(board => (
-              <SidebarMenuItem key={board.id}>
-                 <div className="flex items-center gap-1 w-full">
-                    <SidebarMenuButton
-                        asChild
-                        isActive={pathname === `/dashboard/local-loads/${board.id}`}
-                        tooltip={`${board.name} ${board.number}`}
-                        className="justify-start group flex-grow"
-                    >
-                        <Link href={`/dashboard/local-loads/${board.id}`}>
-                            <ClipboardList />
-                            <span>{`${board.name} ${board.number}`}</span>
-                        </Link>
-                    </SidebarMenuButton>
-                     <div className="flex group-data-[collapsible=icon]:hidden">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditDialog(board)}>
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteLocalLoadBoard(board.id)} disabled={localLoadBoards.length <= 1}>
-                            <MinusCircle className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-              </SidebarMenuItem>
-          ))}
-            {canManageLocalLoadBoards && (
-                 <SidebarMenuItem>
-                     <Button variant="outline" className="w-full justify-center group-data-[collapsible=icon]:justify-start" onClick={() => addLocalLoadBoard()}>
-                        <PlusCircle className="group-data-[collapsible=icon]:mx-auto" />
-                         <span className="group-data-[collapsible=icon]:hidden ml-2">Add Load Board</span>
-                    </Button>
-                </SidebarMenuItem>
-            )}
-
-
         </SidebarMenu>
         
         {filteredAdminNavItems.length > 0 && (
