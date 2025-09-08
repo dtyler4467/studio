@@ -208,9 +208,12 @@ export function TimeClockAdminTable() {
         accessorKey: "clockIn.timestamp",
         header: "Clock In",
         cell: ({ row }) => <ClientFormattedDate date={row.original.clockIn.timestamp} />,
-        filterFn: (row, id, value) => {
+        filterFn: (row, id, value: DateRange) => {
             const rowDate = new Date(row.getValue(id) as string);
-            return isSameDay(rowDate, value);
+            if (value.from && value.to) {
+                return isWithinInterval(rowDate, { start: value.from, end: value.to });
+            }
+            return true;
         },
       },
        {
@@ -303,17 +306,38 @@ export function TimeClockAdminTable() {
                 </Select>
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-[240px] justify-start text-left font-normal">
-                            <span>{table.getColumn('clockIn')?.getFilterValue() ? format(table.getColumn('clockIn')?.getFilterValue() as Date, "PPP") : 'Filter by date...'}</span>
-                        </Button>
+                    <Button
+                        id="date"
+                        variant={"outline"}
+                        className={cn(
+                        "w-full sm:w-[300px] justify-start text-left font-normal",
+                        !table.getColumn("clockIn")?.getFilterValue() && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {(table.getColumn("clockIn")?.getFilterValue() as DateRange)?.from ? (
+                        (table.getColumn("clockIn")?.getFilterValue() as DateRange)?.to ? (
+                            <>
+                            {format((table.getColumn("clockIn")?.getFilterValue() as DateRange).from!, "LLL dd, y")} -{" "}
+                            {format((table.getColumn("clockIn")?.getFilterValue() as DateRange).to!, "LLL dd, y")}
+                            </>
+                        ) : (
+                            format((table.getColumn("clockIn")?.getFilterValue() as DateRange).from!, "LLL dd, y")
+                        )
+                        ) : (
+                        <span>Filter by date...</span>
+                        )}
+                    </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={table.getColumn('clockIn')?.getFilterValue() as Date}
-                            onSelect={(date) => table.getColumn('clockIn')?.setFilterValue(date)}
-                            initialFocus
-                        />
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={(table.getColumn("clockIn")?.getFilterValue() as DateRange)?.from}
+                        selected={table.getColumn("clockIn")?.getFilterValue() as DateRange}
+                        onSelect={(range) => table.getColumn("clockIn")?.setFilterValue(range)}
+                        numberOfMonths={2}
+                    />
                     </PopoverContent>
                 </Popover>
                  {(table.getColumn('employeeName')?.getFilterValue() || table.getColumn('clockIn')?.getFilterValue()) && (
