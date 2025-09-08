@@ -90,17 +90,19 @@ export function SidebarNav() {
                  <SidebarMenuItem>
                  <CollapsibleTrigger asChild>
                     <SidebarMenuButton
-                        asChild={!item.subItems}
+                        asChild={!!item.subItems}
                         isActive={pathname.startsWith(item.href) && (!item.subItems || item.subItems.length === 0)}
                         tooltip={item.label}
                         className="justify-start w-full group"
                     >
                         {item.subItems ? (
-                             <button className="w-full">
-                                <item.icon />
-                                <span>{item.label}</span>
+                             <div className="w-full flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <item.icon />
+                                    <span>{item.label}</span>
+                                </div>
                                 <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", "group-data-[state=open]:rotate-180")} />
-                             </button>
+                             </div>
                         ) : (
                             <Link href={item.href}>
                                 <item.icon />
