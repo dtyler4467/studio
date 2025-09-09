@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -92,6 +93,8 @@ export function TrainingManagementTable() {
         const assignedProgramIds = assignmentsForEmployee.map(
           (a) => a.programId
         )
+        
+        const availablePrograms = trainingPrograms.filter((p) => !assignedProgramIds.includes(p.id));
 
         return (
           <div className="flex flex-wrap gap-2 items-center">
@@ -115,19 +118,18 @@ export function TrainingManagementTable() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Assign a Program</DropdownMenuLabel>
-                {trainingPrograms
-                  .filter((p) => !assignedProgramIds.includes(p.id))
-                  .map((program) => (
+                 {availablePrograms.length > 0 ? (
+                    availablePrograms.map((program) => (
                     <DropdownMenuItem
                       key={program.id}
                       onClick={() => handleAssignTraining(employeeId, program.id)}
                     >
                       {program.title}
                     </DropdownMenuItem>
-                  ))}
-                {trainingPrograms.filter((p) => !assignedProgramIds.includes(p.id)).length === 0 && (
+                  ))
+                 ) : (
                     <DropdownMenuItem disabled>All programs assigned</DropdownMenuItem>
-                )}
+                 )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
