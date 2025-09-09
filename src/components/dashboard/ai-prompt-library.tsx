@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -12,6 +13,7 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '../ui/textarea';
 
 type Prompt = {
     category: string;
@@ -58,6 +60,7 @@ export function AddPromptDialog() {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [newPromptText, setNewPromptText] = useState('');
+    const [newPromptDescription, setNewPromptDescription] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [newCategory, setNewCategory] = useState('');
     
@@ -72,13 +75,14 @@ export function AddPromptDialog() {
             return;
         }
         // In a real app, this would call a function from context to update the state
-        console.log({ category, question: newPromptText });
+        console.log({ category, question: newPromptText, description: newPromptDescription });
         toast({
             title: "Prompt Added!",
             description: "Your new prompt has been added to the library.",
         });
         setIsOpen(false);
         setNewPromptText('');
+        setNewPromptDescription('');
         setSelectedCategory('');
         setNewCategory('');
     };
@@ -90,7 +94,7 @@ export function AddPromptDialog() {
                     <PlusCircle className="mr-2" /> New Prompt
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[480px]">
                 <DialogHeader>
                     <DialogTitle>Add New Prompt</DialogTitle>
                     <DialogDescription>
@@ -99,14 +103,24 @@ export function AddPromptDialog() {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="prompt" className="text-right">Prompt</Label>
+                        <Label htmlFor="prompt-text" className="text-right">Prompt</Label>
                         <Input 
-                            id="prompt" 
+                            id="prompt-text" 
                             value={newPromptText}
                             onChange={(e) => setNewPromptText(e.target.value)}
                             className="col-span-3"
                             placeholder="e.g., How many shipments are scheduled today?"
                         />
+                    </div>
+                     <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="prompt-description" className="text-right pt-2">Description</Label>
+                        <Textarea
+                            id="prompt-description"
+                            value={newPromptDescription}
+                            onChange={(e) => setNewPromptDescription(e.target.value)}
+                            className="col-span-3"
+                            placeholder="Explain what this prompt will do..."
+                         />
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="category" className="text-right">Category</Label>
