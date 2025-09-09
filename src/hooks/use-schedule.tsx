@@ -182,7 +182,7 @@ type ScheduleContextType = {
   loadBoardHub: LocalLoadBoard;
   appointments: Appointment[];
   officeAppointments: OfficeAppointment[];
-  addOfficeAppointment: (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => void;
+  addOfficeAppointment: (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => OfficeAppointment;
   updateOfficeAppointmentStatus: (appointmentId: string, status: OfficeAppointment['status']) => void;
   updateLoadBoardHubName: (name: string) => void;
   addLocalLoadBoard: () => void;
@@ -729,6 +729,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             status: 'Scheduled',
         };
         setOfficeAppointments(prev => [newAppointment, ...prev]);
+        return newAppointment;
     };
 
     const updateOfficeAppointmentStatus = (appointmentId: string, status: OfficeAppointment['status']) => {
