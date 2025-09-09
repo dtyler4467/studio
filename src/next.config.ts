@@ -48,6 +48,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.weather.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   env: {
