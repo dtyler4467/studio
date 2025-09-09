@@ -139,6 +139,15 @@ const navItems: NavItem[] = [
         { href: '/dashboard/yard-management/trash', label: 'Trash', icon: Trash2, roles: ['Admin', 'Dispatcher'] },
     ]
   },
+   {
+    href: '/dashboard/fleet-management',
+    icon: Truck,
+    label: 'Fleet Management',
+    roles: ['Admin', 'Dispatcher', 'Manager'],
+    subItems: [
+        { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
+    ]
+  },
   { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
@@ -263,6 +272,7 @@ export function SidebarNav() {
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isWarehouseHubOpen, setIsWarehouseHubOpen] = useState(false);
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
+  const [isFleetManagementOpen, setIsFleetManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAccountantOpen, setIsAccountantOpen] = useState(false);
@@ -282,6 +292,7 @@ export function SidebarNav() {
     setIsAiOpen(pathname.startsWith('/dashboard/ai-'));
     setIsWarehouseHubOpen(pathname.startsWith('/dashboard/warehouse-hub-manager'));
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
+    setIsFleetManagementOpen(pathname.startsWith('/dashboard/fleet-management'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
@@ -319,7 +330,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -421,6 +432,7 @@ export function SidebarNav() {
                  const isOpenMap = {
                      'Warehouse Hub Manager': isWarehouseHubOpen,
                      'Yard Management': isYardManagementOpen,
+                     'Fleet Management': isFleetManagementOpen,
                      'My Workspace': isWorkspaceOpen,
                      'AI': isAiOpen,
                      'Accountant': isAccountantOpen,
@@ -428,6 +440,7 @@ export function SidebarNav() {
                  const setIsOpenMap = {
                     'Warehouse Hub Manager': setIsWarehouseHubOpen,
                     'Yard Management': setIsYardManagementOpen,
+                    'Fleet Management': setIsFleetManagementOpen,
                     'My Workspace': setIsWorkspaceOpen,
                     'AI': setIsAiOpen,
                     'Accountant': setIsAccountantOpen,
