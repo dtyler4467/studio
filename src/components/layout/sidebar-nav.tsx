@@ -55,6 +55,10 @@ import {
   FileText,
   Database,
   DatabaseBackup,
+  Boxes,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ShoppingCart,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -88,7 +92,20 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-  { href: '/dashboard/warehouse-hub-manager', icon: Warehouse, label: 'Warehouse Hub Manager', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+  { 
+    href: '/dashboard/warehouse-hub-manager', 
+    icon: Warehouse, 
+    label: 'Warehouse Hub Manager', 
+    roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
+    subItems: [
+        { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/warehouse-hub-manager/inventory', icon: Boxes, label: 'Inventory', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/warehouse-hub-manager/bol', icon: FileText, label: 'Bill of Lading', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/warehouse-hub-manager/procurement', icon: ShoppingCart, label: 'Procurement', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/warehouse-hub-manager/receiving', icon: ArrowDownToLine, label: 'Receiving', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/warehouse-hub-manager/shipping', icon: ArrowUpFromLine, label: 'Shipping', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+    ]
+  },
   { 
     href: '/dashboard/yard-management', 
     icon: Truck, 
@@ -226,6 +243,7 @@ export function SidebarNav() {
   const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, loadBoardHub, updateLocalLoadBoard } = useSchedule();
   const { state } = useSidebar();
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isWarehouseHubOpen, setIsWarehouseHubOpen] = useState(false);
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -243,6 +261,7 @@ export function SidebarNav() {
 
   useEffect(() => {
     setIsAiOpen(pathname.startsWith('/dashboard/ai-'));
+    setIsWarehouseHubOpen(pathname.startsWith('/dashboard/warehouse-hub-manager'));
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
@@ -380,11 +399,13 @@ export function SidebarNav() {
 
             if (item.subItems && filteredSubItems && filteredSubItems.length > 0) {
                  const isOpenMap = {
+                     'Warehouse Hub Manager': isWarehouseHubOpen,
                      'Yard Management': isYardManagementOpen,
                      'My Workspace': isWorkspaceOpen,
                      'AI': isAiOpen,
                  };
                  const setIsOpenMap = {
+                    'Warehouse Hub Manager': setIsWarehouseHubOpen,
                     'Yard Management': setIsYardManagementOpen,
                     'My Workspace': setIsWorkspaceOpen,
                     'AI': setIsAiOpen,
