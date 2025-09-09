@@ -6,13 +6,43 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Badge } from "../ui/badge";
 import { History } from "lucide-react";
 import { format } from "date-fns";
+import React from "react";
+import { Skeleton } from "../ui/skeleton";
 
-const mockAlerts = [
-    { id: 'SOS001', type: 'Accident', urgency: 'Critical', location: 'I-80 East, Mile Marker 45', details: 'Multi-vehicle collision, road blocked.', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) },
-    { id: 'SOS002', type: 'Mechanical Breakdown', urgency: 'High', location: 'Warehouse Dock 7', details: 'Trailer landing gear failed, unable to move.', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+type Alert = {
+    id: string;
+    type: string;
+    urgency: 'High' | 'Critical';
+    location: string;
+    details: string;
+    timestamp: Date;
+};
+
+const mockAlertsData: Omit<Alert, 'timestamp'>[] = [
+    { id: 'SOS001', type: 'Accident', urgency: 'Critical', location: 'I-80 East, Mile Marker 45', details: 'Multi-vehicle collision, road blocked.' },
+    { id: 'SOS002', type: 'Mechanical Breakdown', urgency: 'High', location: 'Warehouse Dock 7', details: 'Trailer landing gear failed, unable to move.' },
 ];
 
+const ClientFormattedDate = ({ date }: { date: Date | null }) => {
+    if (!date) {
+        return <Skeleton className="h-4 w-[150px]" />;
+    }
+    return <>{format(date, 'Pp')}</>;
+}
+
+
 export function SosAlertHistory() {
+  const [alerts, setAlerts] = React.useState<Alert[]>([]);
+
+  React.useEffect(() => {
+    // Generate timestamps on the client to avoid hydration mismatch
+    const clientSideAlerts = mockAlertsData.map((alert, index) => ({
+      ...alert,
+      timestamp: new Date(Date.now() - (index + 1) * 2 * 60 * 60 * 1000) // Simulate different times
+    }));
+    setAlerts(clientSideAlerts);
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -35,10 +65,12 @@ export function SosAlertHistory() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockAlerts.length > 0 ? (
-                mockAlerts.map((alert) => (
+              {alerts.length > 0 ? (
+                alerts.map((alert) => (
                   <TableRow key={alert.id}>
-                    <TableCell className="text-muted-foreground">{format(alert.timestamp, 'Pp')}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                        <ClientFormattedDate date={alert.timestamp} />
+                    </TableCell>
                     <TableCell className="font-medium">{alert.type}</TableCell>
                     <TableCell>
                       <Badge variant={alert.urgency === 'Critical' ? 'destructive' : 'default'}>
