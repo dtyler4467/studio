@@ -14,6 +14,7 @@ import { getAssistantResponse } from '@/ai/flows/assistant-flow';
 import { Send, User, Sparkles, Mic } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { Logo } from '../icons/logo';
+import Image from 'next/image';
 
 const formSchema = z.object({
   prompt: z.string().min(1, { message: "Prompt cannot be empty." }),
@@ -22,6 +23,8 @@ const formSchema = z.object({
 type Message = {
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
+  videoUrl?: string;
 };
 
 export function AiAssistantChat() {
@@ -43,7 +46,12 @@ export function AiAssistantChat() {
 
     try {
       const response = await getAssistantResponse({ query: values.prompt });
-      const assistantMessage: Message = { role: 'assistant', content: response.answer };
+      const assistantMessage: Message = { 
+          role: 'assistant', 
+          content: response.answer,
+          imageUrl: response.imageUrl,
+          videoUrl: response.videoUrl,
+      };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       const errorMessage: Message = { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' };
@@ -66,6 +74,16 @@ export function AiAssistantChat() {
               )}
               <div className={`rounded-lg p-3 max-w-lg ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}>
                 <p className="text-sm">{message.content}</p>
+                {message.imageUrl && (
+                    <div className="mt-2">
+                        <Image src={message.imageUrl} alt="AI generated image" width={400} height={300} className="rounded-md" />
+                    </div>
+                )}
+                {message.videoUrl && (
+                    <div className="mt-2">
+                        <video src={message.videoUrl} controls className="w-full rounded-md" />
+                    </div>
+                )}
               </div>
                {message.role === 'user' && (
                 <Avatar className="h-8 w-8">

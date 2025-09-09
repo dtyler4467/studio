@@ -18,6 +18,8 @@ export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
 const AssistantOutputSchema = z.object({
   answer: z.string().describe('The AI-generated response to the user\'s query.'),
+  imageUrl: z.string().optional().describe('An optional URL to an image relevant to the answer.'),
+  videoUrl: z.string().optional().describe('An optional URL to a video relevant to the answer.'),
 });
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
@@ -33,6 +35,7 @@ const prompt = ai.definePrompt({
   Your goal is to provide helpful, accurate, and concise answers to user questions.
   The user is interacting with you through a chat interface in their dashboard.
   You have access to a vast amount of information from the web to answer general knowledge questions.
+  If an image or video would be helpful to illustrate your answer, please provide a URL for it.
 
   Here is the user's query:
   "{{{query}}}"
@@ -54,4 +57,3 @@ const assistantFlow = ai.defineFlow(
     return output!;
   }
 );
-
