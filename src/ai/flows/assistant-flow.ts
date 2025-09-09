@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { getTools } from '../tools/data-tools';
 
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user\'s question or prompt.'),
@@ -31,17 +32,19 @@ const prompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: {schema: AssistantInputSchema},
   output: {schema: AssistantOutputSchema},
+  tools: getTools(),
   prompt: `You are an intelligent AI assistant for a logistics company called LogiFlow.
   Your goal is to provide helpful, accurate, and concise answers to user questions.
   The user is interacting with you through a chat interface in their dashboard.
-  You have access to a vast amount of information from the web to answer general knowledge questions.
+  
+  If the user asks a question about application data (e.g., "how many trailers are in the yard?", "who is on shift today?"), use the provided tools to get the information.
+  You also have access to a vast amount of information from the web to answer general knowledge questions.
   If the user asks for an image to be generated, or if an image would be helpful to illustrate your answer, you can do so. For other queries, just provide a text response.
 
   Here is the user's query:
   "{{{query}}}"
 
   Based on this query, provide a helpful response.
-  If the query is about application data (e.g., "how many trailers are in the yard?"), you can say that you are not yet able to access live data but that functionality is coming soon.
   Keep your answers friendly and professional.
   `,
 });
