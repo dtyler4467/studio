@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +15,8 @@ import { Send, User, Sparkles, Mic } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { Logo } from '../icons/logo';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   prompt: z.string().min(1, { message: "Prompt cannot be empty." }),
@@ -27,9 +29,16 @@ type Message = {
   videoUrl?: string;
 };
 
+// Check for SpeechRecognition API
+const SpeechRecognition =
+  (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
 export function AiAssistantChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,6 +46,52 @@ export function AiAssistantChat() {
       prompt: '',
     },
   });
+
+  useEffect(() => {
+    if (!SpeechRecognition) {
+      // API not supported
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+         form.setValue('prompt', form.getValues('prompt') + finalTranscript);
+      }
+    };
+    
+    recognition.onend = () => {
+        setIsRecording(false);
+    }
+
+    recognition.onerror = (event: any) => {
+        toast({
+            variant: "destructive",
+            title: "Speech Recognition Error",
+            description: `An error occurred: ${event.error}`,
+        });
+        setIsRecording(false);
+    }
+    
+    recognitionRef.current = recognition;
+
+    return () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+        }
+    }
+  }, [form, toast]);
+
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     const userMessage: Message = { role: 'user', content: values.prompt };
@@ -59,6 +114,24 @@ export function AiAssistantChat() {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+   const handleMicClick = () => {
+    if (!SpeechRecognition) {
+       toast({
+            variant: "destructive",
+            title: "Unsupported Browser",
+            description: "Your browser does not support voice recognition.",
+        });
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+    }
+    setIsRecording(!isRecording);
   };
 
   return (
@@ -123,9 +196,16 @@ export function AiAssistantChat() {
             <Send className="mr-2" />
             Send
           </Button>
-           <Button type="button" variant="outline" size="icon" disabled={isLoading}>
+           <Button 
+            type="button" 
+            variant="outline" 
+            size="icon" 
+            disabled={isLoading}
+            onClick={handleMicClick}
+            className={cn(isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+           >
             <Mic />
-            <span className="sr-only">Use Microphone</span>
+            <span className="sr-only">{isRecording ? 'Stop Recording' : 'Use Microphone'}</span>
           </Button>
         </form>
       </Form>
