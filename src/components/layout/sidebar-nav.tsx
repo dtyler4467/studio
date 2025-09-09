@@ -223,7 +223,7 @@ const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration/registrations', icon: UserPlus, label: 'Registrations', roles: ['Admin'] },
     { href: '/dashboard/administration/personnel', icon: Users, label: 'Personnel', roles: ['Admin'] },
     { href: '/dashboard/administration/expense-report', icon: CreditCard, label: 'Expense Reports', roles: ['Admin'] },
-    { href: '/dashboard/administration/training', icon: GraduationCap, label: 'Training Management', roles: ['Admin'] },
+    { href: '/dashboard/administration/training', icon: GraduationCap, label: 'Assign Task Hub', roles: ['Admin'] },
     { href: '/dashboard/administration/billing', icon: CreditCard, label: 'Billing', roles: ['Admin'] },
     { href: '/dashboard/administration/data-plan', icon: Database, label: 'Data Plan', roles: ['Admin'] },
     { href: '/dashboard/administration/storage-backup', icon: DatabaseBackup, label: 'Storage & Backup', roles: ['Admin'] },

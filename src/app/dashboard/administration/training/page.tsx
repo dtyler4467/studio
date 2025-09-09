@@ -6,7 +6,7 @@ import { TrainingManagementTable } from '@/components/dashboard/training-managem
 export default function AdminTrainingPage() {
   return (
     <div className="flex flex-col w-full">
-      <Header pageTitle="Training Management" />
+      <Header pageTitle="Assign Task Hub" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
             <CardHeader>
