@@ -77,7 +77,15 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Dispatcher'],
     subItems: [
         { href: '/dashboard/yard-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/appointment', label: 'Appointment', icon: CalendarPlus, roles: ['Admin', 'Dispatcher'] },
+        { 
+            href: '/dashboard/yard-management/appointment', 
+            label: 'Appointment', 
+            icon: CalendarPlus, 
+            roles: ['Admin', 'Dispatcher'],
+            subItems: [
+                { href: '/dashboard/yard-management/appointment/office', label: 'Office', icon: Briefcase, roles: ['Admin', 'Dispatcher'] },
+            ]
+        },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/check-in', label: 'Check In/Out', roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/dock-doors', label: 'Dock Doors', icon: Warehouse, roles: ['Admin', 'Dispatcher'] },
@@ -196,6 +204,7 @@ export function SidebarNav() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
+    const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<LocalLoadBoard | null>(null);
   
@@ -223,6 +232,15 @@ export function SidebarNav() {
          }
      });
      setOpenAdminSubMenus(newOpenAdminSubMenus);
+
+     const newOpenYardSubMenus: Record<string, boolean> = {};
+        navItems.find(i => i.href === '/dashboard/yard-management')?.subItems?.forEach(item => {
+            if (item.subItems) {
+                const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
+                newOpenYardSubMenus[item.label] = isActive;
+            }
+        });
+    setOpenYardSubMenus(newOpenYardSubMenus);
   }, [pathname]);
 
   if (!currentUser) {
@@ -240,7 +258,7 @@ export function SidebarNav() {
     if (href === '/dashboard/local-loads' || href === '/dashboard/yard-management/trash') {
         return pathname.startsWith(href);
     }
-    return pathname.startsWith(href);
+    return pathname.startsWith(href) && href !== '/dashboard/yard-management/appointment';
   }
   
   const filteredNavItems = navItems.filter(item => item.roles.includes(role));
@@ -268,7 +286,7 @@ export function SidebarNav() {
                          <SidebarMenuItem>
                             <div className="flex items-center w-full">
                                <CollapsibleTrigger asChild>
-                                   <SidebarMenuButton
+                                    <SidebarMenuButton
                                        isActive={isSubItemActive(item.href)}
                                        tooltip={loadBoardHub.name}
                                        className="justify-start w-full group flex-grow"
@@ -358,20 +376,51 @@ export function SidebarNav() {
                              </SidebarMenuButton>
                          </CollapsibleTrigger>
                          {filteredSubItems && (
-                             <CollapsibleContent>
-                                 <SidebarMenuSub>
-                                     {filteredSubItems.map((subItem) => (
-                                         <SidebarMenuSubItem key={subItem.href}>
-                                             <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
-                                                 <Link href={subItem.href}>
-                                                     {subItem.icon && <subItem.icon />}
-                                                     <span>{subItem.label}</span>
-                                                 </Link>
-                                             </SidebarMenuSubButton>
-                                         </SidebarMenuSubItem>
-                                     ))}
-                                 </SidebarMenuSub>
-                             </CollapsibleContent>
+                            <CollapsibleContent>
+                                <SidebarMenuSub>
+                                    {filteredSubItems.map((subItem) => {
+                                        if (subItem.subItems) {
+                                            const isSubOpen = openYardSubMenus[subItem.label] || false;
+                                            const setIsSubOpen = (open: boolean) => setOpenYardSubMenus(prev => ({ ...prev, [subItem.label]: open }));
+                                            return (
+                                                <Collapsible key={subItem.href} open={isSubOpen} onOpenChange={setIsSubOpen}>
+                                                    <CollapsibleTrigger asChild>
+                                                        <SidebarMenuSubButton isActive={subItem.subItems.some(si => pathname.startsWith(si.href))}>
+                                                            <subItem.icon />
+                                                            <span>{subItem.label}</span>
+                                                            <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isSubOpen && "rotate-180")} />
+                                                        </SidebarMenuSubButton>
+                                                    </CollapsibleTrigger>
+                                                    <CollapsibleContent>
+                                                        <SidebarMenuSub>
+                                                            {subItem.subItems.map((nestedSubItem) => (
+                                                                <SidebarMenuSubItem key={nestedSubItem.href}>
+                                                                    <SidebarMenuSubButton asChild isActive={isSubItemActive(nestedSubItem.href)} size="sm">
+                                                                        <Link href={nestedSubItem.href}>
+                                                                            <nestedSubItem.icon />
+                                                                            <span>{nestedSubItem.label}</span>
+                                                                        </Link>
+                                                                    </SidebarMenuSubButton>
+                                                                </SidebarMenuSubItem>
+                                                            ))}
+                                                        </SidebarMenuSub>
+                                                    </CollapsibleContent>
+                                                </Collapsible>
+                                            )
+                                        }
+                                        return (
+                                            <SidebarMenuSubItem key={subItem.href}>
+                                                <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
+                                                    <Link href={subItem.href}>
+                                                        {subItem.icon && <subItem.icon />}
+                                                        <span>{subItem.label}</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        );
+                                    })}
+                                </SidebarMenuSub>
+                            </CollapsibleContent>
                          )}
                      </SidebarMenuItem>
                  </Collapsible>
