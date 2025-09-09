@@ -6,13 +6,13 @@ import { Truck } from 'lucide-react';
 export default function FleetManagementPage() {
   return (
     <div className="flex flex-col w-full">
-      <Header pageTitle="Fleet Management" />
+      <Header pageTitle="Fleet HUB" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2">
                     <Truck />
-                    Fleet Management Overview
+                    Fleet HUB
                 </CardTitle>
                 <CardDescription>
                     Manage your fleet of vehicles, track maintenance schedules, and monitor driver assignments.
