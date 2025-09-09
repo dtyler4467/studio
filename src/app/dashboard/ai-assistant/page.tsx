@@ -1,5 +1,7 @@
+
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { AiAssistantChat } from '@/components/dashboard/ai-assistant-chat';
 
 export default function AiAssistantPage() {
   return (
@@ -10,13 +12,11 @@ export default function AiAssistantPage() {
           <CardHeader>
             <CardTitle className="font-headline">AI Assistant</CardTitle>
             <CardDescription>
-              Your intelligent partner for logistics management.
+              Your intelligent partner for logistics management. Ask a question to get started.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                <p className="text-muted-foreground">AI Assistant features coming soon.</p>
-            </div>
+            <AiAssistantChat />
           </CardContent>
         </Card>
       </main>
