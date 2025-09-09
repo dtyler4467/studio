@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Header } from '@/components/layout/header';
@@ -26,13 +27,14 @@ type Order = {
     destination: string;
     weight: number;
     volume: number;
+    item: string;
 };
 
 const initialOrders: Order[] = [
-    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50 },
-    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150 },
-    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100 },
-    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30 },
+    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50, item: 'Bolts' },
+    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150, item: 'Washers' },
+    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100, item: 'Screws' },
+    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30, item: 'Nuts' },
 ];
 
 const carriers = [
@@ -52,11 +54,12 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Order) => void }) 
             id: `SO-${Math.floor(Math.random() * 900) + 100}`,
             customer: formData.get('customer') as string,
             destination: formData.get('destination') as string,
+            item: formData.get('item') as string,
             weight: Number(formData.get('weight')),
             volume: Number(formData.get('volume')),
         };
 
-        if (!newOrder.customer || !newOrder.destination || !newOrder.weight || !newOrder.volume) {
+        if (!newOrder.customer || !newOrder.destination || !newOrder.weight || !newOrder.volume || !newOrder.item) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields.' });
             return;
         }
@@ -86,6 +89,10 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Order) => void }) 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="destination" className="text-right">Destination</Label>
                         <Input id="destination" name="destination" className="col-span-3" placeholder="e.g. San Francisco, CA" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="item" className="text-right">Item</Label>
+                        <Input id="item" name="item" className="col-span-3" placeholder="e.g. Pallet of Bricks" />
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="weight" className="text-right">Weight (lbs)</Label>
