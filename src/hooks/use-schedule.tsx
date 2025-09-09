@@ -151,6 +151,17 @@ export type Appointment = {
     door?: string;
 };
 
+export type OfficeAppointment = {
+    id: string;
+    title: string;
+    type: 'Meeting' | 'Visitor' | 'Standard';
+    attendees: string[];
+    startTime: Date;
+    endTime: Date;
+    status: 'Scheduled' | 'Completed' | 'Canceled';
+    notes?: string;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -170,6 +181,9 @@ type ScheduleContextType = {
   localLoadBoards: LocalLoadBoard[];
   loadBoardHub: LocalLoadBoard;
   appointments: Appointment[];
+  officeAppointments: OfficeAppointment[];
+  addOfficeAppointment: (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => void;
+  updateOfficeAppointmentStatus: (appointmentId: string, status: OfficeAppointment['status']) => void;
   updateLoadBoardHubName: (name: string) => void;
   addLocalLoadBoard: () => void;
   deleteLocalLoadBoard: (id: string) => void;
@@ -390,7 +404,13 @@ const initialAppointments: Appointment[] = [
     { id: 'APP003', status: 'Scheduled', type: 'Outbound', carrier: 'Schneider', scac: 'SNDR', bolNumber: 'BOL789', poNumber: 'PO123', sealNumber: 'S789', driverName: 'Mike Johnson', appointmentTime: new Date(new Date().getTime() + 4 * 60 * 60 * 1000) },
     { id: 'APP004', status: 'Departed', type: 'Outbound', carrier: 'Werner', scac: 'WERN', bolNumber: 'BOL101', poNumber: 'PO112', sealNumber: 'S101', driverName: 'Emily Davis', appointmentTime: new Date(new Date().getTime() - 24 * 60 * 60 * 1000) },
     { id: 'APP005', status: 'Missed', type: 'Inbound', carrier: 'Swift Logistics', scac: 'SWFT', bolNumber: 'BOL112', poNumber: 'PO113', sealNumber: 'S112', driverName: 'Chris Brown', driverLicenseNumber: 'D7654321', driverLicenseState: 'AZ', appointmentTime: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000) },
-]
+];
+
+const initialOfficeAppointments: OfficeAppointment[] = [
+    { id: 'OA001', title: 'Q3 Financial Review', type: 'Meeting', attendees: ['Emily Jones', 'Mike Smith'], startTime: new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() + (2 * 24 * 60 * 60 + 1 * 60 * 60) * 1000), status: 'Scheduled', notes: 'Conference Room 3' },
+    { id: 'OA002', title: 'Visitor: John from Acme Corp', type: 'Visitor', attendees: ['Admin User'], startTime: new Date(new Date().getTime() + 1 * 24 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() + (1 * 24 * 60 * 60 + 2 * 60 * 60) * 1000), status: 'Scheduled' },
+    { id: 'OA003', title: 'IT Maintenance', type: 'Standard', attendees: ['IT Department'], startTime: new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() - (1 * 24 * 60 * 60 - 4 * 60 * 60) * 1000), status: 'Completed' },
+];
 
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -412,6 +432,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [localLoadBoards, setLocalLoadBoards] = useState<LocalLoadBoard[]>(initialLocalLoadBoards);
   const [loadBoardHub, setLoadBoardHub] = useState<LocalLoadBoard>(initialLoadBoardHub);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
+  const [officeAppointments, setOfficeAppointments] = useState<OfficeAppointment[]>(initialOfficeAppointments);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -701,9 +722,22 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
     };
 
+    const addOfficeAppointment = (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => {
+        const newAppointment: OfficeAppointment = {
+            ...appointment,
+            id: `OA${Date.now()}`,
+            status: 'Scheduled',
+        };
+        setOfficeAppointments(prev => [newAppointment, ...prev]);
+    };
+
+    const updateOfficeAppointmentStatus = (appointmentId: string, status: OfficeAppointment['status']) => {
+        setOfficeAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
+    };
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
@@ -716,5 +750,3 @@ export const useSchedule = () => {
   }
   return context;
 };
-
-    
