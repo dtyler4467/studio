@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { format, isWithinInterval } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { useDebounce } from 'use-debounce';
+import { useDebounce } from '@/hooks/use-debounce';
 
 type Incident = {
     id: string;
