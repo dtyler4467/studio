@@ -88,9 +88,10 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { href: '/dashboard/warehouse-hub-manager', icon: Warehouse, label: 'Warehouse Hub Manager', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
   { 
     href: '/dashboard/yard-management', 
-    icon: Warehouse, 
+    icon: Truck, 
     label: 'Yard Management',
     roles: ['Admin', 'Dispatcher'],
     subItems: [
@@ -279,7 +280,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -472,7 +473,7 @@ export function SidebarNav() {
                 <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.href}
+                    isActive={isSubItemActive(item.href)}
                     tooltip={item.label}
                     className="justify-start w-full group"
                 >
