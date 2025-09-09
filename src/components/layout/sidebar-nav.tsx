@@ -50,6 +50,8 @@ import {
   Truck,
   ArchiveRestore,
   Sparkles,
+  MessageSquare,
+  FileQuestion,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -72,7 +74,16 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard/ai-assistant', icon: Sparkles, label: 'AI Assistant', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { 
+    href: '#', 
+    icon: Sparkles, 
+    label: 'AI',
+    roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+    subItems: [
+        { href: '/dashboard/ai-assistant', icon: MessageSquare, label: 'Assistant', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/ai-prompts', icon: FileQuestion, label: 'Prompts', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+    ]
+  },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   { 
     href: '/dashboard/yard-management', 
@@ -206,6 +217,7 @@ export function SidebarNav() {
   const pathname = usePathname();
   const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, loadBoardHub, updateLocalLoadBoard } = useSchedule();
   const { state } = useSidebar();
+  const [isAiOpen, setIsAiOpen] = useState(false);
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -222,6 +234,7 @@ export function SidebarNav() {
 
 
   useEffect(() => {
+    setIsAiOpen(pathname.startsWith('/dashboard/ai-'));
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
@@ -259,7 +272,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -358,8 +371,24 @@ export function SidebarNav() {
             }
 
             if (item.subItems && filteredSubItems && filteredSubItems.length > 0) {
-                 const isOpen = item.label === 'Yard Management' ? isYardManagementOpen : isWorkspaceOpen;
-                 const setIsOpen = item.label === 'Yard Management' ? setIsYardManagementOpen : setIsWorkspaceOpen;
+                 const isOpenMap = {
+                     'Yard Management': isYardManagementOpen,
+                     'My Workspace': isWorkspaceOpen,
+                     'AI': isAiOpen,
+                 };
+                 const setIsOpenMap = {
+                    'Yard Management': setIsYardManagementOpen,
+                    'My Workspace': setIsWorkspaceOpen,
+                    'AI': setIsAiOpen,
+                 }
+                 const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
+                 const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
+
+                 if(isOpen === undefined || setIsOpen === undefined) {
+                     // Fallback for items not in the map
+                     return null;
+                 }
+
 
                  return (
                  <Collapsible key={item.href} asChild open={isOpen} onOpenChange={setIsOpen}>
