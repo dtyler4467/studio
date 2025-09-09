@@ -9,14 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useSchedule } from '@/hooks/use-schedule';
+import Image from 'next/image';
 
 
 type Trip = {
@@ -120,7 +121,9 @@ export default function MileageTrackerPage() {
     const { toast } = useToast();
     const { currentUser } = useSchedule();
     const tripIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [currentDistance, setCurrentDistance] = useState(0);
+    const [showIdlePrompt, setShowIdlePrompt] = useState(false);
 
     useEffect(() => {
         setTime(new Date());
@@ -128,41 +131,56 @@ export default function MileageTrackerPage() {
         return () => clearInterval(timer);
     }, []);
 
+    const handleStopTrip = useCallback(() => {
+        setIsTracking(false);
+        if (currentDistance > 0) {
+            const newTrip: Trip = {
+                id: `TRIP${Date.now()}`,
+                date: new Date(),
+                type: currentTripType,
+                startLocation: 'Current Location (GPS)',
+                endLocation: 'End Location (GPS)',
+                distance: parseFloat(currentDistance.toFixed(2)),
+            };
+            setTrips(prev => [newTrip, ...prev]);
+            toast({ title: 'Trip Ended', description: `Logged a ${currentTripType} trip of ${newTrip.distance} miles.` });
+        }
+        setCurrentDistance(0);
+    }, [currentDistance, currentTripType, toast]);
+
+    const resetIdleTimer = useCallback(() => {
+        if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+        }
+        idleTimerRef.current = setTimeout(() => {
+            setShowIdlePrompt(true);
+        }, 15000); // 15 seconds for demo, real would be 10 * 60 * 1000
+    }, []);
+
     useEffect(() => {
         if (isTracking) {
+            resetIdleTimer();
             tripIntervalRef.current = setInterval(() => {
-                // Simulate distance increasing
-                setCurrentDistance(prev => prev + Math.random() * 0.1); 
+                setCurrentDistance(prev => {
+                    const newDist = prev + Math.random() * 0.1;
+                    resetIdleTimer(); // Reset idle timer on distance change
+                    return newDist;
+                });
             }, 2000);
         } else {
-            if (tripIntervalRef.current) {
-                clearInterval(tripIntervalRef.current);
-            }
+            if (tripIntervalRef.current) clearInterval(tripIntervalRef.current);
+            if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
         }
         return () => {
-            if (tripIntervalRef.current) clearInterval(tripIntervalRef.current)
+            if (tripIntervalRef.current) clearInterval(tripIntervalRef.current);
+            if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
         };
-    }, [isTracking]);
+    }, [isTracking, resetIdleTimer]);
 
     const handleStartTrip = () => {
         setIsTracking(true);
         setCurrentDistance(0);
         toast({ title: 'Trip Started', description: `Tracking started for a ${currentTripType} trip.` });
-    };
-
-    const handleStopTrip = () => {
-        setIsTracking(false);
-        const newTrip: Trip = {
-            id: `TRIP${Date.now()}`,
-            date: new Date(),
-            type: currentTripType,
-            startLocation: 'Current Location (GPS)',
-            endLocation: 'End Location (GPS)',
-            distance: parseFloat(currentDistance.toFixed(2)),
-        };
-        setTrips(prev => [newTrip, ...prev]);
-        toast({ title: 'Trip Ended', description: `Logged a ${currentTripType} trip of ${newTrip.distance} miles.` });
-        setCurrentDistance(0);
     };
     
     const handleAddTrip = (trip: Omit<Trip, 'id'>) => {
@@ -172,7 +190,6 @@ export default function MileageTrackerPage() {
     
     const businessMiles = trips.filter(t => t.type === 'Business').reduce((acc, t) => acc + t.distance, 0);
     const personalMiles = trips.filter(t => t.type === 'Personal').reduce((acc, t) => acc + t.distance, 0);
-
 
   return (
     <div className="flex flex-col w-full">
@@ -236,7 +253,7 @@ export default function MileageTrackerPage() {
             <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 <div className="flex items-center space-x-2">
                     <Label htmlFor="trip-type" className={currentTripType === 'Personal' ? 'font-bold' : 'text-muted-foreground'}>Personal</Label>
-                    <Switch id="trip-type" checked={currentTripType === 'Business'} onCheckedChange={(checked) => setCurrentTripType(checked ? 'Business' : 'Personal')} />
+                    <Switch id="trip-type" checked={currentTripType === 'Business'} onCheckedChange={(checked) => setCurrentTripType(checked ? 'Business' : 'Personal')} disabled={isTracking} />
                     <Label htmlFor="trip-type" className={currentTripType === 'Business' ? 'font-bold' : 'text-muted-foreground'}>Business</Label>
                 </div>
                  {isTracking ? (
@@ -249,6 +266,16 @@ export default function MileageTrackerPage() {
                     </Button>
                  )}
             </CardContent>
+            {isTracking && (
+                <CardFooter className="p-4 pt-0">
+                    <div className="w-full h-48 bg-muted rounded-md relative overflow-hidden">
+                        <Image src="https://picsum.photos/seed/gpsmap/800/400" alt="Simulated GPS map" layout="fill" objectFit="cover" data-ai-hint="gps map" />
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                            <p className="text-white font-bold bg-black/50 px-4 py-2 rounded-md">Live Tracking Active...</p>
+                        </div>
+                    </div>
+                </CardFooter>
+            )}
         </Card>
 
         <Card>
@@ -303,6 +330,21 @@ export default function MileageTrackerPage() {
                 </Table>
             </CardContent>
         </Card>
+
+        <AlertDialog open={showIdlePrompt} onOpenChange={setShowIdlePrompt}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you still driving?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        We noticed you have been idle for a while. If you do not respond, the trip will be automatically stopped.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={handleStopTrip}>No, Stop Trip</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => { setShowIdlePrompt(false); resetIdleTimer(); }}>Yes, Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
       </main>
     </div>
