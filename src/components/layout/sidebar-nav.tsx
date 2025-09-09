@@ -47,6 +47,7 @@ import {
   PlusCircle,
   Library,
   CalendarPlus,
+  Truck,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -84,6 +85,7 @@ const navItems: NavItem[] = [
             roles: ['Admin', 'Dispatcher'],
             subItems: [
                 { href: '/dashboard/yard-management/appointment/office', label: 'Office', icon: Briefcase, roles: ['Admin', 'Dispatcher'] },
+                { href: '/dashboard/yard-management/appointment/gate', label: 'Gate', icon: Truck, roles: ['Admin', 'Dispatcher'] },
             ]
         },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search, roles: ['Admin', 'Dispatcher'] },
@@ -252,13 +254,10 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment') {
         return pathname === href;
     }
-    if (href === '/dashboard/local-loads' || href === '/dashboard/yard-management/trash') {
-        return pathname.startsWith(href);
-    }
-    return pathname.startsWith(href) && href !== '/dashboard/yard-management/appointment';
+    return pathname.startsWith(href);
   }
   
   const filteredNavItems = navItems.filter(item => item.roles.includes(role));
