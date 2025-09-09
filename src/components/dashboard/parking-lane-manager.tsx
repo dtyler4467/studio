@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Truck, PlusCircle, ParkingCircle, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
@@ -131,7 +131,7 @@ export function ParkingLaneManager() {
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                          <div className={cn(
-                            "rounded-md border p-4 h-32 flex flex-col justify-between transition-colors shadow-sm",
+                            "rounded-md border p-2 flex flex-col justify-between transition-colors shadow-sm h-40",
                             event ? 'bg-amber-400/20 border-amber-500 shadow-lg' : 'bg-muted/50'
                         )}>
                             <div className="flex justify-between items-start">
@@ -139,9 +139,10 @@ export function ParkingLaneManager() {
                                 {event ? <Truck className="w-6 h-6 text-amber-600" /> : <ParkingCircle className="w-6 h-6 text-muted-foreground" />}
                             </div>
                             {event ? (
-                                <div className="text-sm">
-                                    <p className="font-semibold truncate">{event.trailerId}</p>
-                                    <p className="text-muted-foreground truncate">{event.carrier}</p>
+                                <div className="text-xs space-y-1">
+                                    <p className="font-semibold truncate">{event.carrier} ({event.scac})</p>
+                                    <p className="text-muted-foreground truncate">Trailer: {event.trailerId}</p>
+                                    <p className="text-muted-foreground truncate">{format(event.timestamp, 'P p')}</p>
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center h-full">
