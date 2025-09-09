@@ -7,8 +7,8 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  getFilteredRowModel,
 } from "@tanstack/react-table"
-
 import {
   Table,
   TableBody,
@@ -22,10 +22,21 @@ import {
   Employee,
 } from "@/hooks/use-schedule"
 import { Input } from "@/components/ui/input"
+import { Button } from "../ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
 
 export function TrainingManagementTable() {
   const { employees } = useSchedule()
   const [globalFilter, setGlobalFilter] = React.useState("")
+  const { toast } = useToast()
+
+  const handleAssign = (employeeName: string, program: string) => {
+    toast({
+      title: "Training Assigned",
+      description: `${program} has been assigned to ${employeeName}.`
+    })
+  }
 
   const columns: ColumnDef<Employee>[] = [
     {
@@ -48,6 +59,29 @@ export function TrainingManagementTable() {
       accessorKey: "phoneNumber",
       header: "Phone Number",
     },
+    {
+      id: "assign",
+      header: "Assign",
+      cell: ({ row }) => {
+        const employee = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">Assign...</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Assign Training</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Onboarding")}>Onboarding</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Application")}>Application</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Annual Training")}>Annual Training</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Exam")}>Exam</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Library")}>Library</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      }
+    }
   ]
 
   const table = useReactTable({
@@ -55,7 +89,7 @@ export function TrainingManagementTable() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     onGlobalFilterChange: setGlobalFilter,
-    getFilteredRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     state: {
       globalFilter,
     },
