@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -599,10 +598,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         if (finalEvent.assignmentType === 'door_assignment' && finalEvent.assignmentValue && finalEvent.transactionType === 'inbound') {
             const doorId = finalEvent.assignmentValue;
             const lastEventForDoor = yardEvents
-                .filter(e => e.assignmentType === 'door_assignment' && e.assignmentValue === doorId)
+                .filter(e => e.assignmentType === 'door_assignment' && e.assignmentValue === doorId && e.transactionType === 'inbound')
                 .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
 
-            if (lastEventForDoor && lastEventForDoor.transactionType === 'inbound') {
+            if (lastEventForDoor) {
                 const occupyingEvent = lastEventForDoor;
                 // Door is occupied, move occupying trailer to lost and found
                 const outboundForOccupying: YardEvent = {
@@ -781,8 +780,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             return null;
         }
         
-        const occupyingEvent = getLatestInboundEventForLane(toLaneId);
-        
         const newEvents: YardEvent[] = [];
 
         // 1. Create outbound event for the trailer being moved from its original location
@@ -795,7 +792,25 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         };
         newEvents.push(outboundEvent);
 
+        // Handle moving to Lost & Found
+        if (toLaneId === 'lost_and_found') {
+            const lostEvent: YardEvent = {
+                ...eventToMove,
+                id: `EVT${Date.now() + 2}`,
+                transactionType: 'move',
+                assignmentType: 'lost_and_found',
+                assignmentValue: `moved from ${eventToMove.assignmentValue}`,
+                timestamp: new Date(),
+                clerkName: currentUser?.name || 'System',
+            };
+            setLostAndFound(prev => [...prev, lostEvent]);
+            setYardEvents(prev => [...prev, outboundEvent]); // only add outbound
+            return;
+        }
+
+
         // 2. If the destination lane is occupied, move the occupying trailer to Lost & Found
+        const occupyingEvent = getLatestInboundEventForLane(toLaneId);
         if (occupyingEvent) {
              // Create an outbound event for the occupying trailer
             const occupyingOutboundEvent: YardEvent = {
@@ -868,6 +883,7 @@ export const useSchedule = () => {
   }
   return context;
 };
+
 
 
 

@@ -29,7 +29,7 @@ import { Move } from "lucide-react";
 
 const FormSchema = z.object({
   trailerEventId: z.string({ required_error: "Please select a trailer." }),
-  destinationLane: z.string({ required_error: "Please select a destination lane." }),
+  destinationLane: z.string({ required_error: "Please select a destination." }),
 });
 
 export function TrailerMoveForm() {
@@ -65,7 +65,8 @@ export function TrailerMoveForm() {
 
 
   const availableLanes = useMemo(() => {
-    return parkingLanes.filter(lane => !laneTrailers.some(t => t.assignmentValue === lane));
+    const occupiedLanes = new Set(laneTrailers.map(t => t.assignmentValue));
+    return parkingLanes.filter(lane => !occupiedLanes.has(lane));
   }, [parkingLanes, laneTrailers]);
 
 
@@ -78,7 +79,7 @@ export function TrailerMoveForm() {
         moveTrailer(data.trailerEventId, data.destinationLane);
         toast({
             title: "Move Initiated",
-            description: `Trailer move to lane ${data.destinationLane} has been logged.`
+            description: `Trailer move to ${data.destinationLane === 'lost_and_found' ? 'Lost & Found' : `lane ${data.destinationLane}`} has been logged.`
         });
         form.reset();
     } catch (error: any) {
@@ -140,23 +141,32 @@ export function TrailerMoveForm() {
           name="destinationLane"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Destination Lane</FormLabel>
+              <FormLabel>Destination</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an empty lane" />
+                    <SelectValue placeholder="Select a destination" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {availableLanes.length > 0 ? (
-                     availableLanes.map(lane => (
-                        <SelectItem key={lane} value={lane}>
-                          {lane}
+                  <SelectGroup>
+                    <SelectLabel>Parking Lanes</SelectLabel>
+                    {availableLanes.length > 0 ? (
+                      availableLanes.map(lane => (
+                          <SelectItem key={lane} value={lane}>
+                            {lane}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>No available lanes</SelectItem>
+                    )}
+                  </SelectGroup>
+                   <SelectGroup>
+                        <SelectLabel>Other</SelectLabel>
+                        <SelectItem value="lost_and_found">
+                            Lost & Found
                        </SelectItem>
-                     ))
-                  ) : (
-                    <SelectItem value="" disabled>No available lanes</SelectItem>
-                  )}
+                   </SelectGroup>
                 </SelectContent>
               </Select>
               <FormMessage />
