@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -159,13 +158,13 @@ export function TrailerMoveForm() {
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-lanes" disabled>No available lanes</SelectItem>
+                      <SelectItem value="no-lanes-available" disabled>No available lanes</SelectItem>
                     )}
                   </SelectGroup>
                    <SelectGroup>
                         <SelectLabel>Other</SelectLabel>
                         <SelectItem value="lost_and_found">
-                            Lost & Found
+                            Lost &amp; Found
                        </SelectItem>
                    </SelectGroup>
                 </SelectContent>
