@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
 import { DocumentUpload } from "./document-upload"
 import { Label } from "../ui/label"
-import { Upload, Circle } from "lucide-react"
+import { Upload, Circle, Trash2 } from "lucide-react"
 import { Progress } from "../ui/progress"
 import { cn } from "@/lib/utils"
 
@@ -167,8 +167,46 @@ const AssignTaskDropdown = ({ employee, onAssign }: { employee: Employee, onAssi
     )
 }
 
+const UndoTaskDropdown = ({ assignments, onUndo }: { assignments: TrainingAssignment[], onUndo: (assignmentId: string) => void}) => {
+    const { trainingPrograms } = useSchedule();
+    const { toast } = useToast();
+
+    if (assignments.length === 0) {
+        return <Button variant="outline" size="sm" disabled>Undo Task</Button>
+    }
+
+    const handleUndo = (assignmentId: string) => {
+        onUndo(assignmentId);
+        toast({
+            title: "Task Unassigned",
+            description: "The task has been removed from the employee's assignments.",
+        });
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="destructive" size="sm">Undo Task</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuLabel>Select Task to Undo</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {assignments.map(assignment => {
+                    const program = trainingPrograms.flatMap(p => p.modules).find(m => m.id === assignment.moduleId);
+                    return (
+                        <DropdownMenuItem key={assignment.id} onSelect={() => handleUndo(assignment.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>{program?.title || assignment.moduleId}</span>
+                        </DropdownMenuItem>
+                    )
+                })}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
 export function TrainingManagementTable() {
-  const { employees, trainingAssignments, assignTraining, trainingPrograms } = useSchedule()
+  const { employees, trainingAssignments, assignTraining, unassignTraining, trainingPrograms } = useSchedule()
   const [globalFilter, setGlobalFilter] = React.useState("")
   
   const columns: ColumnDef<Employee>[] = [
@@ -255,6 +293,15 @@ export function TrainingManagementTable() {
             programIds.forEach(id => assignTraining(employee.id, id));
         };
         return <AssignTaskDropdown employee={employee} onAssign={handleAssign} />
+      }
+    },
+    {
+      id: "undo",
+      header: "Undo Task",
+      cell: ({ row }) => {
+        const employee = row.original;
+        const assignments = trainingAssignments.filter(a => a.employeeId === employee.id);
+        return <UndoTaskDropdown assignments={assignments} onUndo={unassignTraining} />
       }
     }
   ]
