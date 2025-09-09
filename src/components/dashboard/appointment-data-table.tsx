@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -91,7 +92,7 @@ const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (data:
                 <DialogHeader>
                 <DialogTitle>Schedule New Appointment</DialogTitle>
                 <DialogDescription>
-                    Fill in the details below to add a new appointment to the schedule.
+                    Fill in the details below to add a new appointment to the schedule. An email will be generated.
                 </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
@@ -211,6 +212,19 @@ export function AppointmentDataTable() {
         addAppointment(data);
         toast({ title: 'Appointment Scheduled', description: 'The new appointment has been added to the calendar.'});
         setAddOpen(false);
+
+        // Open email client
+        const subject = `New ${data.type} Appointment: ${data.carrier} - ${data.bolNumber}`;
+        const body = `A new appointment has been scheduled:\n\n` +
+                     `Type: ${data.type}\n` +
+                     `Carrier: ${data.carrier}\n` +
+                     `Driver: ${data.driverName}\n` +
+                     `BOL #: ${data.bolNumber}\n` +
+                     `Time: ${format(data.appointmentTime, 'Pp')}\n` +
+                     `Door: ${data.door || 'N/A'}\n\n` +
+                     `Please be advised.`;
+        
+        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
     
     const handleStatusChange = (appointmentId: string, status: Appointment['status']) => {
@@ -694,5 +708,3 @@ export function AppointmentDataTable() {
     </div>
   )
 }
-
-    

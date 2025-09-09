@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -98,7 +99,7 @@ const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange, employees }: { onS
                 <DialogHeader>
                 <DialogTitle>Schedule New Office Appointment</DialogTitle>
                 <DialogDescription>
-                    Fill in the details below to add a new appointment.
+                    Fill in the details below to add a new appointment. An email will be generated.
                 </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
@@ -218,6 +219,22 @@ export function OfficeAppointmentDataTable() {
         addOfficeAppointment(data);
         toast({ title: 'Appointment Scheduled', description: 'The new appointment has been added to the calendar.'});
         setAddOpen(false);
+
+        // Open email client
+        const attendeeEmails = data.attendees
+            .map(attendeeName => employees.find(emp => emp.name === attendeeName)?.email)
+            .filter(Boolean)
+            .join(',');
+
+        const subject = `New Appointment: ${data.title}`;
+        const body = `You have been invited to a new appointment:\n\n` +
+                     `Title: ${data.title}\n` +
+                     `Type: ${data.type}\n` +
+                     `Start: ${format(data.startTime, 'Pp')}\n` +
+                     `End: ${format(data.endTime, 'Pp')}\n\n` +
+                     `Notes: ${data.notes || 'N/A'}`;
+        
+        window.location.href = `mailto:${attendeeEmails}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
     
     const handleStatusChange = (appointmentId: string, status: OfficeAppointment['status']) => {
