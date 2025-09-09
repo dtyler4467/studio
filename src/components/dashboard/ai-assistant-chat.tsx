@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getAssistantResponse } from '@/ai/flows/assistant-flow';
-import { Send, User, Sparkles } from 'lucide-react';
+import { Send, User, Sparkles, Mic } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { Logo } from '../icons/logo';
 
@@ -104,6 +104,10 @@ export function AiAssistantChat() {
           <Button type="submit" disabled={isLoading}>
             <Send className="mr-2" />
             Send
+          </Button>
+           <Button type="button" variant="outline" size="icon" disabled={isLoading}>
+            <Mic />
+            <span className="sr-only">Use Microphone</span>
           </Button>
         </form>
       </Form>
