@@ -354,6 +354,7 @@ export function SidebarNav() {
         <SidebarMenu>
           {filteredNavItems.map((item) => {
             const filteredSubItems = item.subItems?.filter(sub => sub.roles.includes(role));
+            const isOverview = item.label === 'Dashboard' || item.label === 'Overview';
 
             if (item.href === '/dashboard/load-board-hub') {
                 const hubSubItems = loadBoardHubSubItems.filter(sub => sub.roles.includes(role));
@@ -477,6 +478,7 @@ export function SidebarNav() {
                             <CollapsibleContent>
                                 <SidebarMenuSub>
                                     {filteredSubItems.map((subItem) => {
+                                        const isSubOverview = subItem.label === 'Dashboard' || subItem.label === 'Overview';
                                         if (subItem.subItems) {
                                             const isSubOpen = openYardSubMenus[subItem.label] || false;
                                             const setIsSubOpen = (open: boolean) => setOpenYardSubMenus(prev => ({ ...prev, [subItem.label]: open }));
@@ -509,7 +511,7 @@ export function SidebarNav() {
                                         return (
                                             <SidebarMenuSubItem key={subItem.label}>
                                                 <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
-                                                    <Link href={subItem.href}>
+                                                    <Link href={subItem.href} target={isSubOverview ? "_blank" : undefined} rel={isSubOverview ? "noopener noreferrer" : undefined}>
                                                         {subItem.icon && <subItem.icon />}
                                                         <span>{subItem.label}</span>
                                                     </Link>
@@ -534,7 +536,7 @@ export function SidebarNav() {
                     tooltip={item.label}
                     className="justify-start w-full group"
                 >
-                    <Link href={item.href}>
+                    <Link href={item.href} target={isOverview ? "_blank" : undefined} rel={isOverview ? "noopener noreferrer" : undefined}>
                         <item.icon />
                         <span>{item.label}</span>
                     </Link>
@@ -561,6 +563,7 @@ export function SidebarNav() {
                     <CollapsibleContent>
                         <SidebarMenuSub>
                              {filteredAdminNavItems.map((item) => {
+                                 const isSubOverview = item.label === 'Overview';
                                  if (item.subItems) {
                                      const isOpen = openAdminSubMenus[item.label] || false;
                                      const setIsOpen = (open: boolean) => setOpenAdminSubMenus(prev => ({...prev, [item.label]: open}));
@@ -593,7 +596,7 @@ export function SidebarNav() {
                                  return (
                                      <SidebarMenuSubItem key={item.label}>
                                         <SidebarMenuSubButton asChild isActive={isSubItemActive(item.href)}>
-                                            <Link href={item.href}>
+                                            <Link href={item.href} target={isSubOverview ? "_blank" : undefined} rel={isSubOverview ? "noopener noreferrer" : undefined}>
                                                 <item.icon />
                                                 <span>{item.label}</span>
                                             </Link>
