@@ -1,4 +1,6 @@
 
+"use client";
+
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { ClipboardList, PlusCircle, Truck, Package, Weight, Calendar, Save, XCircle } from 'lucide-react';
@@ -14,8 +16,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-const availableOrders = [
+type Order = {
+    id: string;
+    customer: string;
+    destination: string;
+    weight: number;
+    volume: number;
+};
+
+const initialOrders: Order[] = [
     { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50 },
     { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150 },
     { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100 },
@@ -28,7 +41,77 @@ const carriers = [
     { id: 'carrier-3', name: 'Speedy Shipping' },
 ]
 
+function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Order) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const { toast } = useToast();
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const newOrder = {
+            id: `SO-${Math.floor(Math.random() * 900) + 100}`,
+            customer: formData.get('customer') as string,
+            destination: formData.get('destination') as string,
+            weight: Number(formData.get('weight')),
+            volume: Number(formData.get('volume')),
+        };
+
+        if (!newOrder.customer || !newOrder.destination || !newOrder.weight || !newOrder.volume) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields.' });
+            return;
+        }
+
+        onAddOrder(newOrder);
+        toast({ title: 'Order Added', description: `Order ${newOrder.id} has been added.` });
+        setIsOpen(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline"><PlusCircle className="mr-2"/> Manual Entry</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Order</DialogTitle>
+                    <DialogDescription>
+                        Enter the details for the new order you want to add to the planner.
+                    </DialogDescription>
+                </DialogHeader>
+                <form id="add-order-form" onSubmit={handleSubmit} className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="customer" className="text-right">Customer</Label>
+                        <Input id="customer" name="customer" className="col-span-3" placeholder="e.g. Customer E" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="destination" className="text-right">Destination</Label>
+                        <Input id="destination" name="destination" className="col-span-3" placeholder="e.g. San Francisco, CA" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="weight" className="text-right">Weight (lbs)</Label>
+                        <Input id="weight" name="weight" type="number" className="col-span-3" placeholder="e.g. 750" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="volume" className="text-right">Volume (cu ft)</Label>
+                        <Input id="volume" name="volume" type="number" className="col-span-3" placeholder="e.g. 80" />
+                    </div>
+                </form>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button type="submit" form="add-order-form">Add Order</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function LoadPlannerPage() {
+  const [availableOrders, setAvailableOrders] = useState<Order[]>(initialOrders);
+  
+  const handleAddOrder = (order: Order) => {
+      setAvailableOrders(prev => [order, ...prev]);
+  };
+
   return (
     <div className="flex flex-col w-full">
       <Header pageTitle="Load Planner" />
@@ -36,16 +119,19 @@ export default function LoadPlannerPage() {
         <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {/* Panel 1: Available Orders */}
             <Card className="lg:col-span-1 xl:col-span-1">
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2">
-                        <Package />
-                        Available Orders
-                    </CardTitle>
-                    <CardDescription>
-                        Select orders to add to the current load.
-                    </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="font-headline flex items-center gap-2">
+                            <Package />
+                            Available Orders
+                        </CardTitle>
+                        <CardDescription>
+                            Select orders to add to the current load.
+                        </CardDescription>
+                    </div>
+                    <AddOrderDialog onAddOrder={handleAddOrder} />
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 h-[600px] overflow-y-auto">
                     {availableOrders.map(order => (
                         <div key={order.id} className="border p-3 rounded-lg flex justify-between items-center">
                            <div className="text-sm">
@@ -158,3 +244,4 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
+
