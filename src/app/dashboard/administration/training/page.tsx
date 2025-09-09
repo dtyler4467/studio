@@ -1,7 +1,6 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TrainingManagementTable } from '@/components/dashboard/training-management-table';
 
 export default function AdminTrainingPage() {
   return (
@@ -16,7 +15,9 @@ export default function AdminTrainingPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <TrainingManagementTable />
+                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
+                    <p className="text-muted-foreground">Training management content coming soon.</p>
+                </div>
             </CardContent>
         </Card>
       </main>
