@@ -145,7 +145,7 @@ const navItems: NavItem[] = [
     label: 'Fleet Management',
     roles: ['Admin', 'Dispatcher', 'Manager'],
     subItems: [
-        { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Main Menu', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
   { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
@@ -197,7 +197,7 @@ const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration/training', icon: GraduationCap, label: 'Training Management', roles: ['Admin'] },
     { href: '/dashboard/administration/billing', icon: CreditCard, label: 'Billing', roles: ['Admin'] },
     { href: '/dashboard/administration/data-plan', icon: Database, label: 'Data Plan', roles: ['Admin'] },
-    { href: '/dashboard/administration/storage-backup', icon: DatabaseBackup, label: 'Storage Backup', roles: ['Admin'] },
+    { href: '/dashboard/administration/storage-backup', icon: DatabaseBackup, label: 'Storage & Backup', roles: ['Admin'] },
     { href: '/dashboard/administration/terms-and-agreements', icon: FileText, label: 'Terms & Agreements', roles: ['Admin'] },
     { href: '/dashboard/administration/trash', icon: Trash2, label: 'Trash', roles: ['Admin'] },
     { href: '/dashboard/administration/print', icon: Printer, label: 'Print/Email', roles: ['Admin'] },
