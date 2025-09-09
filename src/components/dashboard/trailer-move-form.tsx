@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,7 +77,7 @@ export function TrailerMoveForm() {
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
-        moveTrailer(data.trailerEventId, data.destinationLane);
+        moveTrailer(data.trailerEventId, 'lane', data.destinationLane);
         toast({
             title: "Move Initiated",
             description: `Trailer move to ${data.destinationLane === 'lost_and_found' ? 'Lost & Found' : `lane ${data.destinationLane}`} has been logged.`
@@ -128,7 +129,7 @@ export function TrailerMoveForm() {
                        </SelectGroup>
                     )}
                     {doorTrailers.length === 0 && laneTrailers.length === 0 && (
-                        <SelectItem value="" disabled>No trailers available to move</SelectItem>
+                        <SelectItem value="no-trailers" disabled>No trailers available to move</SelectItem>
                     )}
                 </SelectContent>
               </Select>
@@ -158,7 +159,7 @@ export function TrailerMoveForm() {
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="" disabled>No available lanes</SelectItem>
+                      <SelectItem value="no-lanes" disabled>No available lanes</SelectItem>
                     )}
                   </SelectGroup>
                    <SelectGroup>
