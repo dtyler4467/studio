@@ -35,7 +35,7 @@ const trainingPrograms = [
 ];
 
 
-const AssignTrainingDropdown = ({ employee }: { employee: Employee }) => {
+const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
     const { toast } = useToast();
     const [selectedPrograms, setSelectedPrograms] = React.useState<string[]>([]);
 
@@ -52,7 +52,7 @@ const AssignTrainingDropdown = ({ employee }: { employee: Employee }) => {
             toast({
                 variant: 'destructive',
                 title: 'No Selection',
-                description: 'Please select at least one training program to assign.'
+                description: 'Please select at least one task to assign.'
             });
             return;
         }
@@ -60,7 +60,7 @@ const AssignTrainingDropdown = ({ employee }: { employee: Employee }) => {
         const programLabels = selectedPrograms.map(id => trainingPrograms.find(p => p.id === id)?.label).join(', ');
 
         toast({
-            title: 'Training Assigned!',
+            title: 'Task Assigned!',
             description: `${programLabels} assigned to ${employee.name}.`
         });
         setSelectedPrograms([]);
@@ -72,7 +72,7 @@ const AssignTrainingDropdown = ({ employee }: { employee: Employee }) => {
               <Button variant="outline" size="sm">Assign...</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuLabel>Assign Training</DropdownMenuLabel>
+              <DropdownMenuLabel>Assign Task</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {trainingPrograms.map(program => (
                   <DropdownMenuCheckboxItem
@@ -129,7 +129,7 @@ export function TrainingManagementTable() {
       header: "Assign",
       cell: ({ row }) => {
         const employee = row.original;
-        return <AssignTrainingDropdown employee={employee} />
+        return <AssignTaskDropdown employee={employee} />
       }
     }
   ]

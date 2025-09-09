@@ -10,9 +10,9 @@ export default function AdminTrainingPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Manage Training Assignments</CardTitle>
+                <CardTitle className="font-headline">Manage Task Assignments</CardTitle>
                 <CardDescription>
-                    Assign training programs to employees and track their completion status.
+                    Assign tasks to employees and track their completion status.
                 </CardDescription>
             </CardHeader>
             <CardContent>
