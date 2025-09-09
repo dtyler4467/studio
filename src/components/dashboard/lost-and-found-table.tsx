@@ -26,20 +26,27 @@ import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
-import { MoreHorizontal, ArrowLeftRight, Move } from "lucide-react"
+import { MoreHorizontal, ArrowLeftRight, Move, Warehouse } from "lucide-react"
 
 
 export function LostAndFoundTable() {
-    const { lostAndFound, parkingLanes, yardEvents, moveTrailer } = useSchedule();
+    const { lostAndFound, parkingLanes, warehouseDoors, yardEvents, moveTrailer } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
-    const [isMoveDialogOpen, setIsMoveDialogOpen] = React.useState(false);
+    const [isMoveLaneDialogOpen, setIsMoveLaneDialogOpen] = React.useState(false);
+    const [isMoveDoorDialogOpen, setIsMoveDoorDialogOpen] = React.useState(false);
     const [selectedEvent, setSelectedEvent] = React.useState<YardEvent | null>(null);
     const [moveToLane, setMoveToLane] = React.useState<string>("");
+    const [moveToDoor, setMoveToDoor] = React.useState<string>("");
 
-    const openMoveDialog = (event: YardEvent) => {
+    const openMoveLaneDialog = (event: YardEvent) => {
         setSelectedEvent(event);
-        setIsMoveDialogOpen(true);
+        setIsMoveLaneDialogOpen(true);
+    };
+
+    const openMoveDoorDialog = (event: YardEvent) => {
+        setSelectedEvent(event);
+        setIsMoveDoorDialogOpen(true);
     };
     
     const handleProcessGateTransaction = (event: YardEvent) => {
@@ -56,12 +63,12 @@ export function LostAndFoundTable() {
         router.push(`/dashboard/yard-management/check-in?${query}`);
     }
 
-    const handleMove = () => {
+    const handleMoveToLane = () => {
         if (selectedEvent && moveToLane) {
             try {
-                moveTrailer(selectedEvent.id, moveToLane, true);
+                moveTrailer(selectedEvent.id, 'lane', moveToLane, true);
                 toast({ title: "Trailer Moved", description: `Trailer ${selectedEvent.trailerId} moved to lane ${moveToLane}.` });
-                setIsMoveDialogOpen(false);
+                setIsMoveLaneDialogOpen(false);
                 setSelectedEvent(null);
                 setMoveToLane("");
             } catch (error: any) {
@@ -69,11 +76,30 @@ export function LostAndFoundTable() {
             }
         }
     };
+
+    const handleMoveToDoor = () => {
+        if (selectedEvent && moveToDoor) {
+            try {
+                moveTrailer(selectedEvent.id, 'door', moveToDoor, true);
+                toast({ title: "Trailer Moved", description: `Trailer ${selectedEvent.trailerId} moved to door ${moveToDoor}.` });
+                setIsMoveDoorDialogOpen(false);
+                setSelectedEvent(null);
+                setMoveToDoor("");
+            } catch (error: any) {
+                 toast({ variant: 'destructive', title: "Move Failed", description: error.message });
+            }
+        }
+    }
     
     const availableLanes = React.useMemo(() => {
-        const occupiedLanes = new Set(yardEvents.filter(e => e.assignmentType === 'lane_assignment').map(e => e.assignmentValue));
+        const occupiedLanes = new Set(yardEvents.filter(e => e.assignmentType === 'lane_assignment' && e.transactionType === 'inbound').map(e => e.assignmentValue));
         return parkingLanes.filter(lane => !occupiedLanes.has(lane));
     }, [parkingLanes, yardEvents]);
+
+    const availableDoors = React.useMemo(() => {
+        const occupiedDoors = new Set(yardEvents.filter(e => e.assignmentType === 'door_assignment' && e.transactionType === 'inbound').map(e => e.assignmentValue));
+        return warehouseDoors.filter(door => !occupiedDoors.has(door));
+    }, [warehouseDoors, yardEvents]);
 
 
     const columns: ColumnDef<YardEvent>[] = [
@@ -108,10 +134,15 @@ export function LostAndFoundTable() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => openMoveDialog(event)}>
+                            <DropdownMenuItem onClick={() => openMoveLaneDialog(event)}>
                                 <Move className="mr-2 h-4 w-4" />
                                 <span>Move to new Lane</span>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openMoveDoorDialog(event)}>
+                                <Warehouse className="mr-2 h-4 w-4" />
+                                <span>Move to Door</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleProcessGateTransaction(event)}>
                                 <ArrowLeftRight className="mr-2 h-4 w-4" />
                                 <span>Process Gate Transaction</span>
@@ -180,7 +211,7 @@ export function LostAndFoundTable() {
                 </TableBody>
                 </Table>
             </div>
-             <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+             <Dialog open={isMoveLaneDialogOpen} onOpenChange={setIsMoveLaneDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Move Trailer {selectedEvent?.trailerId}</DialogTitle>
@@ -210,8 +241,43 @@ export function LostAndFoundTable() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsMoveDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleMove} disabled={!moveToLane}>Move Trailer</Button>
+                        <Button variant="outline" onClick={() => setIsMoveLaneDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleMoveToLane} disabled={!moveToLane}>Move Trailer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+             <Dialog open={isMoveDoorDialogOpen} onOpenChange={setIsMoveDoorDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Move Trailer {selectedEvent?.trailerId} to Door</DialogTitle>
+                        <DialogDescription>
+                            Select an available dock door to move the trailer to.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="door" className="text-right">
+                                Destination Door
+                            </Label>
+                            <Select value={moveToDoor} onValueChange={setMoveToDoor}>
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select a door" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableDoors.length > 0 ? (
+                                        availableDoors.map(door => (
+                                            <SelectItem key={door} value={door}>{door}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <SelectItem value="" disabled>No available doors</SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsMoveDoorDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleMoveToDoor} disabled={!moveToDoor}>Move Trailer</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

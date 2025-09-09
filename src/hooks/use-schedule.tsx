@@ -182,7 +182,7 @@ type ScheduleContextType = {
   appointments: Appointment[];
   officeAppointments: OfficeAppointment[];
   lostAndFound: YardEvent[];
-  moveTrailer: (eventId: string, toLaneId: string, fromLost?: boolean) => void;
+  moveTrailer: (eventId: string, toLocationType: 'lane' | 'door', toLocationId: string, fromLost?: boolean) => void;
   addOfficeAppointment: (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => OfficeAppointment;
   updateOfficeAppointmentStatus: (appointmentId: string, status: OfficeAppointment['status']) => void;
   updateLoadBoardHubName: (name: string) => void;
@@ -595,15 +595,15 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         const newEvents: YardEvent[] = [];
         let finalEvent: YardEvent = { ...newEventBase, id: `EVT${Date.now()}`, timestamp: new Date() };
 
-        if (finalEvent.assignmentType === 'door_assignment' && finalEvent.assignmentValue && finalEvent.transactionType === 'inbound') {
-            const doorId = finalEvent.assignmentValue;
-            const lastEventForDoor = yardEvents
-                .filter(e => e.assignmentType === 'door_assignment' && e.assignmentValue === doorId && e.transactionType === 'inbound')
+        if ((finalEvent.assignmentType === 'door_assignment' || finalEvent.assignmentType === 'lane_assignment') && finalEvent.assignmentValue && finalEvent.transactionType === 'inbound') {
+            const locationId = finalEvent.assignmentValue;
+            const lastEventForLocation = yardEvents
+                .filter(e => e.assignmentType === finalEvent.assignmentType && e.assignmentValue === locationId && e.transactionType === 'inbound')
                 .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
 
-            if (lastEventForDoor) {
-                const occupyingEvent = lastEventForDoor;
-                // Door is occupied, move occupying trailer to lost and found
+            if (lastEventForLocation) {
+                const occupyingEvent = lastEventForLocation;
+                // Location is occupied, move occupying trailer to lost and found
                 const outboundForOccupying: YardEvent = {
                     ...occupyingEvent,
                     id: `EVT${Date.now() + 1}`,
@@ -618,7 +618,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
                     id: `EVT${Date.now() + 2}`,
                     transactionType: 'move',
                     assignmentType: 'lost_and_found',
-                    assignmentValue: `displaced from ${doorId}`,
+                    assignmentValue: `displaced from ${locationId}`,
                     timestamp: new Date(),
                     clerkName: currentUser?.name || 'System',
                 };
@@ -761,19 +761,19 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
     };
 
-    const moveTrailer = (eventId: string, toLaneId: string, fromLost: boolean = false) => {
+    const moveTrailer = (eventId: string, toLocationType: 'lane' | 'door', toLocationId: string, fromLost: boolean = false) => {
         const eventToMove = fromLost 
             ? lostAndFound.find(e => e.id === eventId) 
             : yardEvents.find(e => e.id === eventId);
     
         if (!eventToMove) throw new Error("Trailer event to move not found.");
 
-        const getLatestInboundEventForLane = (laneId: string) => {
-            const eventsInLane = yardEvents
-                .filter(e => e.assignmentType === 'lane_assignment' && e.assignmentValue === laneId)
+        const getLatestInboundEventForLocation = (type: 'lane' | 'door', id: string) => {
+            const eventsInLocation = yardEvents
+                .filter(e => e.assignmentType === `${type}_assignment` && e.assignmentValue === id)
                 .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             
-            const lastEvent = eventsInLane[0];
+            const lastEvent = eventsInLocation[0];
             if (lastEvent && lastEvent.transactionType === 'inbound') {
                 return lastEvent;
             }
@@ -792,8 +792,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         };
         newEvents.push(outboundEvent);
 
-        // Handle moving to Lost & Found
-        if (toLaneId === 'lost_and_found') {
+        if (toLocationId === 'lost_and_found') {
             const lostEvent: YardEvent = {
                 ...eventToMove,
                 id: `EVT${Date.now() + 2}`,
@@ -804,15 +803,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
                 clerkName: currentUser?.name || 'System',
             };
             setLostAndFound(prev => [...prev, lostEvent]);
-            setYardEvents(prev => [...prev, outboundEvent]); // only add outbound
+            setYardEvents(prev => [...prev, outboundEvent]);
             return;
         }
 
-
-        // 2. If the destination lane is occupied, move the occupying trailer to Lost & Found
-        const occupyingEvent = getLatestInboundEventForLane(toLaneId);
+        const occupyingEvent = getLatestInboundEventForLocation(toLocationType, toLocationId);
         if (occupyingEvent) {
-             // Create an outbound event for the occupying trailer
             const occupyingOutboundEvent: YardEvent = {
                 ...occupyingEvent,
                 id: `EVT${Date.now() + 2}`,
@@ -822,26 +818,24 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             };
             newEvents.push(occupyingOutboundEvent);
 
-            // Create a lost & found event for the occupying trailer
             const lostEvent: YardEvent = {
                 ...occupyingEvent,
                 id: `EVT${Date.now() + 3}`,
                 transactionType: 'move',
                 assignmentType: 'lost_and_found',
-                assignmentValue: `displaced from ${toLaneId}`,
+                assignmentValue: `displaced from ${toLocationId}`,
                 timestamp: new Date(),
                 clerkName: currentUser?.name || 'System',
             };
             setLostAndFound(prev => [...prev, lostEvent]);
         }
 
-        // 3. Create inbound event for the trailer being moved to its new lane
         const inboundEvent: YardEvent = {
             ...eventToMove,
             id: `EVT${Date.now()}`,
             transactionType: 'inbound',
-            assignmentType: 'lane_assignment',
-            assignmentValue: toLaneId,
+            assignmentType: `${toLocationType}_assignment`,
+            assignmentValue: toLocationId,
             timestamp: new Date(),
             clerkName: currentUser?.name || 'System',
         };
@@ -883,7 +877,3 @@ export const useSchedule = () => {
   }
   return context;
 };
-
-
-
-
