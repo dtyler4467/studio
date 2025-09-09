@@ -61,6 +61,7 @@ import {
   ShoppingCart,
   Banknote,
   Gauge,
+  Siren,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -143,6 +144,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
+  { href: '/dashboard/sos-alerts', icon: Siren, label: 'SOS Alerts', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager'] },
   { 
     href: '#', 
     icon: Briefcase, 
