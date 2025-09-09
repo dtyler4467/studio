@@ -16,7 +16,8 @@ import {
     initialLoadBoardHub,
     initialAppointments,
     initialOfficeAppointments,
-    initialLostAndFound
+    initialLostAndFound,
+    initialLoads,
 } from "@/hooks/use-schedule";
 
 // In a real application, this would connect to a database or other data source.
@@ -40,4 +41,5 @@ export const dataService = {
     getAppointments: async () => Promise.resolve(initialAppointments),
     getOfficeAppointments: async () => Promise.resolve(initialOfficeAppointments),
     getLostAndFound: async () => Promise.resolve(initialLostAndFound),
+    getLoads: async () => Promise.resolve(initialLoads),
 };

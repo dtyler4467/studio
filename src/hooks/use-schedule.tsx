@@ -133,6 +133,20 @@ export type LocalLoadBoard = {
   number?: number;
 };
 
+export type Load = {
+  id: string
+  origin: string
+  destination: string
+  pickupDate: string
+  deliveryDate: string
+  rate: number
+  status: "Available" | "Assigned" | "In-Transit" | "Delivered" | "Pending" | "Deleted"
+  assignedTo?: string;
+  carrier?: string;
+  scac?: string;
+  dispatcher?: string;
+}
+
 export type Appointment = {
     id: string;
     status: 'Scheduled' | 'Arrived' | 'Departed' | 'Missed';
@@ -182,6 +196,7 @@ type ScheduleContextType = {
   appointments: Appointment[];
   officeAppointments: OfficeAppointment[];
   lostAndFound: YardEvent[];
+  loads: Load[];
   moveTrailer: (eventId: string, toLocationType: 'lane' | 'door', toLocationId: string, fromLost?: boolean) => void;
   addOfficeAppointment: (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => OfficeAppointment;
   updateOfficeAppointmentStatus: (appointmentId: string, status: OfficeAppointment['status']) => void;
@@ -222,7 +237,7 @@ type ScheduleContextType = {
   updateAppointmentStatus: (appointmentId: string, status: Appointment['status']) => void;
 };
 
-const initialShifts: Shift[] = [
+export const initialShifts: Shift[] = [
     { id: 'SH001', date: formatISO(new Date(), { representation: 'date' }), employeeId: 'USR001', title: 'Opening Shift', startTime: '08:00', endTime: '16:00' },
     { id: 'SH002', date: formatISO(new Date(), { representation: 'date' }), employeeId: 'USR002', title: 'Closing Shift', startTime: '14:00', endTime: '22:00' },
     { id: 'SH003', date: formatISO(addDays(new Date(), 2), { representation: 'date' }), employeeId: 'USR001', title: 'Day Shift', startTime: '09:00', endTime: '17:00' },
@@ -230,14 +245,14 @@ const initialShifts: Shift[] = [
 ];
 
 
-const mockEmployees: Employee[] = [
+export const mockEmployees: Employee[] = [
     { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"] },
     { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"] },
     { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"] },
     { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"] },
 ];
 
-const holidays: Holiday[] = [
+export const initialHolidays: Holiday[] = [
     { date: new Date(2024, 0, 1), name: "New Year's Day" },
     { date: new Date(2024, 0, 15), name: "Martin Luther King, Jr. Day" },
     { date: new Date(2024, 1, 19), name: "Presidents' Day" },
@@ -250,17 +265,17 @@ const holidays: Holiday[] = [
     { date: new Date(2024, 11, 25), name: "Christmas Day" },
 ];
 
-const initialTimeOffRequests: TimeOffRequest[] = [
+export const initialTimeOffRequests: TimeOffRequest[] = [
     { id: 'PTO001', employeeId: 'USR002', startDate: addDays(new Date(), 5), endDate: addDays(new Date(), 7), reason: 'Family vacation', status: 'Pending' },
     { id: 'PTO002', employeeId: 'USR003', startDate: addDays(new Date(), 10), endDate: addDays(new Date(), 10), reason: 'Doctor appointment', status: 'Approved' },
 ];
 
-const initialRegistrations: Registration[] = [
+export const initialRegistrations: Registration[] = [
     { id: 'REG001', name: 'New User 1', email: 'new.user1@example.com', phoneNumber: '555-888-1111', role: 'Driver', status: 'Pending' },
     { id: 'REG002', name: 'New User 2', email: 'new.user2@example.com', phoneNumber: '555-888-2222', role: 'Dispatcher', status: 'Pending' },
 ]
 
-const initialYardEvents: YardEvent[] = [
+export const initialYardEvents: YardEvent[] = [
     { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', sealNumber: 'S12345', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD123', assignmentType: 'door_assignment', assignmentValue: 'D4', timestamp: new Date('2024-07-28T08:15:00Z'), documentDataUri: "https://picsum.photos/seed/bol/800/1100" },
     { id: 'EVT002', transactionType: 'outbound', trailerId: 'TR48991', sealNumber: 'S67890', carrier: 'J.B. Hunt', scac: 'JBHT', driverName: 'Jane Smith', clerkName: 'Admin User', loadNumber: 'LD124', assignmentType: 'empty', timestamp: new Date('2024-07-28T09:30:00Z') },
     { id: 'EVT003', transactionType: 'inbound', trailerId: 'TR53456', carrier: 'Schneider', scac: 'SNDR', driverName: 'Mike Johnson', clerkName: 'Jane Clerk', loadNumber: 'LD125', assignmentType: 'lane_assignment', assignmentValue: 'L12', timestamp: new Date('2024-07-27T14:00:00Z') },
@@ -268,7 +283,7 @@ const initialYardEvents: YardEvent[] = [
     { id: 'EVT005', transactionType: 'inbound', trailerId: 'TR53789', carrier: 'Werner', scac: 'WERN', driverName: 'Chris Brown', clerkName: 'Admin User', loadNumber: 'LD127', assignmentType: 'bobtail', timestamp: new Date('2024-07-26T11:20:00Z'), documentDataUri: "https://picsum.photos/seed/doc/800/1100" },
 ];
 
-const initialExpenseReports: ExpenseReport[] = [
+export const initialExpenseReports: ExpenseReport[] = [
     { id: "EXP001", employeeName: "John Doe", date: "2024-07-25", description: "Fuel stop in Nevada", category: "Fuel", amount: 150.75, status: "Approved", documentDataUri: "https://picsum.photos/seed/fuel/800/1100" },
     { id: "EXP002", employeeName: "Jane Doe", date: "2024-07-26", description: "Hotel stay in Denver", category: "Other", amount: 120.00, status: "Approved" },
     { id: "EXP003", employeeName: "Mike Smith", date: "2024-07-27", description: "Dinner with client", category: "Food", amount: 85.50, status: "Pending", documentDataUri: "https://picsum.photos/seed/food/800/1100" },
@@ -279,7 +294,7 @@ const initialExpenseReports: ExpenseReport[] = [
     { id: "EXP008", employeeName: "HR", date: "2024-07-31", description: "Monthly payroll", category: "Payroll", amount: 15000.00, status: "Approved" },
 ];
 
-const initialTrainingPrograms: TrainingProgram[] = [
+export const initialTrainingPrograms: TrainingProgram[] = [
     {
         id: 'PROG001',
         title: 'New Driver Onboarding',
@@ -357,16 +372,16 @@ Be wary of emails that:
     }
 ];
 
-const initialTrainingAssignments: TrainingAssignment[] = [
+export const initialTrainingAssignments: TrainingAssignment[] = [
     { id: 'TA001', employeeId: 'USR001', programId: 'PROG001', status: 'Not Started', assignedDate: new Date() },
     { id: 'TA002', employeeId: 'USR002', programId: 'PROG001', status: 'In Progress', assignedDate: new Date() },
     { id: 'TA003', employeeId: 'USR004', programId: 'PROG002', status: 'Completed', assignedDate: new Date(), completedDate: new Date() },
 ];
 
-const initialWarehouseDoors = Array.from({ length: 10 }, (_, i) => `D${i + 1}`);
-const initialParkingLanes = Array.from({ length: 20 }, (_, i) => `L${i + 1}`);
+export const initialWarehouseDoors = Array.from({ length: 10 }, (_, i) => `D${i + 1}`);
+export const initialParkingLanes = Array.from({ length: 20 }, (_, i) => `L${i + 1}`);
 
-const initialDeletionLogs: DeletionLog[] = [
+export const initialDeletionLogs: DeletionLog[] = [
     {
         id: 'LOG1725792480000',
         deletedItemId: 'SH005',
@@ -385,7 +400,7 @@ const initialDeletionLogs: DeletionLog[] = [
     }
 ];
 
-const initialTimeClockEvents: TimeClockEvent[] = [
+export const initialTimeClockEvents: TimeClockEvent[] = [
     { id: 'TC001', employeeId: 'USR001', timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), type: 'in', status: 'Approved' },
     { id: 'TC002', employeeId: 'USR001', timestamp: new Date(Date.now() - 1 * 60 * 1000).toISOString(), type: 'out' },
     { id: 'TC003', employeeId: 'USR002', timestamp: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(), type: 'in', status: 'Pending' },
@@ -393,13 +408,22 @@ const initialTimeClockEvents: TimeClockEvent[] = [
     { id: 'TC005', employeeId: 'USR003', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), type: 'in', status: 'Denied' },
 ];
 
-const initialLocalLoadBoards: LocalLoadBoard[] = [
+export const initialLocalLoadBoards: LocalLoadBoard[] = [
     { id: 'llb-1', name: 'Local Load board', number: 1 },
 ];
 
-const initialLoadBoardHub: LocalLoadBoard = { id: 'hub-1', name: 'Load board hub' };
+export const initialLoadBoardHub: LocalLoadBoard = { id: 'hub-1', name: 'Load board hub' };
 
-const initialAppointments: Appointment[] = [
+export const initialLoads: Load[] = [
+    { id: "LD001", origin: "Los Angeles, CA", destination: "Phoenix, AZ", pickupDate: "2024-08-01", deliveryDate: "2024-08-02", rate: 1200, status: "Available", carrier: "Knight-Swift", scac: "KNX" },
+    { id: "LD002", origin: "Chicago, IL", destination: "New York, NY", pickupDate: "2024-08-03", deliveryDate: "2024-08-05", rate: 2500, status: "Available", carrier: "J.B. Hunt", scac: "JBHT" },
+    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Pending", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT", dispatcher: "Dispatcher Name" },
+    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith", carrier: "Knight-Swift", scac: "KNX", dispatcher: "Dispatcher Name" },
+    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT", dispatcher: "Dispatcher Name" },
+    { id: "LD006", origin: "Boston, MA", destination: "Washington, DC", pickupDate: "2024-08-10", deliveryDate: "2024-08-11", rate: 900, status: "Deleted" },
+];
+
+export const initialAppointments: Appointment[] = [
     { id: 'APP001', status: 'Scheduled', type: 'Inbound', carrier: 'Knight-Swift', scac: 'KNX', bolNumber: 'BOL123', poNumber: 'PO456', sealNumber: 'S123', driverName: 'John Doe', driverPhoneNumber: '555-111-1111', driverLicenseNumber: 'D1234567', driverLicenseState: 'CA', appointmentTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), door: 'D4' },
     { id: 'APP002', status: 'Arrived', type: 'Inbound', carrier: 'J.B. Hunt', scac: 'JBHT', bolNumber: 'BOL456', poNumber: 'PO789', sealNumber: 'S456', driverName: 'Jane Smith', driverPhoneNumber: '555-222-2222', appointmentTime: new Date(new Date().getTime() - 1 * 60 * 60 * 1000), door: 'D2' },
     { id: 'APP003', status: 'Scheduled', type: 'Outbound', carrier: 'Schneider', scac: 'SNDR', bolNumber: 'BOL789', poNumber: 'PO123', sealNumber: 'S789', driverName: 'Mike Johnson', appointmentTime: new Date(new Date().getTime() + 4 * 60 * 60 * 1000) },
@@ -407,13 +431,13 @@ const initialAppointments: Appointment[] = [
     { id: 'APP005', status: 'Missed', type: 'Inbound', carrier: 'Swift Logistics', scac: 'SWFT', bolNumber: 'BOL112', poNumber: 'PO113', sealNumber: 'S112', driverName: 'Chris Brown', driverLicenseNumber: 'D7654321', driverLicenseState: 'AZ', appointmentTime: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000) },
 ];
 
-const initialOfficeAppointments: OfficeAppointment[] = [
+export const initialOfficeAppointments: OfficeAppointment[] = [
     { id: 'OA001', title: 'Q3 Financial Review', type: 'Meeting', attendees: ['Emily Jones', 'Mike Smith'], startTime: new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() + (2 * 24 * 60 * 60 + 1 * 60 * 60) * 1000), status: 'Scheduled', notes: 'Conference Room 3' },
     { id: 'OA002', title: 'Visitor: John from Acme Corp', type: 'Visitor', attendees: ['Admin User'], startTime: new Date(new Date().getTime() + 1 * 24 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() + (1 * 24 * 60 * 60 + 2 * 60 * 60) * 1000), status: 'Scheduled' },
     { id: 'OA003', title: 'IT Maintenance', type: 'Standard', attendees: ['IT Department'], startTime: new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() - (1 * 24 * 60 * 60 - 4 * 60 * 60) * 1000), status: 'Completed' },
 ];
 
-const initialLostAndFound: YardEvent[] = [];
+export const initialLostAndFound: YardEvent[] = [];
 
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -437,6 +461,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [officeAppointments, setOfficeAppointments] = useState<OfficeAppointment[]>(initialOfficeAppointments);
   const [lostAndFound, setLostAndFound] = useState<YardEvent[]>(initialLostAndFound);
+  const [loads, setLoads] = useState<Load[]>(initialLoads);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -864,7 +889,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );

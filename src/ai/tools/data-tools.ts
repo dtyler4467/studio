@@ -123,6 +123,123 @@ const getPendingRequests = ai.defineTool(
     }
 );
 
+const getAllLoads = ai.defineTool(
+    {
+        name: 'getAllLoads',
+        description: 'Returns a list of all available loads, including their origin, destination, and rate.',
+        outputSchema: z.array(z.object({
+            id: z.string(),
+            origin: z.string(),
+            destination: z.string(),
+            rate: z.number(),
+        }))
+    },
+    async () => {
+        const loads = await dataService.getLoads();
+        return loads
+            .filter(load => load.status === 'Available')
+            .map(load => ({
+                id: load.id,
+                origin: load.origin,
+                destination: load.destination,
+                rate: load.rate,
+            }));
+    }
+);
+
+const getLoadDetails = ai.defineTool(
+    {
+        name: 'getLoadDetails',
+        description: 'Returns the full details for a specific load ID.',
+        inputSchema: z.object({
+            loadId: z.string().describe('The ID of the load, e.g., LD001.'),
+        }),
+        outputSchema: z.object({
+            id: z.string(),
+            origin: z.string(),
+            destination: z.string(),
+            pickupDate: z.string(),
+            deliveryDate: z.string(),
+            rate: z.number(),
+            status: z.string(),
+            assignedTo: z.string().optional(),
+            carrier: z.string().optional(),
+            scac: z.string().optional(),
+            dispatcher: z.string().optional(),
+        })
+    },
+    async ({ loadId }) => {
+        const loads = await dataService.getLoads();
+        const load = loads.find(l => l.id.toLowerCase() === loadId.toLowerCase());
+        if (!load) {
+            throw new Error(`Load with ID ${loadId} not found.`);
+        }
+        return load;
+    }
+);
+
+const getTrainingModules = ai.defineTool(
+    {
+        name: 'getTrainingModules',
+        description: 'Returns a list of all available training modules and the programs they belong to.',
+        outputSchema: z.array(z.object({
+            program: z.string(),
+            moduleId: z.string(),
+            title: z.string(),
+            description: z.string(),
+        }))
+    },
+    async () => {
+        const programs = await dataService.getTrainingPrograms();
+        return programs.flatMap(program => 
+            program.modules.map(module => ({
+                program: program.title,
+                moduleId: module.id,
+                title: module.title,
+                description: module.description,
+            }))
+        );
+    }
+);
+
+const getTrainingModuleContent = ai.defineTool(
+    {
+        name: 'getTrainingModuleContent',
+        description: 'Returns the full content for a specific training module ID.',
+        inputSchema: z.object({
+            moduleId: z.string().describe('The ID of the training module, e.g., MOD001.'),
+        }),
+        outputSchema: z.object({
+            title: z.string(),
+            type: z.string(),
+            content: z.string(),
+        })
+    },
+    async ({ moduleId }) => {
+        const programs = await dataService.getTrainingPrograms();
+        for (const program of programs) {
+            const module = program.modules.find(m => m.id.toLowerCase() === moduleId.toLowerCase());
+            if (module) {
+                return {
+                    title: module.title,
+                    type: module.type,
+                    content: module.content,
+                };
+            }
+        }
+        throw new Error(`Training module with ID ${moduleId} not found.`);
+    }
+);
+
+
 export async function getTools() {
-  return [getActiveTrailersInYard, getEmployeeSchedule, getPendingRequests];
+  return [
+    getActiveTrailersInYard, 
+    getEmployeeSchedule, 
+    getPendingRequests,
+    getAllLoads,
+    getLoadDetails,
+    getTrainingModules,
+    getTrainingModuleContent,
+  ];
 }
