@@ -17,6 +17,7 @@ import { Logo } from '../icons/logo';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 const formSchema = z.object({
   prompt: z.string().min(1, { message: "Prompt cannot be empty." }),
@@ -35,6 +36,7 @@ export function AiAssistantChat() {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,6 +44,13 @@ export function AiAssistantChat() {
       prompt: '',
     },
   });
+
+  useEffect(() => {
+    const promptFromUrl = searchParams.get('prompt');
+    if (promptFromUrl) {
+      form.setValue('prompt', decodeURIComponent(promptFromUrl));
+    }
+  }, [searchParams, form]);
 
   useEffect(() => {
     // Check for SpeechRecognition API only on the client
