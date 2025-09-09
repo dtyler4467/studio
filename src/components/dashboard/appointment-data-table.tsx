@@ -74,6 +74,8 @@ const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (data:
         poNumber: '',
         sealNumber: '',
         driverName: '',
+        driverPhoneNumber: '',
+        driverLicenseNumber: '',
         appointmentTime: new Date(),
         door: '',
     });
@@ -84,7 +86,7 @@ const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (data:
 
     return (
          <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                 <DialogTitle>Schedule New Appointment</DialogTitle>
                 <DialogDescription>
@@ -127,6 +129,14 @@ const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (data:
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="driver" className="text-right">Driver Name</Label>
                         <Input id="driver" value={formData.driverName} onChange={(e) => setFormData({...formData, driverName: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="driverPhone" className="text-right">Driver Phone #</Label>
+                        <Input id="driverPhone" value={formData.driverPhoneNumber} onChange={(e) => setFormData({...formData, driverPhoneNumber: e.target.value})} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="driverLicense" className="text-right">Driver License #</Label>
+                        <Input id="driverLicense" value={formData.driverLicenseNumber} onChange={(e) => setFormData({...formData, driverLicenseNumber: e.target.value})} className="col-span-3" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="door" className="text-right">Door</Label>
@@ -205,7 +215,7 @@ export function AppointmentDataTable() {
 
     const exportToXlsx = () => {
         const dataToExport = table.getFilteredRowModel().rows.map(row => {
-            const { id, status, type, carrier, scac, bolNumber, poNumber, sealNumber, driverName, appointmentTime, door } = row.original;
+            const { id, status, type, carrier, scac, bolNumber, poNumber, sealNumber, driverName, driverPhoneNumber, driverLicenseNumber, appointmentTime, door } = row.original;
             return {
                 ID: id,
                 Status: status,
@@ -217,6 +227,8 @@ export function AppointmentDataTable() {
                 "PO #": poNumber,
                 "Seal #": sealNumber,
                 "Driver Name": driverName,
+                "Driver Phone #": driverPhoneNumber,
+                "Driver License #": driverLicenseNumber,
                 Door: door,
             };
         });
@@ -258,6 +270,8 @@ export function AppointmentDataTable() {
                         poNumber: String(row["PO #"]),
                         sealNumber: String(row["Seal #"]),
                         driverName: String(row["Driver Name"]),
+                        driverPhoneNumber: row["Driver Phone #"] ? String(row["Driver Phone #"]) : undefined,
+                        driverLicenseNumber: row["Driver License #"] ? String(row["Driver License #"]) : undefined,
                         appointmentTime,
                         door: row.Door ? String(row.Door) : undefined,
                     };
@@ -367,6 +381,14 @@ export function AppointmentDataTable() {
        {
         accessorKey: "driverName",
         header: "Driver",
+      },
+       {
+        accessorKey: "driverPhoneNumber",
+        header: "Driver Phone #",
+      },
+       {
+        accessorKey: "driverLicenseNumber",
+        header: "Driver License #",
       },
        {
         accessorKey: "sealNumber",

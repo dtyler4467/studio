@@ -144,6 +144,8 @@ export type Appointment = {
     poNumber: string;
     sealNumber: string;
     driverName: string;
+    driverPhoneNumber?: string;
+    driverLicenseNumber?: string;
     appointmentTime: Date;
     door?: string;
 };
@@ -382,11 +384,11 @@ const initialLocalLoadBoards: LocalLoadBoard[] = [
 const initialLoadBoardHub: LocalLoadBoard = { id: 'hub-1', name: 'Load board hub' };
 
 const initialAppointments: Appointment[] = [
-    { id: 'APP001', status: 'Scheduled', type: 'Inbound', carrier: 'Knight-Swift', scac: 'KNX', bolNumber: 'BOL123', poNumber: 'PO456', sealNumber: 'S123', driverName: 'John Doe', appointmentTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), door: 'D4' },
-    { id: 'APP002', status: 'Arrived', type: 'Inbound', carrier: 'J.B. Hunt', scac: 'JBHT', bolNumber: 'BOL456', poNumber: 'PO789', sealNumber: 'S456', driverName: 'Jane Smith', appointmentTime: new Date(new Date().getTime() - 1 * 60 * 60 * 1000), door: 'D2' },
+    { id: 'APP001', status: 'Scheduled', type: 'Inbound', carrier: 'Knight-Swift', scac: 'KNX', bolNumber: 'BOL123', poNumber: 'PO456', sealNumber: 'S123', driverName: 'John Doe', driverPhoneNumber: '555-111-1111', driverLicenseNumber: 'D1234567', appointmentTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), door: 'D4' },
+    { id: 'APP002', status: 'Arrived', type: 'Inbound', carrier: 'J.B. Hunt', scac: 'JBHT', bolNumber: 'BOL456', poNumber: 'PO789', sealNumber: 'S456', driverName: 'Jane Smith', driverPhoneNumber: '555-222-2222', appointmentTime: new Date(new Date().getTime() - 1 * 60 * 60 * 1000), door: 'D2' },
     { id: 'APP003', status: 'Scheduled', type: 'Outbound', carrier: 'Schneider', scac: 'SNDR', bolNumber: 'BOL789', poNumber: 'PO123', sealNumber: 'S789', driverName: 'Mike Johnson', appointmentTime: new Date(new Date().getTime() + 4 * 60 * 60 * 1000) },
     { id: 'APP004', status: 'Departed', type: 'Outbound', carrier: 'Werner', scac: 'WERN', bolNumber: 'BOL101', poNumber: 'PO112', sealNumber: 'S101', driverName: 'Emily Davis', appointmentTime: new Date(new Date().getTime() - 24 * 60 * 60 * 1000) },
-    { id: 'APP005', status: 'Missed', type: 'Inbound', carrier: 'Swift Logistics', scac: 'SWFT', bolNumber: 'BOL112', poNumber: 'PO113', sealNumber: 'S112', driverName: 'Chris Brown', appointmentTime: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000) },
+    { id: 'APP005', status: 'Missed', type: 'Inbound', carrier: 'Swift Logistics', scac: 'SWFT', bolNumber: 'BOL112', poNumber: 'PO113', sealNumber: 'S112', driverName: 'Chris Brown', driverLicenseNumber: 'D7654321', appointmentTime: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000) },
 ]
 
 
