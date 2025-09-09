@@ -785,6 +785,20 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             setLostAndFound(prev => prev.filter(e => e.id !== eventId));
         }
     };
+    
+    const addOfficeAppointment = (appointment: Omit<OfficeAppointment, 'id' | 'status'>): OfficeAppointment => {
+        const newAppointment: OfficeAppointment = {
+            ...appointment,
+            id: `OA${Date.now()}`,
+            status: 'Scheduled',
+        };
+        setOfficeAppointments(prev => [newAppointment, ...prev]);
+        return newAppointment;
+    };
+
+    const updateOfficeAppointmentStatus = (appointmentId: string, status: OfficeAppointment['status']) => {
+        setOfficeAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
+    };
 
 
   return (
