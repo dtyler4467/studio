@@ -15,6 +15,8 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ArrowLeftRight, Search } from 'lucide-react';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+
 
 type YardCheckInPageContentProps = {
     defaultTransactionType?: 'inbound' | 'outbound';
@@ -26,6 +28,7 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
     const router = useRouter();
     const searchParams = useSearchParams();
     const [documentDataUri, setDocumentDataUri] = useState<string | null>(null);
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -41,6 +44,9 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
             assignmentValue: "",
         },
     });
+    
+    // Watch for changes in the transactionType radio button
+    const transactionType = form.watch('transactionType');
 
     useEffect(() => {
         // Pre-populate form from URL search params
@@ -52,9 +58,9 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
              form.setValue('scac', searchParams.get('scac') || '');
              form.setValue('driverName', searchParams.get('driver') || '');
              form.setValue('sealNumber', searchParams.get('sealNumber') || '');
-             const transactionType = searchParams.get('transactionType');
-             if (transactionType === 'inbound' || transactionType === 'outbound') {
-                 form.setValue('transactionType', transactionType);
+             const urlTransactionType = searchParams.get('transactionType');
+             if (urlTransactionType === 'inbound' || urlTransactionType === 'outbound') {
+                 form.setValue('transactionType', urlTransactionType);
              }
         }
     }, [searchParams, form]);
@@ -86,47 +92,87 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
         });
         
         setDocumentDataUri(null);
-        form.reset();
+        form.reset({
+             transactionType: defaultTransactionType,
+             trailerId: "", sealNumber: "", carrier: "", scac: "", driverName: "",
+             loadNumber: "", assignmentType: "empty", assignmentValue: "",
+        });
         router.push('/dashboard/yard-management/search');
     };
 
+    const handleTransactionTypeChange = (value: "inbound" | "outbound") => {
+        if (defaultTransactionType === 'outbound' && value === 'inbound') {
+            setShowConfirmation(true);
+        } else {
+            form.setValue('transactionType', value);
+        }
+    }
+    
+    const confirmSwitchToInbound = () => {
+        form.setValue('transactionType', 'inbound');
+        setShowConfirmation(false);
+    }
+    
+    const cancelSwitch = () => {
+        // This will revert the radio button visually if the user clicks No
+        form.setValue('transactionType', 'outbound');
+        setShowConfirmation(false);
+    }
+
 
   return (
-        <Card>
-        <CardHeader>
-            <div className="flex justify-between items-start">
-                 <div>
-                    <CardTitle className="font-headline">Gate Check In/Out</CardTitle>
-                    <CardDescription>
-                        Log truck arrivals and departures. You can start by searching for a load or entering details manually.
-                    </CardDescription>
-                 </div>
-                 <Button variant="outline" asChild>
-                    <Link href="/dashboard/yard-management/search">
-                        <Search className="mr-2" />
-                        Search for a Load
-                    </Link>
-                 </Button>
-            </div>
-        </CardHeader>
-        <CardContent>
-            <YardCheckInForm form={form} />
-            <Separator className="my-8" />
-            <div>
-                <h3 className="text-lg font-medium mb-2">Attach Documents (Optional)</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                    Use your device's camera to capture a new document or upload an existing file from your computer. The document will be submitted with the gate record.
-                </p>
-                <DocumentUpload onDocumentChange={setDocumentDataUri} currentDocument={documentDataUri} />
-            </div>
-        </CardContent>
-        <CardFooter>
-            <Button type="submit" form="yard-check-in-form" className="w-full" onClick={form.handleSubmit(handleFormSubmit)}>
-                <ArrowLeftRight className="mr-2" />
-                Submit Gate Record
-            </Button>
-        </CardFooter>
-        </Card>
+        <>
+            <Card>
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="font-headline">Gate Check In/Out</CardTitle>
+                        <CardDescription>
+                            Log truck arrivals and departures. You can start by searching for a load or entering details manually.
+                        </CardDescription>
+                    </div>
+                    <Button variant="outline" asChild>
+                        <Link href="/dashboard/yard-management/search">
+                            <Search className="mr-2" />
+                            Search for a Load
+                        </Link>
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <YardCheckInForm form={form} onTransactionTypeChange={handleTransactionTypeChange} />
+                <Separator className="my-8" />
+                <div>
+                    <h3 className="text-lg font-medium mb-2">Attach Documents (Optional)</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Use your device's camera to capture a new document or upload an existing file from your computer. The document will be submitted with the gate record.
+                    </p>
+                    <DocumentUpload onDocumentChange={setDocumentDataUri} currentDocument={documentDataUri} />
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button type="submit" form="yard-check-in-form" className="w-full" onClick={form.handleSubmit(handleFormSubmit)}>
+                    <ArrowLeftRight className="mr-2" />
+                    Submit Gate Record
+                </Button>
+            </CardFooter>
+            </Card>
+            
+            <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+                        <AlertDialogDescription className="text-destructive font-medium">
+                            Are you sure you want to switch to an inbound check-in process?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={cancelSwitch}>No</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmSwitchToInbound}>Yes</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
   );
 }
 

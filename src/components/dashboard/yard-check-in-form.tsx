@@ -43,6 +43,7 @@ export type FormValues = z.infer<typeof formSchema>;
 
 type YardCheckInFormProps = {
     form: UseFormReturn<FormValues>;
+    onTransactionTypeChange: (value: 'inbound' | 'outbound') => void;
 }
 
 // In a real app, this would come from the authenticated user's session
@@ -64,7 +65,7 @@ const ClientFormattedDate = () => {
     return <>{format(date, 'PPP p')}</>
 }
 
-export function YardCheckInForm({ form }: YardCheckInFormProps) {
+export function YardCheckInForm({ form, onTransactionTypeChange }: YardCheckInFormProps) {
 
   const assignmentType = form.watch("assignmentType");
 
@@ -88,8 +89,8 @@ export function YardCheckInForm({ form }: YardCheckInFormProps) {
               <FormLabel>Transaction Type</FormLabel>
               <FormControl>
                 <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  onValueChange={(value) => onTransactionTypeChange(value as 'inbound' | 'outbound')}
+                  value={field.value}
                   className="flex items-center space-x-4"
                 >
                   <FormItem className="flex items-center space-x-2 space-y-0">
