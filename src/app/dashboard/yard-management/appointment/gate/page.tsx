@@ -1,6 +1,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { AppointmentDataTable } from '@/components/dashboard/appointment-data-table';
 
 export default function GatePage() {
   return (
@@ -11,13 +12,11 @@ export default function GatePage() {
           <CardHeader>
             <CardTitle className="font-headline">Manage Gate Appointments</CardTitle>
             <CardDescription>
-              Schedule and manage gate appointments.
+              Schedule and manage gate appointments for inbound and outbound traffic.
             </CardDescription>
           </CardHeader>
           <CardContent>
-             <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                <p className="text-muted-foreground">Gate appointment content coming soon.</p>
-            </div>
+            <AppointmentDataTable />
           </CardContent>
         </Card>
       </main>
