@@ -14,9 +14,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, X } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, X, Download, Upload } from "lucide-react"
 import { format, isWithinInterval, isValid, parse } from "date-fns"
 import { DateRange } from "react-day-picker"
+import * as XLSX from "xlsx"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -182,6 +183,7 @@ const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (data:
 export function AppointmentDataTable() {
     const { appointments, addAppointment, updateAppointmentStatus } = useSchedule();
     const { toast } = useToast();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [sorting, setSorting] = React.useState<SortingState>([{id: 'appointmentTime', desc: false}])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -200,6 +202,88 @@ export function AppointmentDataTable() {
         updateAppointmentStatus(appointmentId, status);
         toast({ title: 'Status Updated', description: `Appointment has been marked as ${status}.`});
     }
+
+    const exportToXlsx = () => {
+        const dataToExport = table.getFilteredRowModel().rows.map(row => {
+            const { id, status, type, carrier, scac, bolNumber, poNumber, sealNumber, driverName, appointmentTime, door } = row.original;
+            return {
+                ID: id,
+                Status: status,
+                Type: type,
+                "Appointment Time": format(new Date(appointmentTime), "yyyy-MM-dd HH:mm:ss"),
+                Carrier: carrier,
+                SCAC: scac,
+                "BOL #": bolNumber,
+                "PO #": poNumber,
+                "Seal #": sealNumber,
+                "Driver Name": driverName,
+                Door: door,
+            };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Appointments");
+        XLSX.writeFile(workbook, `Appointments_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        
+        toast({
+            title: "Export Successful",
+            description: `${dataToExport.length} appointment(s) have been exported.`,
+        });
+    };
+
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const workbook = XLSX.read(e.target?.result, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+                json.forEach((row: any) => {
+                    const appointmentTime = new Date(row["Appointment Time"]);
+                    if (!isValid(appointmentTime)) {
+                        throw new Error(`Invalid date format for row with Carrier ${row.Carrier}. Expected format like YYYY-MM-DD HH:MM:SS.`);
+                    }
+
+                    const newAppointment: Omit<Appointment, 'id' | 'status'> = {
+                        type: row.Type === 'Inbound' ? 'Inbound' : 'Outbound',
+                        carrier: String(row.Carrier),
+                        scac: String(row.SCAC),
+                        bolNumber: String(row["BOL #"]),
+                        poNumber: String(row["PO #"]),
+                        sealNumber: String(row["Seal #"]),
+                        driverName: String(row["Driver Name"]),
+                        appointmentTime,
+                        door: row.Door ? String(row.Door) : undefined,
+                    };
+                    addAppointment(newAppointment);
+                });
+
+                toast({
+                    title: "Import Successful",
+                    description: `${json.length} appointment(s) imported successfully.`,
+                });
+
+            } catch (error) {
+                console.error("Failed to import Excel file:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Import Failed",
+                    description: error instanceof Error ? error.message : "An unknown error occurred during import.",
+                });
+            } finally {
+                 if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                 }
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
 
     const columns: ColumnDef<Appointment>[] = [
       {
@@ -452,6 +536,21 @@ export function AppointmentDataTable() {
             </Button>
         )}
         <div className="ml-auto flex gap-2">
+             <Input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".xlsx, .xls, .csv"
+                onChange={handleFileImport}
+            />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2" />
+                Import
+            </Button>
+            <Button variant="outline" onClick={exportToXlsx}>
+                <Download className="mr-2" />
+                Export
+            </Button>
              <Button onClick={() => setAddOpen(true)}>
                 <PlusCircle className="mr-2" />
                 New Appointment
