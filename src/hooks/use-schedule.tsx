@@ -217,7 +217,7 @@ type ScheduleContextType = {
   restoreDeletedItem: (logId: string) => void;
   addTimeClockEvent: (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => void;
   updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
-  addAppointment: (appointment: Omit<Appointment, 'id' | 'status'>) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'status'>) => Appointment;
   updateAppointmentStatus: (appointmentId: string, status: Appointment['status']) => void;
 };
 
@@ -716,6 +716,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             status: 'Scheduled',
         };
         setAppointments(prev => [newAppointment, ...prev]);
+        return newAppointment;
     };
 
     const updateAppointmentStatus = (appointmentId: string, status: Appointment['status']) => {

@@ -15,7 +15,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, X, Download, Upload } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, X, Download, Upload, Mail } from "lucide-react"
 import { format, isWithinInterval, isValid, parse } from "date-fns"
 import { DateRange } from "react-day-picker"
 import * as XLSX from "xlsx"
@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { useSchedule, Appointment } from "@/hooks/use-schedule"
+import { useSchedule, Appointment, Employee } from "@/hooks/use-schedule"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
@@ -51,6 +51,7 @@ import { Calendar } from "../ui/calendar"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Skeleton } from "../ui/skeleton"
+import { MultiSelect, MultiSelectOption } from "../ui/multi-select"
 
 const ClientFormattedDate = ({ date }: { date: Date | string }) => {
   const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
@@ -196,8 +197,76 @@ const AddAppointmentDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (data:
     )
 }
 
+
+const EmailDialog = ({
+    isOpen,
+    onOpenChange,
+    appointment,
+    employees,
+}: {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    appointment: Appointment | null;
+    employees: Employee[];
+}) => {
+    const [recipients, setRecipients] = React.useState<string[]>([]);
+    const employeeOptions: MultiSelectOption[] = React.useMemo(() => employees.map(e => ({ value: e.email || '', label: e.name })).filter(e => e.value), [employees]);
+    
+    const handleSendEmail = () => {
+        if (!appointment) return;
+
+        const subject = `New ${appointment.type} Appointment: ${appointment.carrier} - ${appointment.bolNumber}`;
+        const body = `A new gate appointment has been scheduled:\n\n` +
+                     `Type: ${appointment.type}\n` +
+                     `Carrier: ${appointment.carrier}\n` +
+                     `Driver: ${appointment.driverName}\n` +
+                     `BOL #: ${appointment.bolNumber}\n` +
+                     `Time: ${format(appointment.appointmentTime, 'Pp')}\n` +
+                     `Door: ${appointment.door || 'N/A'}\n\n` +
+                     `Please be advised.`;
+        
+        window.location.href = `mailto:${recipients.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        onOpenChange(false);
+    };
+
+    if (!appointment) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Email Appointment Confirmation</DialogTitle>
+                    <DialogDescription>
+                        Select recipients to notify about appointment for "{appointment.carrier} - {appointment.bolNumber}".
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid items-center gap-1.5">
+                        <Label htmlFor="recipients">Recipients</Label>
+                         <MultiSelect
+                            options={employeeOptions}
+                            selected={recipients}
+                            onChange={setRecipients}
+                            className="col-span-3"
+                            placeholder="Select or type email..."
+                            allowOther
+                        />
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Skip</Button>
+                    <Button onClick={handleSendEmail} disabled={recipients.length === 0}>
+                        <Mail className="mr-2" /> Send Email
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+
+}
+
 export function AppointmentDataTable() {
-    const { appointments, addAppointment, updateAppointmentStatus } = useSchedule();
+    const { appointments, addAppointment, updateAppointmentStatus, employees } = useSchedule();
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [sorting, setSorting] = React.useState<SortingState>([{id: 'appointmentTime', desc: false}])
@@ -206,25 +275,15 @@ export function AppointmentDataTable() {
     const [rowSelection, setRowSelection] = React.useState({})
     const [globalFilter, setGlobalFilter] = React.useState('')
     const [isAddOpen, setAddOpen] = React.useState(false);
-
+    const [isEmailOpen, setEmailOpen] = React.useState(false);
+    const [appointmentToEmail, setAppointmentToEmail] = React.useState<Appointment | null>(null);
 
     const handleAddAppointment = (data: Omit<Appointment, 'id' | 'status'>) => {
-        addAppointment(data);
+        const newAppointment = addAppointment(data);
         toast({ title: 'Appointment Scheduled', description: 'The new appointment has been added to the calendar.'});
         setAddOpen(false);
-
-        // Open email client
-        const subject = `New ${data.type} Appointment: ${data.carrier} - ${data.bolNumber}`;
-        const body = `A new appointment has been scheduled:\n\n` +
-                     `Type: ${data.type}\n` +
-                     `Carrier: ${data.carrier}\n` +
-                     `Driver: ${data.driverName}\n` +
-                     `BOL #: ${data.bolNumber}\n` +
-                     `Time: ${format(data.appointmentTime, 'Pp')}\n` +
-                     `Door: ${data.door || 'N/A'}\n\n` +
-                     `Please be advised.`;
-        
-        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        setAppointmentToEmail(newAppointment);
+        setEmailOpen(true);
     }
     
     const handleStatusChange = (appointmentId: string, status: Appointment['status']) => {
@@ -705,6 +764,12 @@ export function AppointmentDataTable() {
         </div>
       </div>
       <AddAppointmentDialog onSave={handleAddAppointment} isOpen={isAddOpen} onOpenChange={setAddOpen} />
+       <EmailDialog 
+        isOpen={isEmailOpen}
+        onOpenChange={setEmailOpen}
+        appointment={appointmentToEmail}
+        employees={employees}
+      />
     </div>
   )
 }
