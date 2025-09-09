@@ -344,7 +344,7 @@ export function SidebarNav() {
             if (item.href === '/dashboard/load-board-hub') {
                 const hubSubItems = loadBoardHubSubItems.filter(sub => sub.roles.includes(role));
                 return (
-                     <Collapsible key={item.href} asChild open={isLoadBoardHubOpen} onOpenChange={setIsLoadBoardHubOpen}>
+                     <Collapsible key={item.label} asChild open={isLoadBoardHubOpen} onOpenChange={setIsLoadBoardHubOpen}>
                          <SidebarMenuItem>
                             <div className="flex items-center w-full">
                                <CollapsibleTrigger asChild>
@@ -440,7 +440,7 @@ export function SidebarNav() {
 
 
                  return (
-                 <Collapsible key={item.href} asChild open={isOpen} onOpenChange={setIsOpen}>
+                 <Collapsible key={item.label} asChild open={isOpen} onOpenChange={setIsOpen}>
                      <SidebarMenuItem>
                          <CollapsibleTrigger asChild>
                              <SidebarMenuButton
@@ -465,7 +465,7 @@ export function SidebarNav() {
                                             const isSubOpen = openYardSubMenus[subItem.label] || false;
                                             const setIsSubOpen = (open: boolean) => setOpenYardSubMenus(prev => ({ ...prev, [subItem.label]: open }));
                                             return (
-                                                <Collapsible key={subItem.href} open={isSubOpen} onOpenChange={setIsSubOpen}>
+                                                <Collapsible key={subItem.label} open={isSubOpen} onOpenChange={setIsSubOpen}>
                                                     <CollapsibleTrigger asChild>
                                                         <SidebarMenuSubButton isActive={subItem.subItems.some(si => pathname.startsWith(si.href))}>
                                                             <subItem.icon />
@@ -511,7 +511,7 @@ export function SidebarNav() {
              
 
             return (
-                <SidebarMenuItem key={item.href}>
+                <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                     asChild
                     isActive={isSubItemActive(item.href)}
@@ -549,7 +549,7 @@ export function SidebarNav() {
                                      const isOpen = openAdminSubMenus[item.label] || false;
                                      const setIsOpen = (open: boolean) => setOpenAdminSubMenus(prev => ({...prev, [item.label]: open}));
                                      return (
-                                         <Collapsible key={item.href} open={isOpen} onOpenChange={setIsOpen}>
+                                         <Collapsible key={item.label} open={isOpen} onOpenChange={setIsOpen}>
                                              <CollapsibleTrigger asChild>
                                                  <SidebarMenuSubButton isActive={item.subItems.some(si => pathname.startsWith(si.href))}>
                                                      <item.icon />
