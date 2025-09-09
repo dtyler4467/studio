@@ -32,6 +32,7 @@ const prompt = ai.definePrompt({
   prompt: `You are an intelligent AI assistant for a logistics company called LogiFlow.
   Your goal is to provide helpful, accurate, and concise answers to user questions.
   The user is interacting with you through a chat interface in their dashboard.
+  You have access to a vast amount of information from the web to answer general knowledge questions.
 
   Here is the user's query:
   "{{{query}}}"
@@ -53,3 +54,4 @@ const assistantFlow = ai.defineFlow(
     return output!;
   }
 );
+
