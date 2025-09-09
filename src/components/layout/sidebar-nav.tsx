@@ -152,6 +152,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
   },
+  { href: '/dashboard/accountant', icon: CreditCard, label: 'Accountant', roles: ['Admin', 'Manager'] },
 ];
 
 const adminNavItems: NavItem[] = [
