@@ -100,10 +100,11 @@ const navItems: NavItem[] = [
     subItems: [
         { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/inventory', icon: Boxes, label: 'Inventory', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-        { href: '/dashboard/warehouse-hub-manager/bol', icon: FileText, label: 'Bill of Lading', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/warehouse-hub-manager/procurement', icon: ShoppingCart, label: 'Procurement', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/receiving', icon: ArrowDownToLine, label: 'Receiving', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/shipping', icon: ArrowUpFromLine, label: 'Shipping', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/warehouse-hub-manager/load-planner', icon: ClipboardList, label: 'Load Planner', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/warehouse-hub-manager/procurement', icon: ShoppingCart, label: 'Procurement', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/warehouse-hub-manager/bol', icon: FileText, label: 'Bill of Lading', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
   { 
