@@ -3,10 +3,22 @@
 
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Lightbulb } from 'lucide-react';
+import { ArrowRight, Lightbulb, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useToast } from '@/hooks/use-toast';
 
-const prompts = [
+type Prompt = {
+    category: string;
+    questions: string[];
+}
+
+const initialPrompts: Prompt[] = [
     {
         category: "Yard Management",
         questions: [
@@ -41,8 +53,107 @@ const prompts = [
     }
 ];
 
+export function AddPromptDialog() {
+    // This is a placeholder. In a real app, this would be connected to a global state or context.
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(false);
+    const [newPromptText, setNewPromptText] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [newCategory, setNewCategory] = useState('');
+    
+    const handleSave = () => {
+        const category = newCategory || selectedCategory;
+        if (!category || !newPromptText) {
+             toast({
+                variant: "destructive",
+                title: "Incomplete",
+                description: "Please fill out both the prompt and category.",
+            });
+            return;
+        }
+        // In a real app, this would call a function from context to update the state
+        console.log({ category, question: newPromptText });
+        toast({
+            title: "Prompt Added!",
+            description: "Your new prompt has been added to the library.",
+        });
+        setIsOpen(false);
+        setNewPromptText('');
+        setSelectedCategory('');
+        setNewCategory('');
+    };
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle className="mr-2" /> New Prompt
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Prompt</DialogTitle>
+                    <DialogDescription>
+                        Create a new prompt and add it to an existing or new category.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="prompt" className="text-right">Prompt</Label>
+                        <Input 
+                            id="prompt" 
+                            value={newPromptText}
+                            onChange={(e) => setNewPromptText(e.target.value)}
+                            className="col-span-3"
+                            placeholder="e.g., How many shipments are scheduled today?"
+                        />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="category" className="text-right">Category</Label>
+                        <Select
+                            value={selectedCategory}
+                            onValueChange={(value) => {
+                                setSelectedCategory(value);
+                                if (value !== 'new') setNewCategory('');
+                            }}
+                        >
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {initialPrompts.map(p => (
+                                    <SelectItem key={p.category} value={p.category}>{p.category}</SelectItem>
+                                ))}
+                                <SelectItem value="new">Create new category...</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {selectedCategory === 'new' && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="new-category" className="text-right">New Category</Label>
+                            <Input 
+                                id="new-category" 
+                                value={newCategory}
+                                onChange={(e) => setNewCategory(e.target.value)}
+                                className="col-span-3"
+                                placeholder="e.g., Reports"
+                            />
+                        </div>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Prompt</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+
 export function AiPromptLibrary() {
   const router = useRouter();
+  const [prompts, setPrompts] = useState(initialPrompts);
 
   const handlePromptClick = (question: string) => {
     const encodedQuestion = encodeURIComponent(question);
