@@ -86,6 +86,7 @@ const navItems: NavItem[] = [
             subItems: [
                 { href: '/dashboard/yard-management/appointment/office', label: 'Office', icon: Briefcase, roles: ['Admin', 'Dispatcher'] },
                 { href: '/dashboard/yard-management/appointment/gate', label: 'Gate', icon: Truck, roles: ['Admin', 'Dispatcher'] },
+                { href: '/dashboard/yard-management/appointment/trash', label: 'Trash', icon: Trash2, roles: ['Admin', 'Dispatcher'] },
             ]
         },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search, roles: ['Admin', 'Dispatcher'] },
