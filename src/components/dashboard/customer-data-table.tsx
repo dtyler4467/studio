@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, Download, Trash2 } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, Download, Trash2, X } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -50,6 +50,7 @@ import { Label } from "../ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
 import { Skeleton } from "../ui/skeleton"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 
 type Customer = {
     id: string;
@@ -137,7 +138,7 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
                         <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData(f => ({...f, phone: e.target.value}))} className="col-span-3" />
                     </div>
                     <div className="grid grid-cols-4 items-start gap-4">
-                        <Label htmlFor="item" className="text-right pt-2">Item</Label>
+                        <Label htmlFor="item" className="text-right pt-2">Items</Label>
                         <div className="col-span-3 space-y-2">
                              <div className="flex gap-2">
                                 <Input 
@@ -191,6 +192,16 @@ export function CustomerDataTable() {
         setAddOpen(false);
         toast({ title: "Customer Added", description: `${customer.name} has been added.` });
     };
+    
+    const handleStatusChange = (customerId: string, status: Customer['status']) => {
+        setData(currentData =>
+            currentData.map(customer =>
+                customer.id === customerId ? { ...customer, status } : customer
+            )
+        );
+        toast({ title: "Status Updated", description: "Customer status has been changed."});
+    };
+
 
     const exportToCsv = () => {
         const headers = ["ID", "Name", "Company", "Email", "Phone", "Status", "Date Added"];
@@ -264,8 +275,21 @@ export function CustomerDataTable() {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-            const status = row.getValue("status") as Customer['status'];
-            return <Badge variant={status === 'Active' ? 'default' : 'secondary'} className={status === 'Active' ? 'bg-green-600' : ''}>{status}</Badge>
+            const customer = row.original;
+            return (
+                <Select
+                    value={customer.status}
+                    onValueChange={(value: Customer['status']) => handleStatusChange(customer.id, value)}
+                >
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                </Select>
+            )
         }
       },
       {
@@ -401,9 +425,20 @@ export function CustomerDataTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest('[role="combobox"]')) {
+                          e.stopPropagation();
+                      }
+                  }}
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} onClick={(e) => {
+                        if (cell.column.id === 'status' || cell.column.id === 'actions' || cell.column.id === 'select') {
+                            e.stopPropagation();
+                        }
+                    }}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -453,3 +488,5 @@ export function CustomerDataTable() {
     </div>
   )
 }
+
+    
