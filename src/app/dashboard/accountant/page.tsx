@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, CartesianGrid, XAxis, YAxis, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 const recentTransactions = [
     { id: 'INV-001', date: new Date(), type: 'Invoice', customer: 'Acme Inc.', amount: 1250.00, status: 'Paid' },
