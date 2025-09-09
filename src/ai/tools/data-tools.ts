@@ -123,6 +123,6 @@ const getPendingRequests = ai.defineTool(
     }
 );
 
-export function getTools() {
+export async function getTools() {
   return [getActiveTrailersInYard, getEmployeeSchedule, getPendingRequests];
 }
