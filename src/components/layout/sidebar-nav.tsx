@@ -145,6 +145,7 @@ const navItems: NavItem[] = [
     label: 'Fleet Management',
     roles: ['Admin', 'Dispatcher', 'Manager'],
     subItems: [
+        { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Main Menu', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
