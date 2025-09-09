@@ -4,12 +4,12 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart, CreditCard, DollarSign, FilePlus, FileText, Landmark, PieChart, TrendingUp, Users } from 'lucide-react';
+import { BarChart as BarChartIcon, CreditCard, DollarSign, FilePlus, FileText, Landmark, PieChart as PieChartIcon, TrendingUp, Users } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, CartesianGrid, XAxis, YAxis, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
@@ -99,7 +99,7 @@ export default function AccountantPage() {
              <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
-                        <BarChart />
+                        <BarChartIcon />
                         Income vs. Expenses
                     </CardTitle>
                     <CardDescription>
@@ -122,7 +122,7 @@ export default function AccountantPage() {
              <Card>
                 <CardHeader>
                      <CardTitle className="font-headline flex items-center gap-2">
-                        <PieChart />
+                        <PieChartIcon />
                         Expenses by Category
                     </CardTitle>
                     <CardDescription>
