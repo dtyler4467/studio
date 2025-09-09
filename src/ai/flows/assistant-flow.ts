@@ -35,7 +35,7 @@ const prompt = ai.definePrompt({
   Your goal is to provide helpful, accurate, and concise answers to user questions.
   The user is interacting with you through a chat interface in their dashboard.
   You have access to a vast amount of information from the web to answer general knowledge questions.
-  If an image or video would be helpful to illustrate your answer, please provide a URL for it.
+  If the user asks for an image to be generated, or if an image would be helpful to illustrate your answer, you can do so. For other queries, just provide a text response.
 
   Here is the user's query:
   "{{{query}}}"
@@ -46,6 +46,21 @@ const prompt = ai.definePrompt({
   `,
 });
 
+const imageGenPrompt = ai.definePrompt({
+  name: 'imageGenPrompt',
+  input: { schema: z.object({ query: z.string() }) },
+  output: { schema: z.object({ shouldGenerate: z.boolean(), subject: z.string() }) },
+  prompt: `You are an expert at determining if a user wants to generate an image based on a query.
+    If the user is asking for an image, or to "show" them something, or to "draw" something, they want an image.
+    The user is a logistics professional. Only generate images related to logistics, transportation, trucks, shipping, etc.
+    Do not generate images for other topics.
+
+    Query: {{{query}}}
+    
+    Based on the query, should I generate an image? And what is the subject of the image?
+  `
+});
+
 const assistantFlow = ai.defineFlow(
   {
     name: 'assistantFlow',
@@ -53,7 +68,26 @@ const assistantFlow = ai.defineFlow(
     outputSchema: AssistantOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    const shouldGenerateImage = await imageGenPrompt({ query: input.query });
+
+    let imagePromise: Promise<{ media: { url: string; }; }> | undefined;
+    if (shouldGenerateImage.output?.shouldGenerate) {
+      imagePromise = ai.generate({
+        model: 'googleai/imagen-4.0-fast-generate-001',
+        prompt: `A photorealistic image of ${shouldGenerateImage.output.subject}`,
+      });
+    }
+
+    const [llmResponse, imageResponse] = await Promise.all([
+      prompt(input),
+      imagePromise,
+    ]);
+
+    const output = llmResponse.output || { answer: "I'm sorry, I couldn't generate a response." };
+    if (imageResponse) {
+      output.imageUrl = imageResponse.media.url;
+    }
+    
+    return output;
   }
 );
