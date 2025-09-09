@@ -587,14 +587,48 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const addYardEvent = (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => {
-        const newEvent: YardEvent = {
+        const newEventBase: Omit<YardEvent, 'id' | 'timestamp'> = {
             ...eventData,
-            id: `EVT${Date.now()}`,
-            timestamp: new Date(),
-            clerkName: "Admin User", // Mocked for now
+            clerkName: currentUser?.name || 'Admin User',
             documentDataUri: documentDataUri,
         };
-        setYardEvents(prev => [newEvent, ...prev]);
+
+        const newEvents: YardEvent[] = [];
+        let finalEvent: YardEvent = { ...newEventBase, id: `EVT${Date.now()}`, timestamp: new Date() };
+
+        if (finalEvent.assignmentType === 'door_assignment' && finalEvent.assignmentValue && finalEvent.transactionType === 'inbound') {
+            const doorId = finalEvent.assignmentValue;
+            const lastEventForDoor = yardEvents
+                .filter(e => e.assignmentType === 'door_assignment' && e.assignmentValue === doorId)
+                .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+            if (lastEventForDoor && lastEventForDoor.transactionType === 'inbound') {
+                const occupyingEvent = lastEventForDoor;
+                // Door is occupied, move occupying trailer to lost and found
+                const outboundForOccupying: YardEvent = {
+                    ...occupyingEvent,
+                    id: `EVT${Date.now() + 1}`,
+                    transactionType: 'outbound',
+                    timestamp: new Date(),
+                    clerkName: currentUser?.name || 'System',
+                };
+                newEvents.push(outboundForOccupying);
+
+                const lostEvent: YardEvent = {
+                    ...occupyingEvent,
+                    id: `EVT${Date.now() + 2}`,
+                    transactionType: 'move',
+                    assignmentType: 'lost_and_found',
+                    assignmentValue: `displaced from ${doorId}`,
+                    timestamp: new Date(),
+                    clerkName: currentUser?.name || 'System',
+                };
+                setLostAndFound(prev => [...prev, lostEvent]);
+            }
+        }
+
+        newEvents.push(finalEvent);
+        setYardEvents(prev => [...prev, ...newEvents]);
     };
     
     const getExpenseReportById = (id: string) => {
@@ -834,5 +868,6 @@ export const useSchedule = () => {
   }
   return context;
 };
+
 
 
