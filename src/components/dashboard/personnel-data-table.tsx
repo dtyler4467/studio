@@ -54,7 +54,7 @@ const workLocationOptions = [
 ];
 
 
-const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (newEmployee: Omit<Employee, 'id' | 'personnelId'>) => void }) => {
+const AddEmployeeDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (newEmployee: Omit<Employee, 'id' | 'personnelId' | 'status'>) => void }) => {
     const [newEmployee, setNewEmployee] = React.useState({
         name: '',
         email: '',
@@ -187,7 +187,7 @@ const EditEmployeeDialog = ({ employee, isOpen, onOpenChange, onSave }: { employ
 }
 
 export function PersonnelDataTable() {
-    const { employees, currentUser, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees } = useSchedule();
+    const { employees, currentUser, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
     const [globalFilter, setGlobalFilter] = React.useState('');
@@ -209,7 +209,7 @@ export function PersonnelDataTable() {
         });
     };
     
-    const handleAddEmployee = (newEmployee: Omit<Employee, 'id' | 'personnelId'>) => {
+    const handleAddEmployee = (newEmployee: Omit<Employee, 'id' | 'personnelId' | 'status'>) => {
         addEmployee(newEmployee);
         toast({
             title: "Employee Added",
@@ -230,6 +230,22 @@ export function PersonnelDataTable() {
         toast({
             title: "Role Updated",
             description: "The user's role has been successfully changed.",
+        });
+    };
+
+     const handleStatusChange = (employeeId: string, status: Employee['status']) => {
+        if (currentUser?.id === employeeId) {
+            toast({
+                variant: "destructive",
+                title: "Action Forbidden",
+                description: "You cannot change your own status.",
+            });
+            return;
+        }
+        updateEmployeeStatus(employeeId, status);
+        toast({
+            title: "Status Updated",
+            description: "The user's status has been successfully changed.",
         });
     };
     
@@ -297,7 +313,7 @@ export function PersonnelDataTable() {
                 const worksheet = workbook.Sheets[sheetName];
                 const json = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-                const newEmployees: Omit<Employee, 'id' | 'personnelId'>[] = json.map((row: any) => {
+                const newEmployees: Omit<Employee, 'id' | 'personnelId' | 'status'>[] = json.map((row: any) => {
                     const name = String(row['Name']);
                     const email = String(row['Email']);
                     const role = String(row['Role']) as Employee['role'];
@@ -347,6 +363,27 @@ export function PersonnelDataTable() {
       {
         accessorKey: "name",
         header: "Name",
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+            const employee = row.original;
+            return (
+                <Select
+                    value={employee.status}
+                    onValueChange={(value: Employee['status']) => handleStatusChange(employee.id, value)}
+                >
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                </Select>
+            )
+        }
       },
       {
         accessorKey: "email",
@@ -551,7 +588,7 @@ export function PersonnelDataTable() {
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} onClick={(e) => {
-                        if (['actions', 'role', 'workLocation'].includes(cell.column.id)) {
+                        if (['actions', 'role', 'status', 'workLocation'].includes(cell.column.id)) {
                              e.stopPropagation();
                         }
                     }}>
@@ -590,5 +627,3 @@ export function PersonnelDataTable() {
     </div>
   )
 }
-
-    

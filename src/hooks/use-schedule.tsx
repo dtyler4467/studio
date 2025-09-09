@@ -20,6 +20,7 @@ export type Employee = {
     name: string;
     email?: string;
     role: EmployeeRole;
+    status: 'Active' | 'Inactive';
     personnelId?: string;
     phoneNumber?: string;
     documentDataUri?: string | null;
@@ -216,10 +217,11 @@ type ScheduleContextType = {
   updateRegistration: (updatedRegistration: Registration) => void;
   getEmployeeById: (id: string) => Employee | null;
   updateEmployeeRole: (employeeId: string, role: EmployeeRole) => void;
+  updateEmployeeStatus: (employeeId: string, status: 'Active' | 'Inactive') => void;
   updateEmployee: (updatedEmployee: Employee) => void;
   deleteEmployee: (employeeId: string, deletedBy: string) => void;
-  addEmployee: (employeeData: Omit<Employee, 'id' | 'personnelId'>) => void;
-  bulkAddEmployees: (employeeData: Omit<Employee, 'id' | 'personnelId'>[]) => void;
+  addEmployee: (employeeData: Omit<Employee, 'id' | 'personnelId' | 'status'>) => void;
+  bulkAddEmployees: (employeeData: Omit<Employee, 'id' | 'personnelId' | 'status'>[]) => void;
   updateEmployeeDocument: (employeeId: string, documentDataUri: string | null) => void;
   getEmployeeDocument: (employeeId: string) => string | null;
   getYardEventById: (id: string) => YardEvent | null;
@@ -246,10 +248,10 @@ export const initialShifts: Shift[] = [
 
 
 export const mockEmployees: Employee[] = [
-    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"] },
-    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"] },
-    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"] },
-    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"] },
+    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"] },
+    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"] },
+    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", status: 'Active', personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"] },
+    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", status: 'Active', personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"] },
 ];
 
 export const initialHolidays: Holiday[] = [
@@ -528,6 +530,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             name: registration.name,
             email: registration.email,
             role: registration.role,
+            status: 'Active',
             personnelId: `TEMP-${Math.floor(100 + Math.random() * 900)}`,
             phoneNumber: registration.phoneNumber,
             workLocation: []
@@ -551,6 +554,10 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setEmployees(prev => prev.map(emp => emp.id === employeeId ? { ...emp, role } : emp));
     };
     
+    const updateEmployeeStatus = (employeeId: string, status: 'Active' | 'Inactive') => {
+        setEmployees(prev => prev.map(emp => emp.id === employeeId ? { ...emp, status } : emp));
+    };
+
     const updateEmployee = (updatedEmployee: Employee) => {
         setEmployees(prev => prev.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp));
     };
@@ -574,24 +581,26 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const addEmployee = (employeeData: Omit<Employee, 'id' | 'personnelId'>) => {
+    const addEmployee = (employeeData: Omit<Employee, 'id' | 'personnelId' | 'status'>) => {
         const newId = `USR${Date.now()}`;
         const newPersonnelId = `${employeeData.name.split(' ').map(n => n[0]).join('').toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
         const newEmployee: Employee = {
             ...employeeData,
             id: newId,
+            status: 'Active',
             personnelId: newPersonnelId,
         };
         setEmployees(prev => [...prev, newEmployee]);
     };
 
-     const bulkAddEmployees = (employeeData: Omit<Employee, 'id' | 'personnelId'>[]) => {
+     const bulkAddEmployees = (employeeData: Omit<Employee, 'id' | 'personnelId' | 'status'>[]) => {
         const newEmployees = employeeData.map(emp => {
              const newId = `USR${Date.now()}${Math.random()}`;
             const newPersonnelId = `${emp.name.split(' ').map(n => n[0]).join('').toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
             return {
                 ...emp,
                 id: newId,
+                status: 'Active' as const,
                 personnelId: newPersonnelId,
             }
         });
@@ -890,7 +899,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
