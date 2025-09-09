@@ -105,6 +105,8 @@ const navItems: NavItem[] = [
         { href: '/dashboard/warehouse-hub-manager/load-planner', icon: ClipboardList, label: 'Load Planner', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/procurement', icon: ShoppingCart, label: 'Procurement', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/bol', icon: FileText, label: 'Bill of Lading', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/warehouse-hub-manager/customers', icon: Users, label: 'Customers', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/warehouse-hub-manager/carriers', icon: Truck, label: 'Carriers', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
   { 
