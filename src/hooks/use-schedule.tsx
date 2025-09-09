@@ -730,56 +730,67 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     const moveTrailer = (eventId: string, toLaneId: string, fromLost: boolean = false) => {
         const eventToMove = fromLost ? lostAndFound.find(e => e.id === eventId) : yardEvents.find(e => e.id === eventId);
-        if (!eventToMove) throw new Error("Trailer event not found.");
+        if (!eventToMove) throw new Error("Trailer event to move not found.");
 
-        const isLaneOccupied = yardEvents.some(e => e.assignmentType === 'lane_assignment' && e.assignmentValue === toLaneId && e.transactionType === 'inbound');
+        const getLatestInboundEventForLane = (laneId: string) => {
+            const eventsInLane = yardEvents
+                .filter(e => e.assignmentType === 'lane_assignment' && e.assignmentValue === laneId && e.transactionType === 'inbound')
+                .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            return eventsInLane[0] || null;
+        }
+        
+        const occupyingEvent = getLatestInboundEventForLane(toLaneId);
+        
+        const newEvents: YardEvent[] = [];
 
-        if (isLaneOccupied) {
-            // Move to lost and found
+        // 1. Create outbound event for the trailer being moved from its original location
+        const outboundEvent: YardEvent = {
+            ...eventToMove,
+            id: `EVT${Date.now() + 1}`,
+            transactionType: 'outbound',
+            timestamp: new Date(),
+            clerkName: currentUser?.name || 'System',
+        };
+        newEvents.push(outboundEvent);
+
+        // 2. If the destination lane is occupied, move the occupying trailer to Lost & Found
+        if (occupyingEvent) {
+             // Create an outbound event for the occupying trailer
+            const occupyingOutboundEvent: YardEvent = {
+                ...occupyingEvent,
+                id: `EVT${Date.now() + 2}`,
+                transactionType: 'outbound',
+                timestamp: new Date(),
+                clerkName: currentUser?.name || 'System',
+            };
+            newEvents.push(occupyingOutboundEvent);
+
+            // Create a lost & found event for the occupying trailer
             const lostEvent: YardEvent = {
-                ...eventToMove,
-                id: `EVT${Date.now()}`,
+                ...occupyingEvent,
+                id: `EVT${Date.now() + 3}`,
                 transactionType: 'move',
                 assignmentType: 'lost_and_found',
-                assignmentValue: 'occupied_lane',
+                assignmentValue: `displaced from ${toLaneId}`,
                 timestamp: new Date(),
                 clerkName: currentUser?.name || 'System',
             };
             setLostAndFound(prev => [...prev, lostEvent]);
-
-            // Create outbound for original lane
-             const outboundEvent: YardEvent = {
-                ...eventToMove,
-                id: `EVT${Date.now() + 1}`,
-                transactionType: 'outbound',
-                timestamp: new Date(),
-                clerkName: currentUser?.name || 'System',
-            };
-            setYardEvents(prev => [...prev, outboundEvent]);
-
-        } else {
-             // Create outbound for original lane
-             const outboundEvent: YardEvent = {
-                ...eventToMove,
-                id: `EVT${Date.now() + 1}`,
-                transactionType: 'outbound',
-                timestamp: new Date(),
-                clerkName: currentUser?.name || 'System',
-            };
-
-            // Create inbound for new lane
-            const inboundEvent: YardEvent = {
-                ...eventToMove,
-                id: `EVT${Date.now()}`,
-                transactionType: 'inbound',
-                assignmentType: 'lane_assignment',
-                assignmentValue: toLaneId,
-                timestamp: new Date(),
-                clerkName: currentUser?.name || 'System',
-            };
-            
-            setYardEvents(prev => [...prev, outboundEvent, inboundEvent]);
         }
+
+        // 3. Create inbound event for the trailer being moved to its new lane
+        const inboundEvent: YardEvent = {
+            ...eventToMove,
+            id: `EVT${Date.now()}`,
+            transactionType: 'inbound',
+            assignmentType: 'lane_assignment',
+            assignmentValue: toLaneId,
+            timestamp: new Date(),
+            clerkName: currentUser?.name || 'System',
+        };
+        newEvents.push(inboundEvent);
+        
+        setYardEvents(prev => [...prev, ...newEvents]);
         
         if (fromLost) {
             setLostAndFound(prev => prev.filter(e => e.id !== eventId));
@@ -815,3 +826,4 @@ export const useSchedule = () => {
   }
   return context;
 };
+
