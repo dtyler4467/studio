@@ -116,13 +116,14 @@ export default function MileageTrackerPage() {
     const [trips, setTrips] = useState<Trip[]>(initialTrips);
     const [isTracking, setIsTracking] = useState(false);
     const [currentTripType, setCurrentTripType] = useState<'Business' | 'Personal'>('Business');
-    const [time, setTime] = useState(new Date());
+    const [time, setTime] = useState<Date | null>(null);
     const { toast } = useToast();
     const { currentUser } = useSchedule();
     const tripIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const [currentDistance, setCurrentDistance] = useState(0);
 
     useEffect(() => {
+        setTime(new Date());
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
@@ -186,7 +187,7 @@ export default function MileageTrackerPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{currentUser?.name || 'Guest'}</div>
-                    <p className="text-xs text-muted-foreground">{format(time, 'PPP p')}</p>
+                    <p className="text-xs text-muted-foreground">{time ? format(time, 'PPP p') : 'Loading...'}</p>
                 </CardContent>
             </Card>
             <Card>
