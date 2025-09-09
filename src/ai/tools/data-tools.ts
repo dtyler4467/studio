@@ -231,6 +231,20 @@ const getTrainingModuleContent = ai.defineTool(
     }
 );
 
+const navigateToPage = ai.defineTool(
+    {
+        name: 'navigateToPage',
+        description: 'Navigates to a specific page in the application. Use this when the user asks to go to a page, for example "take me to dispatch".',
+        inputSchema: z.object({
+            path: z.string().describe('The path to navigate to, e.g., /dashboard/dispatch.'),
+        }),
+        outputSchema: z.string(),
+    },
+    async ({ path }) => {
+        return path;
+    }
+);
+
 
 export async function getTools() {
   return [
@@ -241,5 +255,6 @@ export async function getTools() {
     getLoadDetails,
     getTrainingModules,
     getTrainingModuleContent,
+    navigateToPage,
   ];
 }

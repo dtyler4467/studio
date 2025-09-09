@@ -17,7 +17,7 @@ import { Logo } from '../icons/logo';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   prompt: z.string().min(1, { message: "Prompt cannot be empty." }),
@@ -37,6 +37,7 @@ export function AiAssistantChat() {
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -110,6 +111,12 @@ export function AiAssistantChat() {
 
     try {
       const response = await getAssistantResponse({ query: values.prompt });
+      
+      if (response.navigateTo) {
+          router.push(response.navigateTo);
+          return;
+      }
+
       const assistantMessage: Message = { 
           role: 'assistant', 
           content: response.answer,
