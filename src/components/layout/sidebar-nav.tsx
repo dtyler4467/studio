@@ -64,6 +64,12 @@ import {
   Siren,
   ShieldCheck,
   Gamepad2,
+  ClipboardCheck,
+  Receipt,
+  UploadCloud,
+  Folder,
+  Tablet,
+  BookOpen,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -152,7 +158,24 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard/safety-hub', icon: ShieldCheck, label: 'Safety Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager'] },
-  { href: '/dashboard/driver-hub', icon: Gamepad2, label: 'Driver Hub', roles: ['Admin', 'Dispatcher', 'Driver'] },
+  { 
+    href: '/dashboard/driver-hub', 
+    icon: Gamepad2, 
+    label: 'Driver Hub', 
+    roles: ['Admin', 'Dispatcher', 'Driver'],
+    subItems: [
+        { href: '/dashboard/driver-hub/dvir', icon: ClipboardCheck, label: 'D.V.I.R', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/insurance', icon: ShieldCheck, label: 'Insurance', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/registration', icon: FileText, label: 'Registration', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/receipts', icon: Receipt, label: 'Receipts', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/chat', icon: MessageSquare, label: 'Chat', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/document-uploader', icon: UploadCloud, label: 'Document Uploader', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/company-documents', icon: Folder, label: 'Company Documents', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/eld', icon: Tablet, label: 'ELD', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/paper-logs', icon: BookOpen, label: 'Paper Logs', roles: ['Admin', 'Dispatcher', 'Driver'] },
+        { href: '/dashboard/driver-hub/training', icon: GraduationCap, label: 'Training', roles: ['Admin', 'Dispatcher', 'Driver'] },
+    ]
+  },
   { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
@@ -278,6 +301,7 @@ export function SidebarNav() {
   const [isWarehouseHubOpen, setIsWarehouseHubOpen] = useState(false);
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isFleetManagementOpen, setIsFleetManagementOpen] = useState(false);
+  const [isDriverHubOpen, setIsDriverHubOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAccountantOpen, setIsAccountantOpen] = useState(false);
@@ -298,6 +322,7 @@ export function SidebarNav() {
     setIsWarehouseHubOpen(pathname.startsWith('/dashboard/warehouse-hub-manager'));
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
     setIsFleetManagementOpen(pathname.startsWith('/dashboard/fleet-management'));
+    setIsDriverHubOpen(pathname.startsWith('/dashboard/driver-hub'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
@@ -335,7 +360,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -439,6 +464,7 @@ export function SidebarNav() {
                      'Warehouse Hub Manager': isWarehouseHubOpen,
                      'Yard Management': isYardManagementOpen,
                      'Fleet Management': isFleetManagementOpen,
+                     'Driver Hub': isDriverHubOpen,
                      'My Workspace': isWorkspaceOpen,
                      'AI': isAiOpen,
                      'Accountant': isAccountantOpen,
@@ -447,6 +473,7 @@ export function SidebarNav() {
                     'Warehouse Hub Manager': setIsWarehouseHubOpen,
                     'Yard Management': setIsYardManagementOpen,
                     'Fleet Management': setIsFleetManagementOpen,
+                    'Driver Hub': setIsDriverHubOpen,
                     'My Workspace': setIsWorkspaceOpen,
                     'AI': setIsAiOpen,
                     'Accountant': setIsAccountantOpen,
