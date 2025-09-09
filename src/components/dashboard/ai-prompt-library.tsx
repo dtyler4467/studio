@@ -34,7 +34,7 @@ const initialPrompts: Prompt[] = [
         questions: [
             "Who is on shift today?",
             "What is Jane Doe's schedule for next week?",
-            "Show me pending user registrations.",
+            "Show me all pending time off requests.",
         ]
     },
     {
