@@ -416,15 +416,6 @@ export const initialLocalLoadBoards: LocalLoadBoard[] = [
 
 export const initialLoadBoardHub: LocalLoadBoard = { id: 'hub-1', name: 'Load board hub' };
 
-export const initialLoads: Load[] = [
-    { id: "LD001", origin: "Los Angeles, CA", destination: "Phoenix, AZ", pickupDate: "2024-08-01", deliveryDate: "2024-08-02", rate: 1200, status: "Available", carrier: "Knight-Swift", scac: "KNX" },
-    { id: "LD002", origin: "Chicago, IL", destination: "New York, NY", pickupDate: "2024-08-03", deliveryDate: "2024-08-05", rate: 2500, status: "Available", carrier: "J.B. Hunt", scac: "JBHT" },
-    { id: "LD003", origin: "Dallas, TX", destination: "Atlanta, GA", pickupDate: "2024-08-05", deliveryDate: "2024-08-07", rate: 1800, status: "Pending", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT", dispatcher: "Dispatcher Name" },
-    { id: "LD004", origin: "Seattle, WA", destination: "Denver, CO", pickupDate: "2024-08-06", deliveryDate: "2024-08-08", rate: 2200, status: "In-Transit", assignedTo: "Mike Smith", carrier: "Knight-Swift", scac: "KNX", dispatcher: "Dispatcher Name" },
-    { id: "LD005", origin: "Miami, FL", destination: "Houston, TX", pickupDate: "2024-08-08", deliveryDate: "2024-08-10", rate: 2000, status: "Delivered", assignedTo: "Jane Doe", carrier: "Swift Logistics", scac: "SWFT", dispatcher: "Dispatcher Name" },
-    { id: "LD006", origin: "Boston, MA", destination: "Washington, DC", pickupDate: "2024-08-10", deliveryDate: "2024-08-11", rate: 900, status: "Deleted" },
-];
-
 export const initialAppointments: Appointment[] = [
     { id: 'APP001', status: 'Scheduled', type: 'Inbound', carrier: 'Knight-Swift', scac: 'KNX', bolNumber: 'BOL123', poNumber: 'PO456', sealNumber: 'S123', driverName: 'John Doe', driverPhoneNumber: '555-111-1111', driverLicenseNumber: 'D1234567', driverLicenseState: 'CA', appointmentTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), door: 'D4' },
     { id: 'APP002', status: 'Arrived', type: 'Inbound', carrier: 'J.B. Hunt', scac: 'JBHT', bolNumber: 'BOL456', poNumber: 'PO789', sealNumber: 'S456', driverName: 'Jane Smith', driverPhoneNumber: '555-222-2222', appointmentTime: new Date(new Date().getTime() - 1 * 60 * 60 * 1000), door: 'D2' },
