@@ -23,21 +23,86 @@ import {
 } from "@/hooks/use-schedule"
 import { Input } from "@/components/ui/input"
 import { Button } from "../ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem } from "../ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+
+const trainingPrograms = [
+    { id: 'onboarding', label: 'Onboarding' },
+    { id: 'application', label: 'Application' },
+    { id: 'annual', label: 'Annual Training' },
+    { id: 'exam', label: 'Exam' },
+    { id: 'library', label: 'Library' },
+];
+
+
+const AssignTrainingDropdown = ({ employee }: { employee: Employee }) => {
+    const { toast } = useToast();
+    const [selectedPrograms, setSelectedPrograms] = React.useState<string[]>([]);
+
+    const handleSelect = (programId: string) => {
+        setSelectedPrograms(prev => 
+            prev.includes(programId) 
+            ? prev.filter(id => id !== programId)
+            : [...prev, programId]
+        );
+    }
+    
+    const handleConfirmAssignment = () => {
+        if (selectedPrograms.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: 'No Selection',
+                description: 'Please select at least one training program to assign.'
+            });
+            return;
+        }
+        
+        const programLabels = selectedPrograms.map(id => trainingPrograms.find(p => p.id === id)?.label).join(', ');
+
+        toast({
+            title: 'Training Assigned!',
+            description: `${programLabels} assigned to ${employee.name}.`
+        });
+        setSelectedPrograms([]);
+    };
+    
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">Assign...</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Assign Training</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {trainingPrograms.map(program => (
+                  <DropdownMenuCheckboxItem
+                    key={program.id}
+                    checked={selectedPrograms.includes(program.id)}
+                    onSelect={(e) => {
+                        e.preventDefault();
+                        handleSelect(program.id);
+                    }}
+                  >
+                      {program.label}
+                  </DropdownMenuCheckboxItem>
+              ))}
+               {selectedPrograms.length > 0 && (
+                   <>
+                    <DropdownMenuSeparator />
+                     <DropdownMenuItem onSelect={handleConfirmAssignment}>
+                        Confirm Assignment ({selectedPrograms.length})
+                    </DropdownMenuItem>
+                   </>
+               )}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 
 export function TrainingManagementTable() {
   const { employees } = useSchedule()
   const [globalFilter, setGlobalFilter] = React.useState("")
-  const { toast } = useToast()
-
-  const handleAssign = (employeeName: string, program: string) => {
-    toast({
-      title: "Training Assigned",
-      description: `${program} has been assigned to ${employeeName}.`
-    })
-  }
-
+  
   const columns: ColumnDef<Employee>[] = [
     {
       accessorKey: "personnelId",
@@ -64,22 +129,7 @@ export function TrainingManagementTable() {
       header: "Assign",
       cell: ({ row }) => {
         const employee = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">Assign...</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Assign Training</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Onboarding")}>Onboarding</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Application")}>Application</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Annual Training")}>Annual Training</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Exam")}>Exam</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAssign(employee.name, "Library")}>Library</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
+        return <AssignTrainingDropdown employee={employee} />
       }
     }
   ]
