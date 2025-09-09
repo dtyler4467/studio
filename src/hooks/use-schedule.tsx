@@ -104,7 +104,7 @@ export type TrainingAssignmentStatus = 'Not Started' | 'In Progress' | 'Complete
 export type TrainingAssignment = {
     id: string;
     employeeId: string;
-    programId: string;
+    moduleId: string; // Changed from programId to moduleId
     status: TrainingAssignmentStatus;
     assignedDate: Date;
     completedDate?: Date;
@@ -229,7 +229,7 @@ type ScheduleContextType = {
   getExpenseReportById: (id: string) => ExpenseReport | null;
   setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
   getTrainingModuleById: (id: string) => TrainingModule | null;
-  assignTraining: (employeeId: string, programId: string) => void;
+  assignTraining: (employeeId: string, moduleId: string) => void;
   addWarehouseDoor: (doorId: string) => void;
   addParkingLane: (laneId: string) => void;
   restoreDeletedItem: (logId: string) => void;
@@ -375,9 +375,9 @@ Be wary of emails that:
 ];
 
 export const initialTrainingAssignments: TrainingAssignment[] = [
-    { id: 'TA001', employeeId: 'USR001', programId: 'PROG001', status: 'Not Started', assignedDate: new Date() },
-    { id: 'TA002', employeeId: 'USR002', programId: 'PROG001', status: 'In Progress', assignedDate: new Date() },
-    { id: 'TA003', employeeId: 'USR004', programId: 'PROG002', status: 'Completed', assignedDate: new Date(), completedDate: new Date() },
+    { id: 'TA001', employeeId: 'USR001', moduleId: 'MOD001', status: 'Not Started', assignedDate: new Date() },
+    { id: 'TA002', employeeId: 'USR001', moduleId: 'MOD002', status: 'In Progress', assignedDate: new Date() },
+    { id: 'TA003', employeeId: 'USR002', moduleId: 'MOD001', status: 'Completed', assignedDate: new Date(), completedDate: new Date() },
 ];
 
 export const initialWarehouseDoors = Array.from({ length: 10 }, (_, i) => `D${i + 1}`);
@@ -677,16 +677,17 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return null;
     }
 
-    const assignTraining = (employeeId: string, programId: string) => {
-        const alreadyAssigned = trainingAssignments.find(a => a.employeeId === employeeId && a.programId === programId);
+    const assignTraining = (employeeId: string, moduleId: string) => {
+        const alreadyAssigned = trainingAssignments.find(a => a.employeeId === employeeId && a.moduleId === moduleId);
         if (alreadyAssigned) {
-            throw new Error("This training program is already assigned to this employee.");
+            // Silently ignore if already assigned to prevent errors for user.
+            return;
         }
 
         const newAssignment: TrainingAssignment = {
             id: `TA${Date.now()}`,
             employeeId,
-            programId,
+            moduleId,
             status: 'Not Started',
             assignedDate: new Date(),
         };

@@ -20,6 +20,7 @@ import {
 import {
   useSchedule,
   Employee,
+  TrainingAssignment,
 } from "@/hooks/use-schedule"
 import { Input } from "@/components/ui/input"
 import { Button } from "../ui/button"
@@ -28,7 +29,9 @@ import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
 import { DocumentUpload } from "./document-upload"
 import { Label } from "../ui/label"
-import { Upload } from "lucide-react"
+import { Upload, Circle } from "lucide-react"
+import { Progress } from "../ui/progress"
+import { cn } from "@/lib/utils"
 
 const trainingPrograms = [
     { id: 'onboarding', label: 'Onboarding' },
@@ -42,7 +45,7 @@ const trainingPrograms = [
 ];
 
 
-const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
+const AssignTaskDropdown = ({ employee, onAssign }: { employee: Employee, onAssign: (programIds: string[]) => void }) => {
     const { toast } = useToast();
     const [selectedPrograms, setSelectedPrograms] = React.useState<string[]>([]);
     const [isUploadDialogOpen, setUploadDialogOpen] = React.useState(false);
@@ -66,9 +69,8 @@ const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
             });
             return;
         }
-        
+        onAssign(selectedPrograms);
         const programLabels = selectedPrograms.map(id => trainingPrograms.find(p => p.id === id)?.label).join(', ');
-
         toast({
             title: 'Task Assigned!',
             description: `${programLabels} assigned to ${employee.name}.`
@@ -85,6 +87,7 @@ const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
             toast({ variant: 'destructive', title: 'Document Required', description: 'Please upload or capture a document for the task.' });
             return;
         }
+        // This is a mock assignment for custom tasks
         toast({
             title: 'Custom Task Assigned!',
             description: `Task "${customTaskName}" has been assigned to ${employee.name}.`
@@ -98,7 +101,7 @@ const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">Assign...</Button>
+                <Button variant="outline" size="sm">Assign Task</Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DropdownMenuLabel>Assign Standard Task</DropdownMenuLabel>
@@ -165,36 +168,93 @@ const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
 }
 
 export function TrainingManagementTable() {
-  const { employees } = useSchedule()
+  const { employees, trainingAssignments, assignTraining, trainingPrograms } = useSchedule()
   const [globalFilter, setGlobalFilter] = React.useState("")
   
   const columns: ColumnDef<Employee>[] = [
     {
-      accessorKey: "personnelId",
-      header: "ID",
-    },
-    {
       accessorKey: "name",
       header: "Name",
+      cell: ({ row }) => {
+        const employee = row.original;
+        const assignments = trainingAssignments.filter(a => a.employeeId === employee.id);
+        const completedCount = assignments.filter(a => a.status === 'Completed').length;
+        const percentage = assignments.length > 0 ? (completedCount / assignments.length) * 100 : 0;
+        
+        return (
+            <div>
+                <p className="font-medium">{employee.name}</p>
+                <div className="text-xs text-muted-foreground mt-1">
+                    {assignments.length > 0 ? (
+                        <div className="space-y-1">
+                             <p>{completedCount} of {assignments.length} tasks completed</p>
+                             <Progress value={percentage} className="h-1" />
+                        </div>
+                    ) : (
+                        <p>No tasks assigned</p>
+                    )}
+                </div>
+            </div>
+        )
+      }
     },
     {
       accessorKey: "role",
       header: "Role",
     },
     {
-      accessorKey: "email",
-      header: "Email",
+        id: "status",
+        header: () => (
+            <div className="flex flex-col items-center gap-1">
+                <Circle className="h-3 w-3" />
+                <span>Status</span>
+            </div>
+        ),
+        cell: ({ row }) => {
+             const employee = row.original;
+             const assignments = trainingAssignments.filter(a => a.employeeId === employee.id);
+             if (assignments.length === 0) {
+                 return <div className="flex justify-center"><Circle className="h-4 w-4 text-slate-400 fill-slate-400" /></div>;
+             }
+             const allCompleted = assignments.every(a => a.status === 'Completed');
+             if (allCompleted) {
+                 return <div className="flex justify-center"><Circle className="h-4 w-4 text-green-500 fill-green-500" /></div>;
+             }
+             const anyInProgress = assignments.some(a => a.status === 'In Progress');
+             if (anyInProgress) {
+                 return <div className="flex justify-center"><Circle className="h-4 w-4 text-yellow-500 fill-yellow-500" /></div>;
+             }
+             return <div className="flex justify-center"><Circle className="h-4 w-4 text-red-500 fill-red-500" /></div>;
+        }
     },
     {
-      accessorKey: "phoneNumber",
-      header: "Phone Number",
+      id: "tasks",
+      header: "Assigned Tasks",
+      cell: ({ row }) => {
+        const employee = row.original;
+        const assignments = trainingAssignments.filter(a => a.employeeId === employee.id);
+        if (assignments.length === 0) {
+            return <span className="text-muted-foreground text-xs">N/A</span>
+        }
+        return (
+            <div className="flex flex-col text-xs">
+                {assignments.map(assignment => {
+                    const program = trainingPrograms.flatMap(p => p.modules).find(m => m.id === assignment.moduleId);
+                    return <span key={assignment.id}>{program?.title || assignment.moduleId}</span>
+                })}
+            </div>
+        )
+      }
     },
     {
       id: "assign",
       header: "Assign Task",
       cell: ({ row }) => {
         const employee = row.original;
-        return <AssignTaskDropdown employee={employee} />
+        const handleAssign = (programIds: string[]) => {
+            programIds.forEach(id => assignTraining(employee.id, id));
+        };
+        return <AssignTaskDropdown employee={employee} onAssign={handleAssign} />
       }
     }
   ]
