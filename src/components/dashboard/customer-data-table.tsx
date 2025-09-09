@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, Download } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, Download, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -59,11 +59,12 @@ type Customer = {
     phone: string;
     status: 'Active' | 'Inactive';
     dateAdded: Date;
+    items?: string[];
 }
 
 const initialData: Customer[] = [
-    { id: "CUST001", name: "John Smith", company: "Acme Inc.", email: "john.smith@acme.com", phone: "555-123-4567", status: "Active", dateAdded: new Date("2023-01-15") },
-    { id: "CUST002", name: "Jane Doe", company: "Globex Corporation", email: "jane.doe@globex.com", phone: "555-987-6543", status: "Active", dateAdded: new Date("2023-03-22") },
+    { id: "CUST001", name: "John Smith", company: "Acme Inc.", email: "john.smith@acme.com", phone: "555-123-4567", status: "Active", dateAdded: new Date("2023-01-15"), items: ["Bolts", "Screws"] },
+    { id: "CUST002", name: "Jane Doe", company: "Globex Corporation", email: "jane.doe@globex.com", phone: "555-987-6543", status: "Active", dateAdded: new Date("2023-03-22"), items: ["Washers"] },
     { id: "CUST003", name: "Mike Johnson", company: "Stark Industries", email: "mike.j@stark.com", phone: "555-555-5555", status: "Inactive", dateAdded: new Date("2022-11-01") },
 ];
 
@@ -89,11 +90,24 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
         email: "",
         phone: "",
         status: "Active" as Customer['status'],
+        items: [] as string[],
     });
+    const [currentItem, setCurrentItem] = React.useState("");
+
+    const handleAddItem = () => {
+        if (currentItem.trim() && !formData.items.includes(currentItem.trim())) {
+            setFormData(f => ({ ...f, items: [...f.items, currentItem.trim()] }));
+            setCurrentItem("");
+        }
+    };
+
+    const handleRemoveItem = (itemToRemove: string) => {
+        setFormData(f => ({ ...f, items: f.items.filter(item => item !== itemToRemove) }));
+    };
 
     const handleSave = () => {
         onSave(formData);
-        setFormData({ name: "", company: "", email: "", phone: "", status: "Active" });
+        setFormData({ name: "", company: "", email: "", phone: "", status: "Active", items: [] });
     }
 
     return (
@@ -121,6 +135,32 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="phone" className="text-right">Phone</Label>
                         <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData(f => ({...f, phone: e.target.value}))} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="item" className="text-right pt-2">Item</Label>
+                        <div className="col-span-3 space-y-2">
+                             <div className="flex gap-2">
+                                <Input 
+                                    id="item" 
+                                    value={currentItem} 
+                                    onChange={(e) => setCurrentItem(e.target.value)}
+                                    placeholder="e.g., Pallets"
+                                />
+                                <Button type="button" size="icon" variant="outline" onClick={handleAddItem}>
+                                    <PlusCircle className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {formData.items.map(item => (
+                                    <Badge key={item} variant="secondary">
+                                        {item}
+                                        <button onClick={() => handleRemoveItem(item)} className="ml-1.5 p-0.5 rounded-full hover:bg-background">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
