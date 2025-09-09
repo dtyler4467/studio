@@ -381,7 +381,7 @@ export function SidebarNav() {
                              <CollapsibleContent>
                                  <SidebarMenuSub>
                                      {hubSubItems.map((subItem) => (
-                                         <SidebarMenuSubItem key={subItem.href}>
+                                         <SidebarMenuSubItem key={subItem.label}>
                                              <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
                                                  <Link href={subItem.href}>
                                                      {subItem.icon && <subItem.icon />}
@@ -492,7 +492,7 @@ export function SidebarNav() {
                                                     <CollapsibleContent>
                                                         <SidebarMenuSub>
                                                             {subItem.subItems.map((nestedSubItem) => (
-                                                                <SidebarMenuSubItem key={nestedSubItem.href}>
+                                                                <SidebarMenuSubItem key={nestedSubItem.label}>
                                                                     <SidebarMenuSubButton asChild isActive={isSubItemActive(nestedSubItem.href)} size="sm">
                                                                         <Link href={nestedSubItem.href}>
                                                                             <nestedSubItem.icon />
@@ -507,7 +507,7 @@ export function SidebarNav() {
                                             )
                                         }
                                         return (
-                                            <SidebarMenuSubItem key={subItem.href}>
+                                            <SidebarMenuSubItem key={subItem.label}>
                                                 <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
                                                     <Link href={subItem.href}>
                                                         {subItem.icon && <subItem.icon />}
@@ -576,7 +576,7 @@ export function SidebarNav() {
                                              <CollapsibleContent>
                                                  <SidebarMenuSub>
                                                      {item.subItems.map((subItem) => (
-                                                          <SidebarMenuSubItem key={subItem.href}>
+                                                          <SidebarMenuSubItem key={subItem.label}>
                                                             <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)} size="sm">
                                                                 <Link href={subItem.href}>
                                                                     <subItem.icon />
@@ -591,7 +591,7 @@ export function SidebarNav() {
                                      )
                                  }
                                  return (
-                                     <SidebarMenuSubItem key={item.href}>
+                                     <SidebarMenuSubItem key={item.label}>
                                         <SidebarMenuSubButton asChild isActive={isSubItemActive(item.href)}>
                                             <Link href={item.href}>
                                                 <item.icon />
