@@ -16,7 +16,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeftRight, Search } from 'lucide-react';
 import Link from 'next/link';
 
-export function YardCheckInPageContent() {
+type YardCheckInPageContentProps = {
+    defaultTransactionType?: 'inbound' | 'outbound';
+}
+
+export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: YardCheckInPageContentProps) {
     const { addYardEvent } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
@@ -26,7 +30,7 @@ export function YardCheckInPageContent() {
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            transactionType: "inbound",
+            transactionType: defaultTransactionType,
             trailerId: "",
             sealNumber: "",
             carrier: "",
@@ -125,3 +129,4 @@ export function YardCheckInPageContent() {
         </Card>
   );
 }
+
