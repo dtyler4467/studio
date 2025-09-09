@@ -1,0 +1,399 @@
+
+"use client"
+
+import * as React from "react"
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle, Download } from "lucide-react"
+import { format } from "date-fns"
+
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+    DialogDescription,
+  } from "@/components/ui/dialog"
+import { Label } from "../ui/label"
+import { useToast } from "@/hooks/use-toast"
+import { Badge } from "../ui/badge"
+
+type Customer = {
+    id: string;
+    name: string;
+    company: string;
+    email: string;
+    phone: string;
+    status: 'Active' | 'Inactive';
+    dateAdded: Date;
+}
+
+const initialData: Customer[] = [
+    { id: "CUST001", name: "John Smith", company: "Acme Inc.", email: "john.smith@acme.com", phone: "555-123-4567", status: "Active", dateAdded: new Date("2023-01-15") },
+    { id: "CUST002", name: "Jane Doe", company: "Globex Corporation", email: "jane.doe@globex.com", phone: "555-987-6543", status: "Active", dateAdded: new Date("2023-03-22") },
+    { id: "CUST003", name: "Mike Johnson", company: "Stark Industries", email: "mike.j@stark.com", phone: "555-555-5555", status: "Inactive", dateAdded: new Date("2022-11-01") },
+];
+
+const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer: Omit<Customer, 'id' | 'dateAdded'>) => void, onOpenChange: (open: boolean) => void, isOpen: boolean }) => {
+    const [formData, setFormData] = React.useState({
+        name: "",
+        company: "",
+        email: "",
+        phone: "",
+        status: "Active" as Customer['status'],
+    });
+
+    const handleSave = () => {
+        onSave(formData);
+        setFormData({ name: "", company: "", email: "", phone: "", status: "Active" });
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Customer</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details for the new customer.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">Name</Label>
+                        <Input id="name" value={formData.name} onChange={e => setFormData(f => ({...f, name: e.target.value}))} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="company" className="text-right">Company</Label>
+                        <Input id="company" value={formData.company} onChange={e => setFormData(f => ({...f, company: e.target.value}))} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="email" className="text-right">Email</Label>
+                        <Input id="email" type="email" value={formData.email} onChange={e => setFormData(f => ({...f, email: e.target.value}))} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="phone" className="text-right">Phone</Label>
+                        <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData(f => ({...f, phone: e.target.value}))} className="col-span-3" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Add Customer</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+export function CustomerDataTable() {
+    const [data, setData] = React.useState<Customer[]>(initialData);
+    const { toast } = useToast();
+    const [sorting, setSorting] = React.useState<SortingState>([])
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+    const [rowSelection, setRowSelection] = React.useState({})
+    const [isAddOpen, setAddOpen] = React.useState(false);
+
+    const handleAddCustomer = (customer: Omit<Customer, 'id' | 'dateAdded'>) => {
+        const newCustomer: Customer = {
+            ...customer,
+            id: `CUST${(data.length + 101).toString()}`,
+            dateAdded: new Date(),
+        };
+        setData(prev => [newCustomer, ...prev]);
+        setAddOpen(false);
+        toast({ title: "Customer Added", description: `${customer.name} has been added.` });
+    };
+
+    const exportToCsv = () => {
+        const headers = ["ID", "Name", "Company", "Email", "Phone", "Status", "Date Added"];
+        const rows = table.getRowModel().rows.map(row => row.original).map(customer => [
+            customer.id,
+            `"${customer.name}"`,
+            `"${customer.company}"`,
+            customer.email,
+            customer.phone,
+            customer.status,
+            format(customer.dateAdded, "yyyy-MM-dd")
+        ].join(','));
+
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `customers_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast({
+            title: "Export Successful",
+            description: "The customer data has been exported to a CSV file.",
+        });
+    };
+
+    const columns: ColumnDef<Customer>[] = [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "id",
+        header: "Customer ID",
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "company",
+        header: "Company",
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+      },
+      {
+        accessorKey: "phone",
+        header: "Phone",
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+            const status = row.getValue("status") as Customer['status'];
+            return <Badge variant={status === 'Active' ? 'default' : 'secondary'} className={status === 'Active' ? 'bg-green-600' : ''}>{status}</Badge>
+        }
+      },
+      {
+        accessorKey: "dateAdded",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Date Added
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => <div>{format(row.getValue<Date>("dateAdded"), "PPP")}</div>,
+      },
+      {
+        id: "actions",
+        enableHiding: false,
+        cell: ({ row }) => {
+          const customer = row.original
+    
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(customer.id)}>
+                  Copy Customer ID
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>View Details</DropdownMenuItem>
+                <DropdownMenuItem>Edit Customer</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        },
+      },
+    ]
+
+  const table = useReactTable({
+    data,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  })
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center py-4 gap-2">
+        <Input
+          placeholder="Filter by name, company, or email..."
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("name")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+        <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" onClick={() => setAddOpen(true)}>
+                <PlusCircle className="mr-2" /> Add Customer
+            </Button>
+            <Button variant="outline" onClick={exportToCsv}>
+                <Download className="mr-2" /> Export
+            </Button>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                    return (
+                    <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                        }
+                    >
+                        {column.id}
+                    </DropdownMenuCheckboxItem>
+                    )
+                })}
+            </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+      </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+      <AddCustomerDialog onSave={handleAddCustomer} isOpen={isAddOpen} onOpenChange={setAddOpen} />
+    </div>
+  )
+}
