@@ -59,6 +59,8 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ShoppingCart,
+  Banknote,
+  Gauge,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -152,7 +154,17 @@ const navItems: NavItem[] = [
         { href: '/dashboard/resources', icon: Book, label: 'Training', roles: ['Driver', 'Admin', 'Dispatcher', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
   },
-  { href: '/dashboard/accountant', icon: CreditCard, label: 'Accountant', roles: ['Admin', 'Manager'] },
+  { 
+    href: '#', 
+    icon: CreditCard, 
+    label: 'Accountant', 
+    roles: ['Admin', 'Manager'],
+    subItems: [
+        { href: '/dashboard/accountant', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/budget', icon: Banknote, label: 'Budget', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/mileage-tracker', icon: Gauge, label: 'Mileage Tracker', roles: ['Admin', 'Manager'] },
+    ]
+  },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -251,6 +263,7 @@ export function SidebarNav() {
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isAccountantOpen, setIsAccountantOpen] = useState(false);
   const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
     const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
@@ -269,6 +282,7 @@ export function SidebarNav() {
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
+    setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -303,7 +317,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -407,12 +421,14 @@ export function SidebarNav() {
                      'Yard Management': isYardManagementOpen,
                      'My Workspace': isWorkspaceOpen,
                      'AI': isAiOpen,
+                     'Accountant': isAccountantOpen,
                  };
                  const setIsOpenMap = {
                     'Warehouse Hub Manager': setIsWarehouseHubOpen,
                     'Yard Management': setIsYardManagementOpen,
                     'My Workspace': setIsWorkspaceOpen,
                     'AI': setIsAiOpen,
+                    'Accountant': setIsAccountantOpen,
                  }
                  const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                  const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
