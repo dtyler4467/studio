@@ -52,7 +52,7 @@ export type Registration = {
 
 export type YardEvent = {
     id: string;
-    transactionType: 'inbound' | 'outbound';
+    transactionType: 'inbound' | 'outbound' | 'move';
     trailerId: string;
     sealNumber?: string;
     carrier: string;
@@ -60,7 +60,7 @@ export type YardEvent = {
     driverName: string;
     clerkName: string;
     loadNumber: string;
-    assignmentType: "bobtail" | "empty" | "material" | "door_assignment" | "lane_assignment";
+    assignmentType: "bobtail" | "empty" | "material" | "door_assignment" | "lane_assignment" | "lost_and_found";
     assignmentValue?: string;
     timestamp: Date;
     documentDataUri?: string | null;
@@ -182,6 +182,8 @@ type ScheduleContextType = {
   loadBoardHub: LocalLoadBoard;
   appointments: Appointment[];
   officeAppointments: OfficeAppointment[];
+  lostAndFound: YardEvent[];
+  moveTrailer: (eventId: string, toLaneId: string, fromLost?: boolean) => void;
   addOfficeAppointment: (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => OfficeAppointment;
   updateOfficeAppointmentStatus: (appointmentId: string, status: OfficeAppointment['status']) => void;
   updateLoadBoardHubName: (name: string) => void;
@@ -412,6 +414,8 @@ const initialOfficeAppointments: OfficeAppointment[] = [
     { id: 'OA003', title: 'IT Maintenance', type: 'Standard', attendees: ['IT Department'], startTime: new Date(new Date().getTime() - 1 * 24 * 60 * 60 * 1000), endTime: new Date(new Date().getTime() - (1 * 24 * 60 * 60 - 4 * 60 * 60) * 1000), status: 'Completed' },
 ];
 
+const initialLostAndFound: YardEvent[] = [];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -433,6 +437,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [loadBoardHub, setLoadBoardHub] = useState<LocalLoadBoard>(initialLoadBoardHub);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [officeAppointments, setOfficeAppointments] = useState<OfficeAppointment[]>(initialOfficeAppointments);
+  const [lostAndFound, setLostAndFound] = useState<YardEvent[]>(initialLostAndFound);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -723,23 +728,67 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
     };
 
-    const addOfficeAppointment = (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => {
-        const newAppointment: OfficeAppointment = {
-            ...appointment,
-            id: `OA${Date.now()}`,
-            status: 'Scheduled',
-        };
-        setOfficeAppointments(prev => [newAppointment, ...prev]);
-        return newAppointment;
-    };
+    const moveTrailer = (eventId: string, toLaneId: string, fromLost: boolean = false) => {
+        const eventToMove = fromLost ? lostAndFound.find(e => e.id === eventId) : yardEvents.find(e => e.id === eventId);
+        if (!eventToMove) throw new Error("Trailer event not found.");
 
-    const updateOfficeAppointmentStatus = (appointmentId: string, status: OfficeAppointment['status']) => {
-        setOfficeAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
+        const isLaneOccupied = yardEvents.some(e => e.assignmentType === 'lane_assignment' && e.assignmentValue === toLaneId && e.transactionType === 'inbound');
+
+        if (isLaneOccupied) {
+            // Move to lost and found
+            const lostEvent: YardEvent = {
+                ...eventToMove,
+                id: `EVT${Date.now()}`,
+                transactionType: 'move',
+                assignmentType: 'lost_and_found',
+                assignmentValue: 'occupied_lane',
+                timestamp: new Date(),
+                clerkName: currentUser?.name || 'System',
+            };
+            setLostAndFound(prev => [...prev, lostEvent]);
+
+            // Create outbound for original lane
+             const outboundEvent: YardEvent = {
+                ...eventToMove,
+                id: `EVT${Date.now() + 1}`,
+                transactionType: 'outbound',
+                timestamp: new Date(),
+                clerkName: currentUser?.name || 'System',
+            };
+            setYardEvents(prev => [...prev, outboundEvent]);
+
+        } else {
+             // Create outbound for original lane
+             const outboundEvent: YardEvent = {
+                ...eventToMove,
+                id: `EVT${Date.now() + 1}`,
+                transactionType: 'outbound',
+                timestamp: new Date(),
+                clerkName: currentUser?.name || 'System',
+            };
+
+            // Create inbound for new lane
+            const inboundEvent: YardEvent = {
+                ...eventToMove,
+                id: `EVT${Date.now()}`,
+                transactionType: 'inbound',
+                assignmentType: 'lane_assignment',
+                assignmentValue: toLaneId,
+                timestamp: new Date(),
+                clerkName: currentUser?.name || 'System',
+            };
+            
+            setYardEvents(prev => [...prev, outboundEvent, inboundEvent]);
+        }
+        
+        if (fromLost) {
+            setLostAndFound(prev => prev.filter(e => e.id !== eventId));
+        }
     };
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );

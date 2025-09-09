@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useSchedule, YardEvent } from '@/hooks/use-schedule';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Truck, PlusCircle, ParkingCircle, Search } from 'lucide-react';
+import { Truck, PlusCircle, ParkingCircle, Search, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '../ui/button';
@@ -14,6 +14,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 const ClientFormattedDate = ({ date }: { date: Date }) => {
@@ -41,8 +42,10 @@ const AddLocationDialog = ({ onAdd }: { onAdd: (id: string) => void }) => {
             onAdd(id);
             setIsOpen(false);
             setId('');
-        } catch (error: any) {
-             alert(error.message); // Simple alert for now
+        } catch (error) {
+            if (error instanceof Error) {
+                alert(error.message);
+            }
         }
     };
 
@@ -85,10 +88,71 @@ const AddLocationDialog = ({ onAdd }: { onAdd: (id: string) => void }) => {
     )
 }
 
+const MoveTrailerDialog = ({ event, isOpen, onOpenChange }: { event: YardEvent | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
+    const { parkingLanes, yardEvents, moveTrailer } = useSchedule();
+    const { toast } = useToast();
+    const [moveToLane, setMoveToLane] = useState("");
+
+    const handleMove = () => {
+        if (event && moveToLane) {
+            try {
+                moveTrailer(event.id, moveToLane);
+                toast({ title: "Move Initiated", description: `Trailer ${event.trailerId} is being moved.` });
+                onOpenChange(false);
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: "Move Failed", description: error.message });
+            }
+        }
+    };
+    
+    const availableLanes = useMemo(() => {
+        const occupiedLanes = new Set(yardEvents.filter(e => e.assignmentType === 'lane_assignment').map(e => e.assignmentValue));
+        return parkingLanes.filter(lane => !occupiedLanes.has(lane));
+    }, [parkingLanes, yardEvents]);
+
+    if (!event) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Move Trailer {event.trailerId}</DialogTitle>
+                    <DialogDescription>
+                        Select a new parking lane for this trailer. If the destination is occupied, the trailer will be moved to Lost & Found.
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="lane" className="text-right">
+                            Destination Lane
+                        </Label>
+                         <Select value={moveToLane} onValueChange={setMoveToLane}>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Select a lane" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {parkingLanes.map(lane => (
+                                    <SelectItem key={lane} value={lane}>{lane}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleMove} disabled={!moveToLane}>Confirm Move</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export function ParkingLaneManager() {
     const { yardEvents, parkingLanes, addParkingLane } = useSchedule();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
+    const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState<YardEvent | null>(null);
 
     const currentAssignments = useMemo(() => {
         const assignments: Record<string, YardEvent> = {};
@@ -97,14 +161,17 @@ export function ParkingLaneManager() {
         const sortedEvents = [...yardEvents].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
         for (const event of sortedEvents) {
-            if (seenTrailers[event.trailerId]) continue;
+            if (event.assignmentType !== 'lane_assignment' || !event.assignmentValue) continue;
             
+            if (seenTrailers[event.trailerId]) {
+                 if (seenTrailers[event.trailerId].timestamp > event.timestamp) {
+                    continue;
+                 }
+            }
             seenTrailers[event.trailerId] = event;
 
-            if (event.transactionType === 'inbound' && event.assignmentType === 'lane_assignment' && event.assignmentValue) {
-                 if (!assignments[event.assignmentValue]) {
-                    assignments[event.assignmentValue] = event;
-                }
+            if (event.transactionType === 'inbound') {
+                 assignments[event.assignmentValue] = event;
             }
         }
         
@@ -138,6 +205,11 @@ export function ParkingLaneManager() {
             toast({ variant: 'destructive', title: "Error", description: error.message });
         }
     };
+    
+    const openMoveDialog = (event: YardEvent) => {
+        setSelectedEvent(event);
+        setIsMoveDialogOpen(true);
+    };
 
     const renderLocation = (locationId: string) => {
         const event = currentAssignments[locationId];
@@ -170,13 +242,17 @@ export function ParkingLaneManager() {
                         </div>
                     </TooltipTrigger>
                     {event && (
-                        <TooltipContent>
+                        <TooltipContent className="space-y-2">
                             <div className="space-y-1 text-sm">
                                 <p><strong>Trailer:</strong> {event.trailerId}</p>
                                 <p><strong>Carrier:</strong> {event.carrier}</p>
                                 <p><strong>Load/BOL:</strong> {event.loadNumber}</p>
                                 <p><strong>Arrived:</strong> {formatDistanceToNow(event.timestamp, { addSuffix: true })}</p>
                             </div>
+                            <Button size="sm" className="w-full" onClick={() => openMoveDialog(event)}>
+                                <Move className="mr-2" />
+                                Move Trailer
+                            </Button>
                         </TooltipContent>
                     )}
                 </Tooltip>
@@ -208,6 +284,7 @@ export function ParkingLaneManager() {
                     <p className="text-sm text-muted-foreground">Try a different search term.</p>
                 </div>
              )}
+             <MoveTrailerDialog event={selectedEvent} isOpen={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen} />
         </div>
     );
 }
