@@ -1,7 +1,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { ClipboardList, PlusCircle, Truck, Package, Weight, Calendar, Save } from 'lucide-react';
+import { ClipboardList, PlusCircle, Truck, Package, Weight, Calendar, Save, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
