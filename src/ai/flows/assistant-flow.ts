@@ -118,16 +118,18 @@ const assistantFlow = ai.defineFlow(
       imagePromise,
     ]);
 
-    const output = llmResponse.output || { answer: "I'm sorry, I couldn't generate a response." };
+    const output = llmResponse.output || { answer: "im not that smart please ask another quiestion" };
     if (imageResponse) {
       output.imageUrl = imageResponse.media.url;
     }
 
     // Check if the LLM decided to use the navigation tool
-    for (const part of llmResponse.history?.[0]?.output?.content || []) {
-      if (part.toolRequest?.name === 'navigateToPage') {
-        output.navigateTo = part.toolRequest.output as string;
-      }
+    const toolRequest = llmResponse.history?.[0]?.output?.content.find(
+      (part) => part.toolRequest?.name === 'navigateToPage'
+    )?.toolRequest;
+
+    if (toolRequest) {
+      output.navigateTo = toolRequest.output as string;
     }
     
     return output;
