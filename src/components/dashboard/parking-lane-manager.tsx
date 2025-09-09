@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useSchedule, YardEvent } from '@/hooks/use-schedule';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -13,6 +13,22 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '../ui/skeleton';
+
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        setFormattedDate(format(date, 'P p'));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[120px]" />;
+    }
+
+    return <>{formattedDate}</>;
+}
 
 
 const AddLocationDialog = ({ onAdd }: { onAdd: (id: string) => void }) => {
@@ -142,7 +158,7 @@ export function ParkingLaneManager() {
                                 <div className="text-xs space-y-1">
                                     <p className="font-semibold truncate">{event.carrier} ({event.scac})</p>
                                     <p className="text-muted-foreground truncate">Trailer: {event.trailerId}</p>
-                                    <p className="text-muted-foreground truncate">{format(event.timestamp, 'P p')}</p>
+                                    <p className="text-muted-foreground truncate"><ClientFormattedDate date={event.timestamp} /></p>
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center h-full">
