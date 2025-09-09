@@ -25,6 +25,10 @@ import { Input } from "@/components/ui/input"
 import { Button } from "../ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem } from "../ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
+import { DocumentUpload } from "./document-upload"
+import { Label } from "../ui/label"
+import { Upload } from "lucide-react"
 
 const trainingPrograms = [
     { id: 'onboarding', label: 'Onboarding' },
@@ -32,12 +36,18 @@ const trainingPrograms = [
     { id: 'annual', label: 'Annual Training' },
     { id: 'exam', label: 'Exam' },
     { id: 'library', label: 'Library' },
+    { id: 'benefits', label: 'Benefits Guide' },
+    { id: '401k', label: '401K' },
+    { id: 'handbook', label: 'Handbook' },
 ];
 
 
 const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
     const { toast } = useToast();
     const [selectedPrograms, setSelectedPrograms] = React.useState<string[]>([]);
+    const [isUploadDialogOpen, setUploadDialogOpen] = React.useState(false);
+    const [customTaskName, setCustomTaskName] = React.useState("");
+    const [documentUri, setDocumentUri] = React.useState<string | null>(null);
 
     const handleSelect = (programId: string) => {
         setSelectedPrograms(prev => 
@@ -65,37 +75,92 @@ const AssignTaskDropdown = ({ employee }: { employee: Employee }) => {
         });
         setSelectedPrograms([]);
     };
+
+    const handleUploadTask = () => {
+        if (!customTaskName) {
+            toast({ variant: 'destructive', title: 'Task Name Required', description: 'Please provide a name for the custom task.' });
+            return;
+        }
+         if (!documentUri) {
+            toast({ variant: 'destructive', title: 'Document Required', description: 'Please upload or capture a document for the task.' });
+            return;
+        }
+        toast({
+            title: 'Custom Task Assigned!',
+            description: `Task "${customTaskName}" has been assigned to ${employee.name}.`
+        });
+        setUploadDialogOpen(false);
+        setCustomTaskName("");
+        setDocumentUri(null);
+    }
     
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">Assign...</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Assign Task</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {trainingPrograms.map(program => (
-                  <DropdownMenuCheckboxItem
-                    key={program.id}
-                    checked={selectedPrograms.includes(program.id)}
-                    onSelect={(e) => {
-                        e.preventDefault();
-                        handleSelect(program.id);
-                    }}
-                  >
-                      {program.label}
-                  </DropdownMenuCheckboxItem>
-              ))}
-               {selectedPrograms.length > 0 && (
-                   <>
-                    <DropdownMenuSeparator />
-                     <DropdownMenuItem onSelect={handleConfirmAssignment}>
-                        Confirm Assignment ({selectedPrograms.length})
-                    </DropdownMenuItem>
-                   </>
-               )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">Assign...</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                <DropdownMenuLabel>Assign Standard Task</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {trainingPrograms.map(program => (
+                    <DropdownMenuCheckboxItem
+                        key={program.id}
+                        checked={selectedPrograms.includes(program.id)}
+                        onSelect={(e) => {
+                            e.preventDefault();
+                            handleSelect(program.id);
+                        }}
+                    >
+                        {program.label}
+                    </DropdownMenuCheckboxItem>
+                ))}
+                {selectedPrograms.length > 0 && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={handleConfirmAssignment}>
+                            Confirm Assignment ({selectedPrograms.length})
+                        </DropdownMenuItem>
+                    </>
+                )}
+                 <DropdownMenuSeparator />
+                 <DropdownMenuItem onSelect={() => setUploadDialogOpen(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Custom Task...
+                 </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Dialog open={isUploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Upload Custom Task</DialogTitle>
+                        <DialogDescription>
+                            Upload a document or use the camera to create and assign a new task to {employee.name}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                             <Label htmlFor="task-name">Task Name</Label>
+                             <Input 
+                                id="task-name" 
+                                value={customTaskName} 
+                                onChange={(e) => setCustomTaskName(e.target.value)}
+                                placeholder="e.g., Signed BOL for Load #123"
+                             />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Document</Label>
+                            <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleUploadTask}>Assign Task</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }
 
@@ -126,7 +191,7 @@ export function TrainingManagementTable() {
     },
     {
       id: "assign",
-      header: "Assign",
+      header: "Assign Task",
       cell: ({ row }) => {
         const employee = row.original;
         return <AssignTaskDropdown employee={employee} />
