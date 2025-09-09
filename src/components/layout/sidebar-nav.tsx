@@ -62,6 +62,7 @@ import {
   Banknote,
   Gauge,
   Siren,
+  ShieldCheck,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -149,6 +150,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Main Menu', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
+  { href: '/dashboard/safety-hub', icon: ShieldCheck, label: 'Safety Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager'] },
   { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
