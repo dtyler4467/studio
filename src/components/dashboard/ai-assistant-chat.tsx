@@ -29,10 +29,6 @@ type Message = {
   videoUrl?: string;
 };
 
-// Check for SpeechRecognition API
-const SpeechRecognition =
-  (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
 export function AiAssistantChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +44,10 @@ export function AiAssistantChat() {
   });
 
   useEffect(() => {
+    // Check for SpeechRecognition API only on the client
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      
     if (!SpeechRecognition) {
       // API not supported
       return;
@@ -117,7 +117,7 @@ export function AiAssistantChat() {
   };
   
    const handleMicClick = () => {
-    if (!SpeechRecognition) {
+    if (!recognitionRef.current) {
        toast({
             variant: "destructive",
             title: "Unsupported Browser",
