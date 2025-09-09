@@ -10,6 +10,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { format } from "date-fns"
+import { useRouter } from "next/navigation"
 
 import {
   Table,
@@ -22,13 +23,16 @@ import {
 import { Button } from "../ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Label } from "../ui/label"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { MoreHorizontal, ArrowLeftRight, Move } from "lucide-react"
 
 
 export function LostAndFoundTable() {
     const { lostAndFound, parkingLanes, yardEvents, moveTrailer } = useSchedule();
     const { toast } = useToast();
+    const router = useRouter();
     const [isMoveDialogOpen, setIsMoveDialogOpen] = React.useState(false);
     const [selectedEvent, setSelectedEvent] = React.useState<YardEvent | null>(null);
     const [moveToLane, setMoveToLane] = React.useState<string>("");
@@ -37,6 +41,20 @@ export function LostAndFoundTable() {
         setSelectedEvent(event);
         setIsMoveDialogOpen(true);
     };
+    
+    const handleProcessGateTransaction = (event: YardEvent) => {
+        const query = new URLSearchParams({
+            loadNumber: event.loadNumber,
+            trailerId: event.trailerId,
+            carrier: event.carrier,
+            scac: event.scac,
+            driver: event.driverName,
+            sealNumber: event.sealNumber || '',
+            transactionType: 'outbound'
+        }).toString();
+
+        router.push(`/dashboard/yard-management/check-in?${query}`);
+    }
 
     const handleMove = () => {
         if (selectedEvent && moveToLane) {
@@ -79,8 +97,27 @@ export function LostAndFoundTable() {
         {
             id: "actions",
             cell: ({ row }) => {
+                const event = row.original;
                 return (
-                    <Button size="sm" onClick={() => openMoveDialog(row.original)}>Move to Lane</Button>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => openMoveDialog(event)}>
+                                <Move className="mr-2 h-4 w-4" />
+                                <span>Move to new Lane</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleProcessGateTransaction(event)}>
+                                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                                <span>Process Gate Transaction</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )
             }
         }

@@ -47,6 +47,11 @@ export function YardCheckInPageContent() {
              form.setValue('carrier', searchParams.get('carrier') || '');
              form.setValue('scac', searchParams.get('scac') || '');
              form.setValue('driverName', searchParams.get('driver') || '');
+             form.setValue('sealNumber', searchParams.get('sealNumber') || '');
+             const transactionType = searchParams.get('transactionType');
+             if (transactionType === 'inbound' || transactionType === 'outbound') {
+                 form.setValue('transactionType', transactionType);
+             }
         }
     }, [searchParams, form]);
 
@@ -120,4 +125,3 @@ export function YardCheckInPageContent() {
         </Card>
   );
 }
-
