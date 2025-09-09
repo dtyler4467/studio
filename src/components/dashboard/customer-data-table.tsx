@@ -49,6 +49,7 @@ import {
 import { Label } from "../ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
+import { Skeleton } from "../ui/skeleton"
 
 type Customer = {
     id: string;
@@ -65,6 +66,21 @@ const initialData: Customer[] = [
     { id: "CUST002", name: "Jane Doe", company: "Globex Corporation", email: "jane.doe@globex.com", phone: "555-987-6543", status: "Active", dateAdded: new Date("2023-03-22") },
     { id: "CUST003", name: "Mike Johnson", company: "Stark Industries", email: "mike.j@stark.com", phone: "555-555-5555", status: "Inactive", dateAdded: new Date("2022-11-01") },
 ];
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "PPP"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[90px]" />;
+    }
+
+    return <div>{formattedDate}</div>;
+}
+
 
 const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer: Omit<Customer, 'id' | 'dateAdded'>) => void, onOpenChange: (open: boolean) => void, isOpen: boolean }) => {
     const [formData, setFormData] = React.useState({
@@ -223,7 +239,7 @@ export function CustomerDataTable() {
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
-        cell: ({ row }) => <div>{format(row.getValue<Date>("dateAdded"), "PPP")}</div>,
+        cell: ({ row }) => <ClientFormattedDate date={row.getValue("dateAdded")} />,
       },
       {
         id: "actions",
