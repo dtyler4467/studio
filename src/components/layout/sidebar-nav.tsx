@@ -140,7 +140,7 @@ const navItems: NavItem[] = [
         },
         { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/check-in', label: 'Inbound', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/check-in', label: 'Outbound', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/outbound', label: 'Outbound', roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/dock-doors', label: 'Dock Doors', icon: Warehouse, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/parking-lanes', label: 'Parking Lanes', icon: ParkingCircle, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History, roles: ['Admin', 'Dispatcher'] },
