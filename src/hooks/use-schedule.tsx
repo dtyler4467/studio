@@ -446,6 +446,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
+  const [holidays, setHolidays] = useState<Holiday[]>(initialHolidays);
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>(initialTimeOffRequests);
   const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
   const [yardEvents, setYardEvents] = useState<YardEvent[]>(initialYardEvents);
