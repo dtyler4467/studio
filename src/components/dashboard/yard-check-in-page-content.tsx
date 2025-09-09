@@ -29,6 +29,7 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
     const searchParams = useSearchParams();
     const [documentDataUri, setDocumentDataUri] = useState<string | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [confirmationType, setConfirmationType] = useState<'inbound' | 'outbound' | null>(null);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -102,21 +103,28 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
 
     const handleTransactionTypeChange = (value: "inbound" | "outbound") => {
         if (defaultTransactionType === 'outbound' && value === 'inbound') {
+            setConfirmationType('inbound');
             setShowConfirmation(true);
+        } else if (defaultTransactionType === 'inbound' && value === 'outbound') {
+             setConfirmationType('outbound');
+             setShowConfirmation(true);
         } else {
             form.setValue('transactionType', value);
         }
     }
     
-    const confirmSwitchToInbound = () => {
-        form.setValue('transactionType', 'inbound');
+    const confirmSwitch = () => {
+        if (confirmationType) {
+            form.setValue('transactionType', confirmationType);
+        }
         setShowConfirmation(false);
+        setConfirmationType(null);
     }
     
     const cancelSwitch = () => {
-        // This will revert the radio button visually if the user clicks No
-        form.setValue('transactionType', 'outbound');
+        form.setValue('transactionType', defaultTransactionType);
         setShowConfirmation(false);
+        setConfirmationType(null);
     }
 
 
@@ -163,16 +171,15 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Action</AlertDialogTitle>
                         <AlertDialogDescription className="text-destructive font-medium">
-                            Are you sure you want to switch to an inbound check-in process?
+                            Are you sure you want to switch to an {confirmationType === 'inbound' ? 'inbound check-in' : 'outbound check-out'} process?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={cancelSwitch}>No</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmSwitchToInbound}>Yes</AlertDialogAction>
+                        <AlertDialogAction onClick={confirmSwitch}>Yes</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>
   );
 }
-
