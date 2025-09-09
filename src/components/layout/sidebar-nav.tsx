@@ -49,6 +49,7 @@ import {
   CalendarPlus,
   Truck,
   ArchiveRestore,
+  Sparkles,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -71,6 +72,7 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
+  { href: '/dashboard/ai-assistant', icon: Sparkles, label: 'AI Assistant', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   { 
     href: '/dashboard/yard-management', 
