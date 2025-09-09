@@ -158,7 +158,9 @@ export function ParkingLaneManager() {
                                 <div className="text-xs space-y-1">
                                     <p className="font-semibold truncate">{event.carrier} ({event.scac})</p>
                                     <p className="text-muted-foreground truncate">Trailer: {event.trailerId}</p>
-                                    <p className="text-muted-foreground truncate"><ClientFormattedDate date={event.timestamp} /></p>
+                                    <div className="text-muted-foreground truncate">
+                                        <ClientFormattedDate date={event.timestamp} />
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center h-full">
