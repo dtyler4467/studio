@@ -19,8 +19,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectGroup,
-  SelectLabel
 } from "@/components/ui/select";
 import { useSchedule, YardEvent } from "@/hooks/use-schedule";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +31,7 @@ const FormSchema = z.object({
 });
 
 export function TrailerMoveForm() {
-  const { yardEvents, parkingLanes, warehouseDoors, moveTrailer } = useSchedule();
+  const { yardEvents, parkingLanes, moveTrailer } from useSchedule();
   const { toast } = useToast();
 
   const occupiedTrailers = useMemo(() => {
@@ -43,7 +41,7 @@ export function TrailerMoveForm() {
     const sortedEvents = [...yardEvents].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     for (const event of sortedEvents) {
-        if (event.assignmentType !== 'lane_assignment' && event.assignmentType !== 'door_assignment' || !event.assignmentValue) continue;
+        if (event.assignmentType !== 'lane_assignment' || !event.assignmentValue) continue;
         
         if (seenTrailers[event.trailerId]) {
              if (seenTrailers[event.trailerId].timestamp > event.timestamp) {
@@ -58,9 +56,6 @@ export function TrailerMoveForm() {
     }
     return Object.values(assignments);
   }, [yardEvents]);
-
-  const trailersInLanes = occupiedTrailers.filter(e => e.assignmentType === 'lane_assignment');
-  const trailersAtDoors = occupiedTrailers.filter(e => e.assignmentType === 'door_assignment');
 
 
   const availableLanes = useMemo(() => {
@@ -102,30 +97,19 @@ export function TrailerMoveForm() {
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a trailer..." />
+                    <SelectValue placeholder="Select a trailer from a parking lane" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                    {trailersAtDoors.length > 0 && (
-                        <SelectGroup>
-                            <SelectLabel>From Dock Door</SelectLabel>
-                             {trailersAtDoors.map(event => (
-                                <SelectItem key={event.id} value={event.id}>
-                                Trailer: {event.trailerId} (at Door {event.assignmentValue})
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    )}
-                    {trailersInLanes.length > 0 && (
-                        <SelectGroup>
-                            <SelectLabel>From Parking Lane</SelectLabel>
-                            {trailersInLanes.map(event => (
-                                <SelectItem key={event.id} value={event.id}>
-                                Trailer: {event.trailerId} (in Lane {event.assignmentValue})
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    )}
+                  {occupiedTrailers.length > 0 ? (
+                     occupiedTrailers.map(event => (
+                        <SelectItem key={event.id} value={event.id}>
+                          Trailer: {event.trailerId} (in Lane {event.assignmentValue})
+                       </SelectItem>
+                     ))
+                  ) : (
+                    <SelectItem value="" disabled>No trailers in lanes</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
