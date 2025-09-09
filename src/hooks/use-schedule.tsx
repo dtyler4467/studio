@@ -729,14 +729,22 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const moveTrailer = (eventId: string, toLaneId: string, fromLost: boolean = false) => {
-        const eventToMove = fromLost ? lostAndFound.find(e => e.id === eventId) : yardEvents.find(e => e.id === eventId);
+        const eventToMove = fromLost 
+            ? lostAndFound.find(e => e.id === eventId) 
+            : yardEvents.find(e => e.id === eventId);
+    
         if (!eventToMove) throw new Error("Trailer event to move not found.");
 
         const getLatestInboundEventForLane = (laneId: string) => {
             const eventsInLane = yardEvents
-                .filter(e => e.assignmentType === 'lane_assignment' && e.assignmentValue === laneId && e.transactionType === 'inbound')
+                .filter(e => e.assignmentType === 'lane_assignment' && e.assignmentValue === laneId)
                 .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            return eventsInLane[0] || null;
+            
+            const lastEvent = eventsInLane[0];
+            if (lastEvent && lastEvent.transactionType === 'inbound') {
+                return lastEvent;
+            }
+            return null;
         }
         
         const occupyingEvent = getLatestInboundEventForLane(toLaneId);
@@ -826,4 +834,5 @@ export const useSchedule = () => {
   }
   return context;
 };
+
 
