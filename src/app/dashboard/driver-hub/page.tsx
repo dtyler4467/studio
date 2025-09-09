@@ -1,6 +1,6 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { SteeringWheel } from 'lucide-react';
+import { Gamepad2 } from 'lucide-react';
 
 export default function DriverHubPage() {
   return (
@@ -10,7 +10,7 @@ export default function DriverHubPage() {
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2">
-                    <SteeringWheel />
+                    <Gamepad2 />
                     Driver Hub
                 </CardTitle>
                 <CardDescription>
