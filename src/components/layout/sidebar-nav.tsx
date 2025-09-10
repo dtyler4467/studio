@@ -72,6 +72,10 @@ import {
   BookOpen,
   Fence,
   Share2,
+  Building2,
+  Contact,
+  ClipboardPaste,
+  Map,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -158,6 +162,10 @@ const navItems: NavItem[] = [
     subItems: [
         { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Main Menu', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/vendor', icon: Building2, label: 'Vendor', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/customer', icon: Contact, label: 'Customer', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/equipment-assignment', icon: ClipboardPaste, label: 'Equipment Assignment', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/location', icon: Map, label: 'Location', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
   { href: '/dashboard/safety-hub', icon: ShieldCheck, label: 'Safety Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager'] },
