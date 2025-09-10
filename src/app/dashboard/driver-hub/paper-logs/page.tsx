@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Printer, Mail, Upload, FileText, Download } from 'lucide-react';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -118,7 +118,11 @@ export default function PaperLogsPage() {
     const { currentUser } = useSchedule();
     const [uploadedLogs, setUploadedLogs] = useState(initialUploadedLogs);
     const [isUploadDialogOpen, setUploadDialogOpen] = useState(false);
-    const [newLogData, setNewLogData] = useState({ logDate: new Date(), documentUri: null as string | null });
+    const [newLogData, setNewLogData] = useState<{ logDate: Date | null, documentUri: string | null }>({ logDate: null, documentUri: null });
+
+    useEffect(() => {
+        setNewLogData({ logDate: new Date(), documentUri: null });
+    }, []);
 
     const handlePrint = () => {
         const content = templateRef.current;
@@ -144,8 +148,8 @@ export default function PaperLogsPage() {
     };
 
     const handleSaveUpload = () => {
-        if (!newLogData.documentUri) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please upload a document for the log.' });
+        if (!newLogData.documentUri || !newLogData.logDate) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and upload a document for the log.' });
             return;
         }
         const newLog: UploadedLog = {
@@ -244,12 +248,14 @@ export default function PaperLogsPage() {
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
                             <Label htmlFor="log-date">Log Date</Label>
-                            <Input 
-                            id="log-date" 
-                            type="date" 
-                            value={format(newLogData.logDate, 'yyyy-MM-dd')}
-                            onChange={(e) => setNewLogData(prev => ({...prev, logDate: new Date(e.target.value)}))}
-                        />
+                            {newLogData.logDate && (
+                                <Input 
+                                id="log-date" 
+                                type="date" 
+                                value={format(newLogData.logDate, 'yyyy-MM-dd')}
+                                onChange={(e) => setNewLogData(prev => ({...prev, logDate: new Date(e.target.value)}))}
+                            />
+                            )}
                     </div>
                         <div className="space-y-2">
                         <Label>Document</Label>
@@ -269,5 +275,3 @@ export default function PaperLogsPage() {
     </div>
   );
 }
-
-  
