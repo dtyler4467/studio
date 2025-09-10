@@ -406,7 +406,7 @@ function EquipmentTable() {
                                 <DropdownMenuSeparator />
                                 <AlertDialogTrigger asChild>
                                     <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(equipmentItem)} onSelect={(e) => e.preventDefault()}>
-                                        <Trash2 className="mr-2" /> Delete
+                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
                                     </DropdownMenuItem>
                                 </AlertDialogTrigger>
                             </DropdownMenuContent>
@@ -792,8 +792,8 @@ export default function FleetManagementPage() {
                                                  <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent>
-                                                        <DropdownMenuItem onClick={() => { setEditingPM(pm); setPMDialogOpen(true); }}><Edit className="mr-2"/>Edit Schedule</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => setEditingDocPM(pm)}><FilePlus className="mr-2"/>Add/Edit Document</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => { setEditingPM(pm); setPMDialogOpen(true); }}><Edit className="mr-2 h-4 w-4"/>Edit Schedule</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setEditingDocPM(pm)}><FilePlus className="mr-2 h-4 w-4"/>Add/Edit Document</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem>Log Service</DropdownMenuItem>
                                                     </DropdownMenuContent>
