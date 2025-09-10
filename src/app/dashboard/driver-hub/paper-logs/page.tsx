@@ -18,83 +18,114 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 const LogGrid = () => {
     const hours = Array.from({ length: 24 }, (_, i) => i);
-    const statuses = ['Off Duty', 'Sleeper Berth', 'Driving', 'On-Duty (Not Driving)'];
+    const statuses = [
+        { num: 1, label: 'Off Duty' },
+        { num: 2, label: 'Sleeper Berth' },
+        { num: 3, label: 'Driving' },
+        { num: 4, label: 'On Duty' },
+    ];
     return (
-        <div className="border-t border-l">
+        <div className="border border-black text-xs">
+            <div className="grid grid-cols-27">
+                 <div className="col-span-2"></div>
+                 {hours.map(hour => {
+                    if (hour === 0) return <div key={hour} className="text-center font-bold">Mid Night</div>
+                    if (hour === 12) return <div key={hour} className="text-center font-bold">Noon</div>
+                    return <div key={hour} className="text-center">{(hour % 12) === 0 ? 12 : hour % 12}</div>
+                 })}
+                 <div className="col-span-1"></div>
+            </div>
             {statuses.map(status => (
-                 <div key={status} className="grid grid-cols-25 border-b text-xs">
-                    <div className="col-span-1 border-r p-1 text-right font-medium text-muted-foreground break-words w-[120px]">{status}</div>
+                 <div key={status.num} className="grid grid-cols-27 border-t border-black">
+                    <div className="col-span-2 border-r border-black p-1 flex items-center gap-2">
+                        <span className="font-bold">{status.num}</span>
+                        <span>{status.label}</span>
+                    </div>
                     {hours.map(hour => (
-                        <div key={hour} className="col-span-1 border-r h-8"></div>
+                        <div key={hour} className="col-span-1 border-r border-black h-8 grid grid-cols-4">
+                            <div className="border-r border-dashed border-gray-400"></div>
+                            <div className="border-r border-dashed border-gray-400"></div>
+                            <div className="border-r border-dashed border-gray-400"></div>
+                            <div></div>
+                        </div>
                     ))}
+                    <div className="col-span-1 border-l border-black"></div>
                  </div>
             ))}
-             <div className="grid grid-cols-25 border-b text-xs text-muted-foreground">
-                <div className="col-span-1 border-r p-1 text-right font-medium">Midnight</div>
-                {hours.map(hour => (
-                    <div key={hour} className="col-span-1 border-r text-center">{hour}</div>
-                ))}
+            <div className="grid grid-cols-27 border-t border-black">
+                 <div className="col-span-2 border-r border-black p-1 font-bold">Remarks</div>
+                 {hours.map(hour => (
+                    <div key={hour} className="col-span-1 border-r border-black h-8"></div>
+                 ))}
+                 <div className="col-span-1 flex items-center justify-center p-1 text-center border-l border-black bg-gray-200">
+                    <p className="font-bold leading-tight">Total Hours</p>
+                 </div>
+            </div>
+             <div className="grid grid-cols-27 border-t border-black text-xs text-muted-foreground">
+                <div className="col-span-2"></div>
+                {hours.map(hour => {
+                    if (hour === 0) return <div key={hour} className="text-center font-bold text-black">Mid Night</div>
+                    if (hour === 12) return <div key={hour} className="text-center font-bold text-black">Noon</div>
+                    return <div key={hour} className="text-center text-black">{(hour % 12) === 0 ? 12 : hour % 12}</div>
+                 })}
+                 <div className="col-span-1"></div>
             </div>
         </div>
     )
 }
 
+
 const PaperLogTemplate = React.forwardRef<HTMLDivElement, {}>((props, ref) => (
-    <div ref={ref} className="bg-white text-black p-4 space-y-4">
-        <div className="text-center">
-            <h2 className="text-xl font-bold">DRIVER'S DAILY LOG</h2>
+    <div ref={ref} className="bg-white text-black p-4 space-y-2 font-sans">
+        <div className="text-center font-bold font-headline">
+            <h2 className="text-2xl tracking-wider">DRIVER'S DAILY LOG</h2>
+            <p className="text-lg">ONE CALENDAR DAY</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 border p-2">
-            <div className="space-y-1">
-                <Label className="text-xs">Date</Label>
-                <Input className="h-8 text-xs" />
+        <div className="flex gap-4">
+            <div className="flex-1 text-center">
+                <Input className="h-8 text-xs border-black rounded-none" />
+                <Label className="text-xs font-semibold">MONTH/DAY/YEAR</Label>
             </div>
-             <div className="space-y-1">
-                <Label className="text-xs">Total Miles Driving Today</Label>
-                <Input className="h-8 text-xs" />
+            <div className="flex-1 text-center">
+                <Input className="h-8 text-xs border-black rounded-none" />
+                <Label className="text-xs font-semibold">TOTAL MILES DRIVEN TODAY</Label>
             </div>
-             <div className="space-y-1">
-                <Label className="text-xs">Truck/Tractor and Trailer(s) No.</Label>
-                <Input className="h-8 text-xs" />
-            </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4 border p-2">
-            <div className="col-span-2 space-y-1">
-                <Label className="text-xs">Carrier</Label>
-                <Input className="h-8 text-xs" />
-            </div>
-             <div className="space-y-1">
-                <Label className="text-xs">Driver's Signature</Label>
-                <Input className="h-8 text-xs" />
-            </div>
-            <div className="col-span-2 space-y-1">
-                <Label className="text-xs">Main Office Address</Label>
-                <Input className="h-8 text-xs" />
-            </div>
-             <div className="space-y-1">
-                <Label className="text-xs">Co-Driver Name</Label>
-                <Input className="h-8 text-xs" />
+            <div className="flex-1 text-center">
+                <Input className="h-8 text-xs border-black rounded-none" />
+                <Label className="text-xs font-semibold">VEHICLE NUMBERS</Label>
             </div>
         </div>
         
+        <div className="flex gap-4">
+            <div className="w-2/3 space-y-2">
+                 <div className="text-center">
+                    <Input className="h-8 text-xs border-black rounded-none" />
+                    <Label className="text-xs font-semibold">NAME OF THE CARRIER</Label>
+                 </div>
+                  <div className="text-center">
+                    <Input className="h-8 text-xs border-black rounded-none" />
+                    <Label className="text-xs font-semibold">MAIN OFFICE ADDRESS</Label>
+                 </div>
+                 <div className="text-center">
+                    <Input className="h-8 text-xs border-black rounded-none" />
+                    <Label className="text-xs font-semibold">NAME OF THE CO-DRIVER</Label>
+                 </div>
+            </div>
+             <div className="w-1/3 text-center">
+                <div className="h-20 border-black border flex items-center justify-center">
+                    {/* Placeholder for signature */}
+                </div>
+                <Label className="text-xs font-semibold">DRIVER'S SIGNATURE</Label>
+            </div>
+        </div>
+        <div className="text-center">
+            <Input className="h-8 text-xs border-black rounded-none" />
+            <Label className="text-xs font-semibold">PRO OR SHIPPING NUMBER</Label>
+        </div>
+
         <LogGrid />
 
-        <div className="grid grid-cols-2 gap-4 border p-2">
-             <div className="space-y-1">
-                <Label className="text-xs">Total Hours</Label>
-                <Input className="h-8 text-xs" />
-            </div>
-             <div className="space-y-1">
-                <Label className="text-xs">Shipping Document Number(s) or Name of Shipper and Commodity</Label>
-                <Input className="h-8 text-xs" />
-            </div>
-        </div>
-
-        <div className="space-y-1 border p-2">
-            <Label className="text-xs">Remarks</Label>
-            <textarea className="w-full border rounded-md p-2 min-h-[80px] text-xs" />
-        </div>
     </div>
 ));
 PaperLogTemplate.displayName = "PaperLogTemplate";
@@ -134,8 +165,8 @@ export default function PaperLogsPage() {
             const printWindow = window.open('', '', 'height=800,width=1000');
             printWindow?.document.write('<html><head><title>Print Paper Log</title>');
             // A simple way to include Tailwind-like styles for printing
-            printWindow?.document.write('<style>body{font-family:sans-serif;}input,textarea{border:1px solid #ccc;padding:0.5rem;width:100%;}label{font-size:0.75rem;}.grid{display:grid;gap:1rem;}.grid-cols-3{grid-template-columns:repeat(3,1fr);}.grid-cols-2{grid-template-columns:repeat(2,1fr);}.grid-cols-25{grid-template-columns:120px repeat(24,1fr);}.col-span-1{grid-column:span 1 / span 1;}.col-span-2{grid-column:span 2 / span 2;}.space-y-1 > * + *{margin-top:0.25rem;}.border{border:1px solid #ccc;}.border-b{border-bottom:1px solid #ccc;}.border-t{border-top:1px solid #ccc;}.border-l{border-left:1px solid #ccc;}.border-r{border-right:1px solid #ccc;}.p-1{padding:0.25rem;}.p-2{padding:0.5rem;}.p-4{padding:1rem;}.text-center{text-align:center;}.text-right{text-align:right;}.h-8{height:2rem;}.text-xs{font-size:0.75rem;}.font-bold{font-weight:700;}.font-medium{font-weight:500;}h2{font-size:1.25rem;}.text-muted-foreground{color:#777;}</style>');
-            printWindow?.document.write('</head><body>');
+            printWindow?.document.write('<style>body{font-family:sans-serif;}input,textarea{border:1px solid #000;border-radius:0;padding:0.5rem;width:100%;}label{font-size:0.75rem;font-weight:600;text-transform:uppercase;} .font-headline{ font-family: "Space Grotesk", sans-serif;} .font-sans{font-family: sans-serif} .flex{display:flex;} .gap-4{gap:1rem;} .w-1\\/3{width:33.333333%} .w-2\\/3{width:66.666667%} .space-y-2 > * + *{margin-top:0.5rem;} .text-center{text-align:center;} .text-2xl{font-size:1.5rem;} .text-lg{font-size:1.125rem;} .font-bold{font-weight:700;} .tracking-wider{letter-spacing:.05em;} .h-8{height:2rem;} .h-20{height:5rem;} .text-xs{font-size:.75rem;} .border-black{border-color:#000;} .border{border-width:1px;} .items-center{align-items:center;} .justify-center{justify-content:center;} .grid{display:grid;} .grid-cols-27{grid-template-columns: 80px repeat(24, 1fr) 50px;} .grid-cols-4{grid-template-columns:repeat(4,1fr);} .col-span-1{grid-column:span 1 / span 1;} .col-span-2{grid-column:span 2 / span 2;} .border-t{border-top-width:1px;} .border-r{border-right-width:1px;} .border-l{border-left-width:1px;} .border-dashed{border-style:dashed;} .p-1{padding:.25rem;} .bg-gray-200{background-color:#e5e7eb;} .leading-tight{line-height:1.25;} .font-semibold{font-weight:600;} .gap-2{gap:.5rem;}</style>');
+            printWindow?.document.write('</head><body style="zoom:0.8;">');
             printWindow?.document.write(content.innerHTML);
             printWindow?.document.write('</body></html>');
             printWindow?.document.close();
