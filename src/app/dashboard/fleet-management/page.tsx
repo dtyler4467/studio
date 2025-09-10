@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,8 @@ import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import * as XLSX from "xlsx";
+import { format } from 'date-fns';
 
 
 type RepairOrder = {
@@ -157,6 +159,7 @@ export default function FleetManagementPage() {
     const [pmSchedules, setPmSchedules] = useState(initialPMSchedules);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveOrder = (orderData: Omit<RepairOrder, 'id' | 'dateCreated'>) => {
         const newOrder: RepairOrder = {
@@ -171,6 +174,78 @@ export default function FleetManagementPage() {
     const handleApproveEstimate = (orderId: string) => {
         setRepairOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Work in Progress' } : o));
         toast({ title: 'Estimate Approved!', description: `Repair order ${orderId} is now in progress.` });
+    };
+    
+    const exportToXlsx = () => {
+        const dataToExport = repairOrders.map(order => ({
+            "PO Number": order.poNumber,
+            "Vehicle ID": order.vehicleId,
+            "Issue": order.issue,
+            "Status": order.status,
+            "Assigned To": order.assignedTo,
+            "Estimate": order.estimate,
+            "Final Cost": order.finalCost,
+            "Date Created": format(order.dateCreated, "yyyy-MM-dd HH:mm:ss"),
+            "Date Completed": order.dateCompleted ? format(order.dateCompleted, "yyyy-MM-dd HH:mm:ss") : "N/A",
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "RepairOrders");
+        XLSX.writeFile(workbook, `RepairOrders_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        
+        toast({
+            title: "Export Successful",
+            description: `${dataToExport.length} repair order(s) have been exported.`,
+        });
+    };
+
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const workbook = XLSX.read(e.target?.result, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+                const newOrders: RepairOrder[] = json.map((row: any) => ({
+                    id: `RO-IMP-${Date.now()}-${Math.random()}`,
+                    poNumber: String(row["PO Number"]),
+                    vehicleId: String(row["Vehicle ID"]),
+                    issue: String(row.Issue),
+                    status: row.Status || 'Pending Estimate',
+                    assignedTo: String(row["Assigned To"]),
+                    estimate: row.Estimate ? Number(row.Estimate) : undefined,
+                    finalCost: row["Final Cost"] ? Number(row["Final Cost"]) : undefined,
+                    dateCreated: row["Date Created"] ? new Date(row["Date Created"]) : new Date(),
+                    dateCompleted: row["Date Completed"] && row["Date Completed"] !== "N/A" ? new Date(row["Date Completed"]) : undefined,
+                }));
+
+                setRepairOrders(prev => [...prev, ...newOrders]);
+
+                toast({
+                    title: "Import Successful",
+                    description: `${newOrders.length} repair order(s) imported.`,
+                });
+
+            } catch (error) {
+                console.error("Failed to import Excel file:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Import Failed",
+                    description: "Please check the file format and try again.",
+                });
+            } finally {
+                 if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                 }
+            }
+        };
+        reader.readAsBinaryString(file);
     };
 
   return (
@@ -236,7 +311,20 @@ export default function FleetManagementPage() {
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline"><FileDown className="mr-2"/>Export</Button>
+                             <Input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".xlsx, .xls, .csv"
+                                onChange={handleFileImport}
+                            />
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                <Upload className="mr-2" />
+                                Import
+                            </Button>
+                            <Button variant="outline" onClick={exportToXlsx}>
+                                <FileDown className="mr-2"/>Export
+                            </Button>
                             <Button onClick={() => setIsDialogOpen(true)}><PlusCircle className="mr-2"/>New Repair Order</Button>
                         </div>
                     </CardHeader>
