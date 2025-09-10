@@ -76,6 +76,8 @@ import {
   Contact,
   ClipboardPaste,
   Map,
+  Wrench,
+  Store,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -215,6 +217,9 @@ const navItems: NavItem[] = [
         { href: '/dashboard/accountant/mileage-tracker', icon: Gauge, label: 'Mileage Tracker', roles: ['Admin', 'Manager'] },
     ]
   },
+  { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
+  { href: '/dashboard/repair-shop', icon: Wrench, label: 'Repair Shop', roles: ['Admin', 'Manager', 'Dispatcher'] },
+  { href: '/dashboard/store', icon: Store, label: 'Store', roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'] },
 ];
 
 const adminNavItems: NavItem[] = [
