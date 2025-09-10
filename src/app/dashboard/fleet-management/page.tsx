@@ -261,7 +261,7 @@ function AddEquipmentDialog({ onSave }: { onSave: (equipment: Omit<Equipment, 'i
     const [isOpen, setIsOpen] = useState(false);
     const [formState, setFormState] = useState<Omit<Equipment, 'id'>>({
         name: '', type: 'Truck', make: '', model: '', vin: '', fuelType: 'Diesel',
-        registrationExpiry: new Date(), inspectionExpiry: new Date()
+        registrationExpiry: new Date(), inspectionExpiry: new Date(), notes: '', documentUri: null,
     });
     
     const handleSave = () => {
@@ -271,7 +271,7 @@ function AddEquipmentDialog({ onSave }: { onSave: (equipment: Omit<Equipment, 'i
         }
         onSave(formState);
         setIsOpen(false);
-        setFormState({name: '', type: 'Truck', make: '', model: '', vin: '', fuelType: 'Diesel', registrationExpiry: new Date(), inspectionExpiry: new Date()});
+        setFormState({name: '', type: 'Truck', make: '', model: '', vin: '', fuelType: 'Diesel', registrationExpiry: new Date(), inspectionExpiry: new Date(), notes: '', documentUri: null});
     }
 
     return (
@@ -343,6 +343,14 @@ function AddEquipmentDialog({ onSave }: { onSave: (equipment: Omit<Equipment, 'i
                             <Label>Inspection Expiry</Label>
                             <Input type="date" value={format(new Date(formState.inspectionExpiry), 'yyyy-MM-dd')} onChange={(e) => setFormState(f => ({...f, inspectionExpiry: new Date(e.target.value)}))} />
                         </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Notes</Label>
+                        <Textarea value={formState.notes} onChange={(e) => setFormState(f => ({...f, notes: e.target.value}))} placeholder="Add any relevant notes..." />
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Attach Document (Optional)</Label>
+                        <DocumentUpload onDocumentChange={(uri) => setFormState(f => ({...f, documentUri: uri}))} currentDocument={formState.documentUri} />
                     </div>
                 </div>
                  <DialogFooter>

@@ -204,6 +204,8 @@ export type Equipment = {
     fuelType: 'Diesel' | 'Gasoline' | 'Electric' | 'Hybrid';
     registrationExpiry: Date;
     inspectionExpiry: Date;
+    notes?: string;
+    documentUri?: string | null;
 };
 
 
