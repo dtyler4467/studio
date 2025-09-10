@@ -107,20 +107,24 @@ type UploadedLog = {
     documentUri: string;
 };
 
-const initialUploadedLogs: UploadedLog[] = [
-    { id: 'LOG001', driverName: 'John Doe', logDate: new Date('2024-07-28'), uploadDate: new Date('2024-07-29'), documentUri: 'https://picsum.photos/seed/log1/800/1100' },
-    { id: 'LOG002', driverName: 'Jane Doe', logDate: new Date('2024-07-29'), uploadDate: new Date('2024-07-30'), documentUri: 'https://picsum.photos/seed/log2/800/1100' },
-]
+const serverSideInitialLogs: UploadedLog[] = [];
 
 export default function PaperLogsPage() {
     const templateRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const { currentUser } = useSchedule();
-    const [uploadedLogs, setUploadedLogs] = useState(initialUploadedLogs);
+    const [uploadedLogs, setUploadedLogs] = useState(serverSideInitialLogs);
     const [isUploadDialogOpen, setUploadDialogOpen] = useState(false);
     const [newLogData, setNewLogData] = useState<{ logDate: Date | null, documentUri: string | null }>({ logDate: null, documentUri: null });
 
     useEffect(() => {
+        // Initialize state that depends on `new Date()` on the client side
+        // to prevent hydration errors.
+        const clientSideInitialLogs: UploadedLog[] = [
+            { id: 'LOG001', driverName: 'John Doe', logDate: new Date('2024-07-28'), uploadDate: new Date('2024-07-29'), documentUri: 'https://picsum.photos/seed/log1/800/1100' },
+            { id: 'LOG002', driverName: 'Jane Doe', logDate: new Date('2024-07-29'), uploadDate: new Date('2024-07-30'), documentUri: 'https://picsum.photos/seed/log2/800/1100' },
+        ];
+        setUploadedLogs(clientSideInitialLogs);
         setNewLogData({ logDate: new Date(), documentUri: null });
     }, []);
 
