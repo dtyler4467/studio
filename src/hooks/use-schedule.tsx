@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -208,6 +207,30 @@ export type Equipment = {
     documentUri?: string | null;
 };
 
+export type JobPosting = {
+    id: string;
+    title: string;
+    location: string;
+    type: 'Full-time' | 'Part-time' | 'Contract';
+    description: string;
+    status: 'Open' | 'Closed';
+    datePosted: Date;
+};
+
+export type ApplicantStatus = 'Applied' | 'Screening' | 'Interview' | 'Offer' | 'Hired' | 'Rejected';
+
+export type Applicant = {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    applyingFor: string; // JobPosting ID
+    status: ApplicantStatus;
+    resumeUri?: string | null;
+    applicationDate: Date;
+    notes?: string;
+};
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -232,6 +255,12 @@ type ScheduleContextType = {
   loads: Load[];
   files: File[];
   equipment: Equipment[];
+  jobPostings: JobPosting[];
+  applicants: Applicant[];
+  addApplicant: (applicantData: Omit<Applicant, 'id' | 'applicationDate'>) => void;
+  updateApplicantStatus: (applicantId: string, status: ApplicantStatus) => void;
+  addJobPosting: (jobPostingData: Omit<JobPosting, 'id' | 'datePosted'>) => void;
+  updateJobPostingStatus: (jobPostingId: string, status: JobPosting['status']) => void;
   deleteEquipment: (equipmentId: string, deletedBy: string) => void;
   addEquipment: (equipmentData: Omit<Equipment, 'id'>) => void;
   addFile: (fileData: Omit<File, 'id'>) => void;
@@ -497,7 +526,23 @@ export const initialEquipment: Equipment[] = [
     { id: 'EQ002', name: 'TRK-102', type: 'Truck', make: 'Volvo', model: 'VNL 860', vin: '4V4NC9TH7PN000002', fuelType: 'Diesel', registrationExpiry: new Date('2025-10-31'), inspectionExpiry: new Date('2025-04-30') },
     { id: 'EQ003', name: 'VAN-03', type: 'Van', make: 'Ford', model: 'Transit', vin: '1FTYF1C58KKA00003', fuelType: 'Gasoline', registrationExpiry: new Date('2026-02-28'), inspectionExpiry: new Date('2026-02-28') },
     { id: 'EQ004', name: 'FL-005', type: 'Forklift', make: 'Toyota', model: '8FGCU25', vin: 'N/A', fuelType: 'Electric', registrationExpiry: new Date('2099-01-01'), inspectionExpiry: new Date('2025-01-31') },
-]
+];
+
+export const initialJobPostings: JobPosting[] = [
+    { id: 'JOB001', title: 'Long-Haul Truck Driver', location: 'Remote', type: 'Full-time', description: 'Seeking experienced long-haul drivers for cross-country routes.', status: 'Open', datePosted: new Date('2024-07-15') },
+    { id: 'JOB002', title: 'Warehouse Associate', location: 'Anytown, USA', type: 'Full-time', description: 'Responsible for loading/unloading trucks and inventory management.', status: 'Open', datePosted: new Date('2024-07-20') },
+    { id: 'JOB003', title: 'Dispatcher', location: 'Anytown, USA', type: 'Full-time', description: 'Manage driver schedules and routes.', status: 'Closed', datePosted: new Date('2024-06-01') },
+];
+
+export const initialApplicants: Applicant[] = [
+    { id: 'APP001', name: 'Alice Johnson', email: 'alice@email.com', phone: '555-1111', applyingFor: 'JOB001', status: 'Applied', applicationDate: new Date('2024-07-25') },
+    { id: 'APP002', name: 'Bob Williams', email: 'bob@email.com', phone: '555-2222', applyingFor: 'JOB002', status: 'Screening', applicationDate: new Date('2024-07-26') },
+    { id: 'APP003', name: 'Charlie Brown', email: 'charlie@email.com', phone: '555-3333', applyingFor: 'JOB001', status: 'Interview', applicationDate: new Date('2024-07-22') },
+    { id: 'APP004', name: 'Diana Prince', email: 'diana@email.com', phone: '555-4444', applyingFor: 'JOB002', status: 'Offer', applicationDate: new Date('2024-07-20') },
+    { id: 'APP005', name: 'Ethan Hunt', email: 'ethan@email.com', phone: '555-5555', applyingFor: 'JOB003', status: 'Hired', applicationDate: new Date('2024-06-10') },
+    { id: 'APP006', name: 'Fiona Glenanne', email: 'fiona@email.com', phone: '555-6666', applyingFor: 'JOB001', status: 'Rejected', applicationDate: new Date('2024-07-18') },
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -522,9 +567,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [officeAppointments, setOfficeAppointments] = useState<OfficeAppointment[]>(initialOfficeAppointments);
   const [lostAndFound, setLostAndFound] = useState<YardEvent[]>(initialLostAndFound);
   const [loads, setLoads] = useState<Load[]>(initialLoads);
-  const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
+  const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>([]);
   const [files, setFiles] = useState<File[]>(initialFiles);
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>(initialJobPostings);
+  const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -532,6 +579,32 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const adminUser = employees.find(e => e.role === 'Admin');
     setCurrentUser(adminUser || null);
   }, [employees]);
+
+    const addApplicant = (applicantData: Omit<Applicant, 'id' | 'applicationDate'>) => {
+        const newApplicant: Applicant = {
+            ...applicantData,
+            id: `APP${Date.now()}`,
+            applicationDate: new Date(),
+        };
+        setApplicants(prev => [newApplicant, ...prev]);
+    };
+
+    const updateApplicantStatus = (applicantId: string, status: ApplicantStatus) => {
+        setApplicants(prev => prev.map(app => app.id === applicantId ? { ...app, status } : app));
+    };
+
+    const addJobPosting = (jobPostingData: Omit<JobPosting, 'id' | 'datePosted'>) => {
+        const newJobPosting: JobPosting = {
+            ...jobPostingData,
+            id: `JOB${Date.now()}`,
+            datePosted: new Date(),
+        };
+        setJobPostings(prev => [newJobPosting, ...prev]);
+    };
+
+    const updateJobPostingStatus = (jobPostingId: string, status: JobPosting['status']) => {
+        setJobPostings(prev => prev.map(job => job.id === jobPostingId ? { ...job, status } : job));
+    };
 
     const addFile = (fileData: Omit<File, 'id'>) => {
         const newFile = { ...fileData, id: `FILE${Date.now()}` };
@@ -1031,7 +1104,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
