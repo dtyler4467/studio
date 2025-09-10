@@ -14,6 +14,7 @@ import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { useSchedule } from '@/hooks/use-schedule';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const LogGrid = () => {
     const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -233,40 +234,40 @@ export default function PaperLogsPage() {
         </Card>
 
         <Dialog open={isUploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-            <Card>
-                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Upload Completed Log</DialogTitle>
-                        <DialogDescription>
-                           Select the date for the log and upload the document.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                             <Label htmlFor="log-date">Log Date</Label>
-                             <Input 
-                                id="log-date" 
-                                type="date" 
-                                value={format(newLogData.logDate, 'yyyy-MM-dd')}
-                                onChange={(e) => setNewLogData(prev => ({...prev, logDate: new Date(e.target.value)}))}
-                            />
-                        </div>
-                         <div className="space-y-2">
-                            <Label>Document</Label>
-                             <DocumentUpload 
-                                onDocumentChange={(uri) => setNewLogData(prev => ({...prev, documentUri: uri}))} 
-                                currentDocument={newLogData.documentUri}
-                            />
-                        </div>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Upload Completed Log</DialogTitle>
+                    <DialogDescription>
+                        Select the date for the log and upload the document.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                            <Label htmlFor="log-date">Log Date</Label>
+                            <Input 
+                            id="log-date" 
+                            type="date" 
+                            value={format(newLogData.logDate, 'yyyy-MM-dd')}
+                            onChange={(e) => setNewLogData(prev => ({...prev, logDate: new Date(e.target.value)}))}
+                        />
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveUpload}>Save Log</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Card>
+                        <div className="space-y-2">
+                        <Label>Document</Label>
+                            <DocumentUpload 
+                            onDocumentChange={(uri) => setNewLogData(prev => ({...prev, documentUri: uri}))} 
+                            currentDocument={newLogData.documentUri}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSaveUpload}>Save Log</Button>
+                </DialogFooter>
+            </DialogContent>
         </Dialog>
       </main>
     </div>
   );
 }
+
+  
