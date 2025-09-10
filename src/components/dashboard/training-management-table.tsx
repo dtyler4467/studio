@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -32,6 +33,7 @@ import { Label } from "../ui/label"
 import { Upload, Circle, Trash2 } from "lucide-react"
 import { Progress } from "../ui/progress"
 import { cn } from "@/lib/utils"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 
 const trainingPrograms = [
     { id: 'onboarding', label: 'Onboarding' },
@@ -170,38 +172,58 @@ const AssignTaskDropdown = ({ employee, onAssign }: { employee: Employee, onAssi
 const UndoTaskDropdown = ({ assignments, onUndo }: { assignments: TrainingAssignment[], onUndo: (assignmentId: string) => void}) => {
     const { trainingPrograms } = useSchedule();
     const { toast } = useToast();
+    const [selectedAssignment, setSelectedAssignment] = React.useState<TrainingAssignment | null>(null);
 
     if (assignments.length === 0) {
         return <Button variant="outline" size="sm" disabled>Undo Task</Button>
     }
 
-    const handleUndo = (assignmentId: string) => {
-        onUndo(assignmentId);
-        toast({
-            title: "Task Unassigned",
-            description: "The task has been removed from the employee's assignments.",
-        });
+    const handleUndo = () => {
+        if (selectedAssignment) {
+            onUndo(selectedAssignment.id);
+            toast({
+                title: "Task Unassigned",
+                description: "The task has been removed from the employee's assignments.",
+            });
+            setSelectedAssignment(null);
+        }
     }
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="destructive" size="sm">Undo Task</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuLabel>Select Task to Undo</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {assignments.map(assignment => {
-                    const program = trainingPrograms.flatMap(p => p.modules).find(m => m.id === assignment.moduleId);
-                    return (
-                        <DropdownMenuItem key={assignment.id} onSelect={() => handleUndo(assignment.id)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>{program?.title || assignment.moduleId}</span>
-                        </DropdownMenuItem>
-                    )
-                })}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <AlertDialog>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="destructive" size="sm">Undo Task</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuLabel>Select Task to Undo</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {assignments.map(assignment => {
+                        const program = trainingPrograms.flatMap(p => p.modules).find(m => m.id === assignment.moduleId);
+                        return (
+                            <AlertDialogTrigger asChild key={assignment.id}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedAssignment(assignment) }}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>{program?.title || assignment.moduleId}</span>
+                                </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                        )
+                    })}
+                </DropdownMenuContent>
+            </DropdownMenu>
+             <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action will unassign the task from the employee. They will lose any progress made. This cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setSelectedAssignment(null)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleUndo}>Yes, undo task</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     )
 }
 
