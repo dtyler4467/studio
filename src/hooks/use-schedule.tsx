@@ -176,6 +176,14 @@ export type OfficeAppointment = {
     notes?: string;
 }
 
+export type ShareHistoryLog = {
+    id: string;
+    fileName: string;
+    sharedBy: string;
+    sharedWith: string[];
+    timestamp: Date;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -198,6 +206,8 @@ type ScheduleContextType = {
   officeAppointments: OfficeAppointment[];
   lostAndFound: YardEvent[];
   loads: Load[];
+  shareHistoryLogs: ShareHistoryLog[];
+  logFileShare: (fileName: string, sharedBy: string, sharedWith: string[]) => void;
   moveTrailer: (eventId: string, toLocationType: 'lane' | 'door', toLocationId: string, fromLost?: boolean) => void;
   addOfficeAppointment: (appointment: Omit<OfficeAppointment, 'id' | 'status'>) => OfficeAppointment;
   updateOfficeAppointmentStatus: (appointmentId: string, status: OfficeAppointment['status']) => void;
@@ -442,6 +452,8 @@ export const initialLoads: Load[] = [
     { id: "LD006", origin: "Boston, MA", destination: "Washington, DC", pickupDate: "2024-08-10", deliveryDate: "2024-08-11", rate: 900, status: "Deleted" },
 ];
 
+export const initialShareHistoryLogs: ShareHistoryLog[] = [];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -466,6 +478,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [officeAppointments, setOfficeAppointments] = useState<OfficeAppointment[]>(initialOfficeAppointments);
   const [lostAndFound, setLostAndFound] = useState<YardEvent[]>(initialLostAndFound);
   const [loads, setLoads] = useState<Load[]>(initialLoads);
+  const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -473,6 +486,17 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const adminUser = employees.find(e => e.role === 'Admin');
     setCurrentUser(adminUser || null);
   }, [employees]);
+
+  const logFileShare = (fileName: string, sharedBy: string, sharedWith: string[]) => {
+    const newLog: ShareHistoryLog = {
+        id: `SHARE-${Date.now()}`,
+        fileName,
+        sharedBy,
+        sharedWith,
+        timestamp: new Date(),
+    };
+    setShareHistoryLogs(prev => [newLog, ...prev]);
+  };
 
 
   const addShift = (shift: Omit<Shift, 'id'>) => {
@@ -905,7 +929,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
