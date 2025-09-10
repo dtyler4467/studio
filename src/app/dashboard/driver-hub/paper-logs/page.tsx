@@ -77,51 +77,51 @@ const LogGrid = () => {
 
 const PaperLogTemplate = React.forwardRef<HTMLDivElement, {}>((props, ref) => (
     <div ref={ref} className="bg-white text-black p-4 space-y-2 font-sans">
-        <div className="text-center font-bold font-headline">
-            <h2 className="text-2xl tracking-wider">DRIVER'S DAILY LOG</h2>
-            <p className="text-lg">ONE CALENDAR DAY</p>
+        <div className="text-center">
+            <h2 className="text-lg font-bold font-headline tracking-wider">DRIVER'S DAILY LOG</h2>
+            <p className="text-sm font-semibold">ONE CALENDAR DAY - 24-HOUR PERIOD</p>
         </div>
 
-        <div className="flex gap-4">
-            <div className="flex-1 text-center">
-                <Input className="h-8 text-xs border-black rounded-none" />
+        <div className="grid grid-cols-3 gap-2">
+            <div className="text-center">
+                <Input className="h-7 text-xs border-b border-black rounded-none px-1" />
                 <Label className="text-xs font-semibold">MONTH/DAY/YEAR</Label>
             </div>
-            <div className="flex-1 text-center">
-                <Input className="h-8 text-xs border-black rounded-none" />
+            <div className="text-center">
+                <Input className="h-7 text-xs border-b border-black rounded-none px-1" />
                 <Label className="text-xs font-semibold">TOTAL MILES DRIVEN TODAY</Label>
             </div>
-            <div className="flex-1 text-center">
-                <Input className="h-8 text-xs border-black rounded-none" />
-                <Label className="text-xs font-semibold">VEHICLE NUMBERS</Label>
+            <div className="text-center">
+                <Input className="h-7 text-xs border-b border-black rounded-none px-1" />
+                <Label className="text-xs font-semibold">VEHICLE NUMBERS (TRUCK/TRAILER)</Label>
             </div>
         </div>
         
-        <div className="flex gap-4">
-            <div className="w-2/3 space-y-2">
+        <div className="flex gap-2">
+            <div className="w-2/3 space-y-1">
                  <div className="text-center">
-                    <Input className="h-8 text-xs border-black rounded-none" />
+                    <Input className="h-7 text-xs border-b border-black rounded-none px-1" />
                     <Label className="text-xs font-semibold">NAME OF THE CARRIER</Label>
                  </div>
                   <div className="text-center">
-                    <Input className="h-8 text-xs border-black rounded-none" />
+                    <Input className="h-7 text-xs border-b border-black rounded-none px-1" />
                     <Label className="text-xs font-semibold">MAIN OFFICE ADDRESS</Label>
                  </div>
                  <div className="text-center">
-                    <Input className="h-8 text-xs border-black rounded-none" />
+                    <Input className="h-7 text-xs border-b border-black rounded-none px-1" />
                     <Label className="text-xs font-semibold">NAME OF THE CO-DRIVER</Label>
                  </div>
             </div>
-             <div className="w-1/3 text-center">
-                <div className="h-20 border-black border flex items-center justify-center">
+             <div className="w-1/3 text-center flex flex-col">
+                <div className="flex-grow border-b border-black">
                     {/* Placeholder for signature */}
                 </div>
                 <Label className="text-xs font-semibold">DRIVER'S SIGNATURE</Label>
             </div>
         </div>
         <div className="text-center">
-            <Input className="h-8 text-xs border-black rounded-none" />
-            <Label className="text-xs font-semibold">PRO OR SHIPPING NUMBER</Label>
+            <Input className="h-7 text-xs border-b border-black rounded-none px-1" />
+            <Label className="text-xs font-semibold">SHIPPING DOCUMENT NUMBER(S) OR NAME OF SHIPPER & COMMODITY</Label>
         </div>
 
         <LogGrid />
@@ -165,7 +165,7 @@ export default function PaperLogsPage() {
             const printWindow = window.open('', '', 'height=800,width=1000');
             printWindow?.document.write('<html><head><title>Print Paper Log</title>');
             // A simple way to include Tailwind-like styles for printing
-            printWindow?.document.write('<style>body{font-family:sans-serif;}input,textarea{border:1px solid #000;border-radius:0;padding:0.5rem;width:100%;}label{font-size:0.75rem;font-weight:600;text-transform:uppercase;} .font-headline{ font-family: "Space Grotesk", sans-serif;} .font-sans{font-family: sans-serif} .flex{display:flex;} .gap-4{gap:1rem;} .w-1\\/3{width:33.333333%} .w-2\\/3{width:66.666667%} .space-y-2 > * + *{margin-top:0.5rem;} .text-center{text-align:center;} .text-2xl{font-size:1.5rem;} .text-lg{font-size:1.125rem;} .font-bold{font-weight:700;} .tracking-wider{letter-spacing:.05em;} .h-8{height:2rem;} .h-20{height:5rem;} .text-xs{font-size:.75rem;} .border-black{border-color:#000;} .border{border-width:1px;} .items-center{align-items:center;} .justify-center{justify-content:center;} .grid{display:grid;} .grid-cols-27{grid-template-columns: 80px repeat(24, 1fr) 50px;} .grid-cols-4{grid-template-columns:repeat(4,1fr);} .col-span-1{grid-column:span 1 / span 1;} .col-span-2{grid-column:span 2 / span 2;} .border-t{border-top-width:1px;} .border-r{border-right-width:1px;} .border-l{border-left-width:1px;} .border-dashed{border-style:dashed;} .p-1{padding:.25rem;} .bg-gray-200{background-color:#e5e7eb;} .leading-tight{line-height:1.25;} .font-semibold{font-weight:600;} .gap-2{gap:.5rem;}</style>');
+            printWindow?.document.write('<style>body{font-family:sans-serif;}input,textarea{border:1px solid #000;border-radius:0;padding:0.5rem;width:100%;}label{font-size:0.75rem;font-weight:600;text-transform:uppercase;} .font-headline{ font-family: "Space Grotesk", sans-serif;} .font-sans{font-family: sans-serif} .flex{display:flex;} .gap-2{gap:.5rem;} .w-1\\/3{width:33.333333%} .w-2\\/3{width:66.666667%} .space-y-1 > * + *{margin-top:0.25rem;} .text-center{text-align:center;} .text-lg{font-size:1.125rem;} .text-sm{font-size:.875rem;} .font-bold{font-weight:700;} .tracking-wider{letter-spacing:.05em;} .h-7{height:1.75rem;} .text-xs{font-size:.75rem;} .border-black{border-color:#000;} .border-b{border-bottom-width:1px;} .px-1{padding-left:.25rem;padding-right:.25rem;} .grid{display:grid;} .grid-cols-3{grid-template-columns:repeat(3,1fr);} .flex-col{flex-direction:column;} .flex-grow{flex-grow:1;} .grid-cols-27{grid-template-columns: 80px repeat(24, 1fr) 50px;} .grid-cols-4{grid-template-columns:repeat(4,1fr);} .col-span-1{grid-column:span 1 / span 1;} .col-span-2{grid-column:span 2 / span 2;} .border-t{border-top-width:1px;} .border-r{border-right-width:1px;} .border-l{border-left-width:1px;} .border-dashed{border-style:dashed;} .p-1{padding:.25rem;} .bg-gray-200{background-color:#e5e7eb;} .leading-tight{line-height:1.25;} .font-semibold{font-weight:600;} .gap-2{gap:.5rem;} .items-center{align-items:center;}</style>');
             printWindow?.document.write('</head><body style="zoom:0.8;">');
             printWindow?.document.write(content.innerHTML);
             printWindow?.document.write('</body></html>');
@@ -218,8 +218,10 @@ export default function PaperLogsPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="bg-muted p-4 rounded-md">
-                    <PaperLogTemplate ref={templateRef} />
+                <div className="bg-muted p-4 rounded-md overflow-x-auto">
+                   <div className="max-w-3xl mx-auto origin-top" style={{ transform: 'scale(0.9)', transformOrigin: 'top' }}>
+                        <PaperLogTemplate ref={templateRef} />
+                    </div>
                 </div>
             </CardContent>
         </Card>
