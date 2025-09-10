@@ -49,23 +49,7 @@ import { Label } from "../ui/label"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 import { Skeleton } from "../ui/skeleton"
 import { MultiSelect, MultiSelectOption } from "../ui/multi-select"
-import { useSchedule } from "@/hooks/use-schedule"
-
-type File = {
-    id: string;
-    name: string;
-    type: 'PDF' | 'Image' | 'Excel' | 'Word' | 'Other';
-    size: number; // in bytes
-    path: string;
-    dateAdded: Date;
-}
-
-const mockFiles: File[] = [
-    { id: 'FILE001', name: 'BOL_LD123.pdf', type: 'PDF', size: 1024 * 500, path: '/documents/bol/', dateAdded: new Date('2024-07-28T08:15:00Z') },
-    { id: 'FILE002', name: 'Trailer_Damage.jpg', type: 'Image', size: 1024 * 1024 * 2, path: '/images/incidents/', dateAdded: new Date('2024-07-27T14:30:00Z') },
-    { id: 'FILE003', name: 'Q3_Expense_Report.xlsx', type: 'Excel', size: 1024 * 150, path: '/reports/expenses/', dateAdded: new Date('2024-07-26T10:00:00Z') },
-    { id: 'FILE004', name: 'Driver_Handbook_v3.pdf', type: 'PDF', size: 1024 * 1024 * 5, path: '/hr/documents/', dateAdded: new Date('2024-07-25T11:00:00Z') },
-];
+import { useSchedule, File } from "@/hooks/use-schedule"
 
 const getFileIcon = (type: File['type']) => {
     switch (type) {
@@ -144,7 +128,7 @@ const ShareDialog = ({ file, isOpen, onOpenChange }: { file: File | null, isOpen
 
 
 export function FileDataTable() {
-    const [data, setData] = React.useState<File[]>([]);
+    const { files, deleteFile, currentUser, addFile, logFileShare } = useSchedule();
     const { toast } = useToast();
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -155,14 +139,23 @@ export function FileDataTable() {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [isShareOpen, setShareOpen] = React.useState(false);
     const [fileToShare, setFileToShare] = React.useState<File | null>(null);
-
-    React.useEffect(() => {
-        setData(mockFiles);
-    }, []);
+    const [fileToDelete, setFileToDelete] = React.useState<File | null>(null);
 
     const handleShareClick = (file: File) => {
         setFileToShare(file);
         setShareOpen(true);
+    }
+
+    const handleDeleteClick = (file: File) => {
+        setFileToDelete(file);
+    };
+
+    const confirmDelete = () => {
+        if (fileToDelete && currentUser) {
+            deleteFile(fileToDelete.id, currentUser.id);
+            toast({ variant: 'destructive', title: 'File Deleted', description: `${fileToDelete.name} has been moved to the trash.` });
+        }
+        setFileToDelete(null);
     }
     
      const exportToXlsx = () => {
@@ -214,7 +207,8 @@ export function FileDataTable() {
                     };
                 });
 
-                setData(prev => [...prev, ...newFiles]);
+                // In a real app you might have a bulk add function
+                newFiles.forEach(addFile);
 
                 toast({
                     title: "Import Successful",
@@ -237,8 +231,7 @@ export function FileDataTable() {
         const file = event.target.files?.[0];
         if (!file) return;
         
-        const newFile: File = {
-            id: `FILE-${Date.now()}`,
+        const newFile: Omit<File, 'id'> = {
             name: file.name,
             type: file.type.startsWith('image/') ? 'Image' : file.type === 'application/pdf' ? 'PDF' : 'Other',
             size: file.size,
@@ -246,7 +239,7 @@ export function FileDataTable() {
             dateAdded: new Date(),
         };
 
-        setData(prev => [newFile, ...prev]);
+        addFile(newFile);
         toast({ title: "File Uploaded", description: `${file.name} has been added.` });
 
         if (fileInputRef.current) {
@@ -255,7 +248,7 @@ export function FileDataTable() {
     };
 
     const filteredData = React.useMemo(() => {
-        let filtered = data;
+        let filtered = files;
         if (dateRange?.from) {
             const toDate = dateRange.to || new Date();
             filtered = filtered.filter(file => isWithinInterval(file.dateAdded, { start: dateRange.from!, end: toDate }));
@@ -264,7 +257,7 @@ export function FileDataTable() {
             filtered = filtered.filter(file => file.name.toLowerCase().includes(globalFilter.toLowerCase()));
         }
         return filtered;
-    }, [data, dateRange, globalFilter]);
+    }, [files, dateRange, globalFilter]);
 
     const columns: ColumnDef<File>[] = [
       {
@@ -336,7 +329,7 @@ export function FileDataTable() {
                     <DropdownMenuItem><Move className="mr-2"/> Move</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <AlertDialogTrigger asChild>
-                        <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2"/> Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(file)} onSelect={(e) => e.preventDefault()}><Trash2 className="mr-2"/> Delete</DropdownMenuItem>
                     </AlertDialogTrigger>
                 </DropdownMenuContent>
                 </DropdownMenu>
@@ -344,15 +337,12 @@ export function FileDataTable() {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete the file "{file.name}". This action cannot be undone.
+                        This will move the file "{fileToDelete?.name}" to the trash. You can restore it later.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => {
-                        setData(data.filter(f => f.id !== file.id));
-                        toast({ variant: 'destructive', title: 'File Deleted', description: `${file.name} has been deleted.` });
-                    }}>Delete</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setFileToDelete(null)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

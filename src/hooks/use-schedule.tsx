@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -113,7 +114,7 @@ export type TrainingAssignment = {
 export type DeletionLog = {
     id: string;
     deletedItemId: string;
-    itemType: 'Shift' | 'User';
+    itemType: 'Shift' | 'User' | 'File';
     deletedBy: string; // User ID
     deletedAt: Date;
     originalData: any;
@@ -184,6 +185,15 @@ export type ShareHistoryLog = {
     timestamp: Date;
 }
 
+export type File = {
+    id: string;
+    name: string;
+    type: 'PDF' | 'Image' | 'Excel' | 'Word' | 'Other';
+    size: number; // in bytes
+    path: string;
+    dateAdded: Date;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -206,6 +216,9 @@ type ScheduleContextType = {
   officeAppointments: OfficeAppointment[];
   lostAndFound: YardEvent[];
   loads: Load[];
+  files: File[];
+  addFile: (fileData: Omit<File, 'id'>) => void;
+  deleteFile: (fileId: string, deletedBy: string) => void;
   shareHistoryLogs: ShareHistoryLog[];
   logFileShare: (fileName: string, sharedBy: string, sharedWith: string[]) => void;
   moveTrailer: (eventId: string, toLocationType: 'lane' | 'door', toLocationId: string, fromLost?: boolean) => void;
@@ -454,6 +467,13 @@ export const initialLoads: Load[] = [
 
 export const initialShareHistoryLogs: ShareHistoryLog[] = [];
 
+export const initialFiles: File[] = [
+    { id: 'FILE001', name: 'BOL_LD123.pdf', type: 'PDF', size: 1024 * 500, path: '/documents/bol/', dateAdded: new Date('2024-07-28T08:15:00Z') },
+    { id: 'FILE002', name: 'Trailer_Damage.jpg', type: 'Image', size: 1024 * 1024 * 2, path: '/images/incidents/', dateAdded: new Date('2024-07-27T14:30:00Z') },
+    { id: 'FILE003', name: 'Q3_Expense_Report.xlsx', type: 'Excel', size: 1024 * 150, path: '/reports/expenses/', dateAdded: new Date('2024-07-26T10:00:00Z') },
+    { id: 'FILE004', name: 'Driver_Handbook_v3.pdf', type: 'PDF', size: 1024 * 1024 * 5, path: '/hr/documents/', dateAdded: new Date('2024-07-25T11:00:00Z') },
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -479,6 +499,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [lostAndFound, setLostAndFound] = useState<YardEvent[]>(initialLostAndFound);
   const [loads, setLoads] = useState<Load[]>(initialLoads);
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
+  const [files, setFiles] = useState<File[]>(initialFiles);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -486,6 +507,28 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     const adminUser = employees.find(e => e.role === 'Admin');
     setCurrentUser(adminUser || null);
   }, [employees]);
+
+    const addFile = (fileData: Omit<File, 'id'>) => {
+        const newFile = { ...fileData, id: `FILE${Date.now()}` };
+        setFiles(prev => [newFile, ...prev]);
+        return newFile;
+    }
+
+    const deleteFile = (fileId: string, deletedBy: string) => {
+        const fileToDelete = files.find(f => f.id === fileId);
+        if (fileToDelete) {
+            const logEntry: DeletionLog = {
+                id: `LOG${Date.now()}`,
+                deletedItemId: fileId,
+                itemType: 'File',
+                deletedBy,
+                deletedAt: new Date(),
+                originalData: fileToDelete,
+            };
+            setDeletionLogs(prev => [logEntry, ...prev]);
+            setFiles(prev => prev.filter(f => f.id !== fileId));
+        }
+    }
 
   const logFileShare = (fileName: string, sharedBy: string, sharedWith: string[]) => {
     const newLog: ShareHistoryLog = {
@@ -760,6 +803,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             case 'User':
                 setEmployees(prev => [...prev, logEntry.originalData]);
                 break;
+             case 'File':
+                setFiles(prev => [...prev, logEntry.originalData]);
+                break;
             default:
                 break;
         }
@@ -929,7 +975,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, addFile, deleteFile, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );

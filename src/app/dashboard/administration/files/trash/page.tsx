@@ -1,6 +1,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { TrashDataTable } from '@/components/dashboard/trash-data-table';
 import { Trash2 } from 'lucide-react';
 
 export default function AdminFilesTrashPage() {
@@ -19,9 +20,7 @@ export default function AdminFilesTrashPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                    <p className="text-muted-foreground">Trash content coming soon.</p>
-                </div>
+                <TrashDataTable />
             </CardContent>
         </Card>
       </main>

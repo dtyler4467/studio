@@ -35,6 +35,8 @@ const getDeletedItemDescription = (item: DeletionLog) => {
             return `Shift for ${item.originalData.employeeName} on ${format(new Date(`${item.originalData.date}T00:00:00`), 'PPP')}`;
         case 'User':
             return `User: ${item.originalData.name} (${item.originalData.email})`;
+        case 'File':
+            return `File: ${item.originalData.name}`;
         default:
             return `Item ID: ${item.deletedItemId}`;
     }
@@ -153,7 +155,7 @@ export function TrashDataTable() {
                         colSpan={columns.length}
                         className="h-24 text-center"
                         >
-                        No results found.
+                        The trash is empty.
                         </TableCell>
                     </TableRow>
                     )}
