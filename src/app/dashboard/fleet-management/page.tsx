@@ -5,10 +5,10 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip, Check, Edit, FilePlus } from 'lucide-react';
+import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip, Check, Edit, FilePlus, Truck, PackagePlus } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import * as XLSX from "xlsx";
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { useSchedule, Equipment } from '@/hooks/use-schedule';
+import { ColumnDef, useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 
 type RepairOrder = {
     id: string;
@@ -66,11 +67,10 @@ const initialPMSchedules: PMSchedule[] = [
 
 const vendors = ['City Auto Repair', 'National Parts Supply', 'Highway Truck Service'];
 const personnel = ['John Doe (Mechanic)', 'Jane Smith (Technician)'];
-const vehicles = ['TRK-101', 'TRK-102', 'VAN-03', 'FL-005'];
-
 
 function RepairOrderDialog({ isOpen, onOpenChange, orderToEdit, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, orderToEdit?: RepairOrder | null, onSave: (order: Omit<RepairOrder, 'id' | 'dateCreated'>) => void }) {
     const { toast } = useToast();
+    const { equipment } = useSchedule();
     const [vehicleId, setVehicleId] = useState('');
     const [issue, setIssue] = useState('');
     const [assignedTo, setAssignedTo] = useState('');
@@ -121,7 +121,7 @@ function RepairOrderDialog({ isOpen, onOpenChange, orderToEdit, onSave }: { isOp
                              <Label htmlFor="vehicleId">Vehicle ID</Label>
                              <Select value={vehicleId} onValueChange={setVehicleId}>
                                 <SelectTrigger id="vehicleId"><SelectValue placeholder="Select vehicle..." /></SelectTrigger>
-                                <SelectContent>{vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+                                <SelectContent>{equipment.map(v => <SelectItem key={v.id} value={v.name}>{v.name}</SelectItem>)}</SelectContent>
                              </Select>
                          </div>
                          <div className="space-y-2">
@@ -159,6 +159,7 @@ function RepairOrderDialog({ isOpen, onOpenChange, orderToEdit, onSave }: { isOp
 
 function PMScheduleDialog({ isOpen, onOpenChange, scheduleToEdit, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, scheduleToEdit?: PMSchedule | null, onSave: (schedule: Omit<PMSchedule, 'id'> | PMSchedule) => void }) {
     const { toast } = useToast();
+    const { equipment } = useSchedule();
     const [formState, setFormState] = useState<Omit<PMSchedule, 'id'>>({
         vehicleId: '',
         serviceType: 'Oil Change',
@@ -210,7 +211,7 @@ function PMScheduleDialog({ isOpen, onOpenChange, scheduleToEdit, onSave }: { is
                              <Label>Vehicle ID</Label>
                              <Select value={formState.vehicleId} onValueChange={(v) => handleInputChange('vehicleId', v)}>
                                 <SelectTrigger><SelectValue placeholder="Select vehicle..." /></SelectTrigger>
-                                <SelectContent>{vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+                                <SelectContent>{equipment.map(v => <SelectItem key={v.id} value={v.name}>{v.name}</SelectItem>)}</SelectContent>
                              </Select>
                          </div>
                          <div className="space-y-2">
@@ -255,7 +256,155 @@ function PMScheduleDialog({ isOpen, onOpenChange, scheduleToEdit, onSave }: { is
     )
 }
 
+function AddEquipmentDialog({ onSave }: { onSave: (equipment: Omit<Equipment, 'id'>) => void }) {
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(false);
+    const [formState, setFormState] = useState<Omit<Equipment, 'id'>>({
+        name: '', type: 'Truck', make: '', model: '', vin: '', fuelType: 'Diesel',
+        registrationExpiry: new Date(), inspectionExpiry: new Date()
+    });
+    
+    const handleSave = () => {
+        if(!formState.name || !formState.vin || !formState.make || !formState.model) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all required fields.'});
+            return;
+        }
+        onSave(formState);
+        setIsOpen(false);
+        setFormState({name: '', type: 'Truck', make: '', model: '', vin: '', fuelType: 'Diesel', registrationExpiry: new Date(), inspectionExpiry: new Date()});
+    }
+
+    return (
+         <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button><PlusCircle className="mr-2"/>Add Equipment</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+                 <DialogHeader>
+                    <DialogTitle>Add New Equipment</DialogTitle>
+                    <DialogDescription>
+                        Fill out the details for the new piece of equipment.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Equipment Name/Unit #</Label>
+                            <Input value={formState.name} onChange={(e) => setFormState(f => ({...f, name: e.target.value}))} placeholder="e.g. TRK-103"/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>VIN</Label>
+                            <Input value={formState.vin} onChange={(e) => setFormState(f => ({...f, vin: e.target.value}))} />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Equipment Type</Label>
+                            <Select value={formState.type} onValueChange={(v: Equipment['type']) => setFormState(f => ({...f, type: v}))}>
+                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Truck">Truck</SelectItem>
+                                    <SelectItem value="Trailer">Trailer</SelectItem>
+                                    <SelectItem value="Van">Van</SelectItem>
+                                    <SelectItem value="Forklift">Forklift</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Fuel Type</Label>
+                            <Select value={formState.fuelType} onValueChange={(v: Equipment['fuelType']) => setFormState(f => ({...f, fuelType: v}))}>
+                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Diesel">Diesel</SelectItem>
+                                    <SelectItem value="Gasoline">Gasoline</SelectItem>
+                                    <SelectItem value="Electric">Electric</SelectItem>
+                                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Make</Label>
+                            <Input value={formState.make} onChange={(e) => setFormState(f => ({...f, make: e.target.value}))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Model</Label>
+                            <Input value={formState.model} onChange={(e) => setFormState(f => ({...f, model: e.target.value}))} />
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Registration Expiry</Label>
+                            <Input type="date" value={format(new Date(formState.registrationExpiry), 'yyyy-MM-dd')} onChange={(e) => setFormState(f => ({...f, registrationExpiry: new Date(e.target.value)}))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Inspection Expiry</Label>
+                            <Input type="date" value={format(new Date(formState.inspectionExpiry), 'yyyy-MM-dd')} onChange={(e) => setFormState(f => ({...f, inspectionExpiry: new Date(e.target.value)}))} />
+                        </div>
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Equipment</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function EquipmentTable() {
+    const { equipment } = useSchedule();
+    
+    const columns: ColumnDef<Equipment>[] = useMemo(() => [
+        { accessorKey: 'name', header: 'Name/Unit #' },
+        { accessorKey: 'type', header: 'Type' },
+        { accessorKey: 'make', header: 'Make' },
+        { accessorKey: 'model', header: 'Model' },
+        { accessorKey: 'vin', header: 'VIN' },
+        { accessorKey: 'registrationExpiry', header: 'Reg. Expiry', cell: ({cell}) => format(new Date(cell.getValue() as string), 'P') },
+        { accessorKey: 'inspectionExpiry', header: 'Insp. Expiry', cell: ({cell}) => format(new Date(cell.getValue() as string), 'P') },
+    ], []);
+
+    const table = useReactTable({
+        data: equipment,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+    });
+
+    return (
+        <div className="rounded-md border">
+            <Table>
+                <TableHeader>
+                    {table.getHeaderGroups().map(headerGroup => (
+                        <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map(header => (
+                                <TableHead key={header.id}>
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                </TableHead>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableHeader>
+                <TableBody>
+                    {table.getRowModel().rows.map(row => (
+                        <TableRow key={row.id}>
+                            {row.getVisibleCells().map(cell => (
+                                <TableCell key={cell.id}>
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    )
+}
+
 export default function FleetManagementPage() {
+    const { equipment, addEquipment } = useSchedule();
     const [repairOrders, setRepairOrders] = useState(initialRepairOrders);
     const [pmSchedules, setPmSchedules] = useState(initialPMSchedules);
     const [isRODialogOpen, setRODialogOpen] = useState(false);
@@ -411,6 +560,11 @@ export default function FleetManagementPage() {
         reader.readAsBinaryString(file);
     };
 
+    const handleAddEquipment = (equipmentData: Omit<Equipment, 'id'>) => {
+        addEquipment(equipmentData);
+        toast({ title: 'Equipment Added', description: `Successfully added ${equipmentData.name} to the fleet.` });
+    }
+
   return (
     <div className="flex flex-col w-full">
       <Header pageTitle="Fleet HUB" />
@@ -463,6 +617,7 @@ export default function FleetManagementPage() {
              <TabsList>
                 <TabsTrigger value="repair-orders">Repair Orders</TabsTrigger>
                 <TabsTrigger value="pm-schedule">PM & Inspections</TabsTrigger>
+                <TabsTrigger value="equipment">Equipment</TabsTrigger>
             </TabsList>
              <TabsContent value="repair-orders">
                 <Card>
@@ -587,6 +742,22 @@ export default function FleetManagementPage() {
                                 })}
                             </TableBody>
                         </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="equipment">
+                <Card>
+                    <CardHeader className="flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="font-headline">Equipment & Vehicle Fleet</CardTitle>
+                            <CardDescription>
+                                Add, view, and manage all your physical assets.
+                            </CardDescription>
+                        </div>
+                        <AddEquipmentDialog onSave={handleAddEquipment} />
+                    </CardHeader>
+                    <CardContent>
+                        <EquipmentTable />
                     </CardContent>
                 </Card>
             </TabsContent>

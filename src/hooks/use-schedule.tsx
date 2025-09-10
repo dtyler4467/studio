@@ -194,6 +194,18 @@ export type File = {
     dateAdded: Date;
 }
 
+export type Equipment = {
+    id: string;
+    name: string; // e.g., TRK-101, VAN-03
+    type: 'Truck' | 'Trailer' | 'Van' | 'Forklift' | 'Other';
+    make: string;
+    model: string;
+    vin: string;
+    fuelType: 'Diesel' | 'Gasoline' | 'Electric' | 'Hybrid';
+    registrationExpiry: Date;
+    inspectionExpiry: Date;
+};
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -217,6 +229,8 @@ type ScheduleContextType = {
   lostAndFound: YardEvent[];
   loads: Load[];
   files: File[];
+  equipment: Equipment[];
+  addEquipment: (equipmentData: Omit<Equipment, 'id'>) => void;
   addFile: (fileData: Omit<File, 'id'>) => void;
   deleteFile: (fileId: string, deletedBy: string) => void;
   permanentlyDeleteItem: (logId: string) => void;
@@ -475,6 +489,12 @@ export const initialFiles: File[] = [
     { id: 'FILE004', name: 'Driver_Handbook_v3.pdf', type: 'PDF', size: 1024 * 1024 * 5, path: '/hr/documents/', dateAdded: new Date('2024-07-25T11:00:00Z') },
 ];
 
+export const initialEquipment: Equipment[] = [
+    { id: 'EQ001', name: 'TRK-101', type: 'Truck', make: 'Freightliner', model: 'Cascadia', vin: '1FUJGHF56HP000001', fuelType: 'Diesel', registrationExpiry: new Date('2025-12-31'), inspectionExpiry: new Date('2025-06-30') },
+    { id: 'EQ002', name: 'TRK-102', type: 'Truck', make: 'Volvo', model: 'VNL 860', vin: '4V4NC9TH7PN000002', fuelType: 'Diesel', registrationExpiry: new Date('2025-10-31'), inspectionExpiry: new Date('2025-04-30') },
+    { id: 'EQ003', name: 'VAN-03', type: 'Van', make: 'Ford', model: 'Transit', vin: '1FTYF1C58KKA00003', fuelType: 'Gasoline', registrationExpiry: new Date('2026-02-28'), inspectionExpiry: new Date('2026-02-28') },
+    { id: 'EQ004', name: 'FL-005', type: 'Forklift', make: 'Toyota', model: '8FGCU25', vin: 'N/A', fuelType: 'Electric', registrationExpiry: new Date('2099-01-01'), inspectionExpiry: new Date('2025-01-31') },
+]
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -501,6 +521,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [loads, setLoads] = useState<Load[]>(initialLoads);
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
   const [files, setFiles] = useState<File[]>(initialFiles);
+  const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
@@ -978,9 +999,17 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setOfficeAppointments(prev => prev.map(app => app.id === appointmentId ? { ...app, status } : app));
     };
 
+    const addEquipment = (equipmentData: Omit<Equipment, 'id'>) => {
+        const newEquipment: Equipment = {
+            ...equipmentData,
+            id: `EQ${Date.now()}`,
+        };
+        setEquipment(prev => [newEquipment, ...prev]);
+    }
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
