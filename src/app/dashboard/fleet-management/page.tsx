@@ -5,7 +5,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip, Check } from 'lucide-react';
+import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip, Check, Edit, FilePlus } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import React, { useState, useRef } from 'react';
@@ -41,12 +41,14 @@ type RepairOrder = {
 type PMSchedule = {
     id: string;
     vehicleId: string;
-    serviceType: 'Oil Change' | 'Tire Rotation' | 'Annual Inspection';
+    serviceType: string;
     intervalType: 'mileage' | 'hours' | 'date';
     intervalValue: number;
     lastPerformedValue: number;
     lastPerformedDate: Date;
     nextDueValue: number;
+    notes?: string;
+    documentUri?: string | null;
 };
 
 const initialRepairOrders: RepairOrder[] = [
@@ -155,13 +157,117 @@ function RepairOrderDialog({ isOpen, onOpenChange, orderToEdit, onSave }: { isOp
     )
 }
 
+function PMScheduleDialog({ isOpen, onOpenChange, scheduleToEdit, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, scheduleToEdit?: PMSchedule | null, onSave: (schedule: Omit<PMSchedule, 'id'> | PMSchedule) => void }) {
+    const { toast } = useToast();
+    const [formState, setFormState] = useState<Omit<PMSchedule, 'id'>>({
+        vehicleId: '',
+        serviceType: 'Oil Change',
+        intervalType: 'mileage',
+        intervalValue: 5000,
+        lastPerformedValue: 0,
+        lastPerformedDate: new Date(),
+        nextDueValue: 5000,
+    });
+
+    React.useEffect(() => {
+        if (scheduleToEdit) {
+            setFormState(scheduleToEdit);
+        } else {
+             setFormState({
+                vehicleId: '', serviceType: 'Oil Change', intervalType: 'mileage',
+                intervalValue: 5000, lastPerformedValue: 0, lastPerformedDate: new Date(), nextDueValue: 5000,
+            });
+        }
+    }, [scheduleToEdit]);
+
+    const handleSave = () => {
+        if (!formState.vehicleId || !formState.serviceType) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please fill out Vehicle and Service Type.' });
+            return;
+        }
+        
+        const dataToSave = scheduleToEdit ? { ...formState, id: scheduleToEdit.id } : formState;
+        onSave(dataToSave);
+        onOpenChange(false);
+    };
+
+    const handleInputChange = (field: keyof typeof formState, value: any) => {
+        setFormState(prev => ({ ...prev, [field]: value }));
+    };
+
+    return (
+         <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                 <DialogHeader>
+                    <DialogTitle>{scheduleToEdit ? 'Edit PM Schedule' : 'Create New PM Schedule'}</DialogTitle>
+                    <DialogDescription>
+                        Fill out the details below to create or update a preventive maintenance schedule.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                     <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                             <Label>Vehicle ID</Label>
+                             <Select value={formState.vehicleId} onValueChange={(v) => handleInputChange('vehicleId', v)}>
+                                <SelectTrigger><SelectValue placeholder="Select vehicle..." /></SelectTrigger>
+                                <SelectContent>{vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+                             </Select>
+                         </div>
+                         <div className="space-y-2">
+                             <Label>Service Type</Label>
+                             <Input value={formState.serviceType} onChange={(e) => handleInputChange('serviceType', e.target.value)} placeholder="e.g., Oil Change" />
+                         </div>
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                             <Label>Interval Type</Label>
+                             <Select value={formState.intervalType} onValueChange={(v) => handleInputChange('intervalType', v)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="mileage">Mileage</SelectItem>
+                                    <SelectItem value="hours">Hours</SelectItem>
+                                    <SelectItem value="date">Date</SelectItem>
+                                </SelectContent>
+                             </Select>
+                        </div>
+                        <div className="space-y-2">
+                             <Label>Interval Value</Label>
+                             <Input type="number" value={formState.intervalValue} onChange={(e) => handleInputChange('intervalValue', Number(e.target.value))} />
+                        </div>
+                     </div>
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <Label>Last Performed ({formState.intervalType})</Label>
+                            <Input type="number" value={formState.lastPerformedValue} onChange={(e) => handleInputChange('lastPerformedValue', Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Last Performed Date</Label>
+                            <Input type="date" value={format(new Date(formState.lastPerformedDate), 'yyyy-MM-dd')} onChange={(e) => handleInputChange('lastPerformedDate', new Date(e.target.value))} />
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Schedule</Button>
+                </DialogFooter>
+            </DialogContent>
+         </Dialog>
+    )
+}
+
 export default function FleetManagementPage() {
     const [repairOrders, setRepairOrders] = useState(initialRepairOrders);
     const [pmSchedules, setPmSchedules] = useState(initialPMSchedules);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [isRODialogOpen, setRODialogOpen] = useState(false);
+    const [isPMDialogOpen, setPMDialogOpen] = useState(false);
+    const [selectedROs, setSelectedROs] = useState<string[]>([]);
+    const [selectedPMs, setSelectedPMs] = useState<string[]>([]);
+    const [editingPM, setEditingPM] = useState<PMSchedule | null>(null);
+    const [editingDocPM, setEditingDocPM] = useState<PMSchedule | null>(null);
+
     const { toast } = useToast();
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const roFileInputRef = useRef<HTMLInputElement>(null);
+    const pmFileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveOrder = (orderData: Omit<RepairOrder, 'id' | 'dateCreated'>) => {
         const newOrder: RepairOrder = {
@@ -178,61 +284,44 @@ export default function FleetManagementPage() {
         toast({ title: 'Estimate Approved!', description: `Repair order ${orderId} is now in progress.` });
     };
 
-    const handleRowSelect = (orderId: string) => {
-        setSelectedRows(prev => 
+    const handleROSelect = (orderId: string) => {
+        setSelectedROs(prev => 
             prev.includes(orderId) 
             ? prev.filter(id => id !== orderId)
             : [...prev, orderId]
         );
     };
 
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedRows(repairOrders.map(o => o.id));
-        } else {
-            setSelectedRows([]);
-        }
+    const handlePMSelect = (pmId: string) => {
+        setSelectedPMs(prev => 
+            prev.includes(pmId) 
+            ? prev.filter(id => id !== pmId)
+            : [...prev, pmId]
+        );
     };
     
-    const handleExport = () => {
+    const handleExportROs = () => {
         const dataToExport = repairOrders
-            .filter(order => selectedRows.includes(order.id))
+            .filter(order => selectedROs.includes(order.id))
             .map(order => ({
-                'PO Number': order.poNumber,
-                'Vehicle ID': order.vehicleId,
-                'Issue': order.issue,
-                'Status': order.status,
-                'Assigned To': order.assignedTo,
-                'Estimate': order.estimate ?? "N/A",
-                'Final Cost': order.finalCost ?? "N/A",
-                'Date Created': order.dateCreated ? format(order.dateCreated, "yyyy-MM-dd HH:mm:ss") : "N/A",
+                'PO Number': order.poNumber, 'Vehicle ID': order.vehicleId, 'Issue': order.issue, 'Status': order.status, 'Assigned To': order.assignedTo,
+                'Estimate': order.estimate ?? "N/A", 'Final Cost': order.finalCost ?? "N/A", 'Date Created': order.dateCreated ? format(order.dateCreated, "yyyy-MM-dd HH:mm:ss") : "N/A",
                 'Date Completed': order.dateCompleted ? format(order.dateCompleted, "yyyy-MM-dd HH:mm:ss") : "N/A",
             }));
-        
         if (dataToExport.length === 0) {
-             toast({
-                variant: 'destructive',
-                title: "No Rows Selected",
-                description: "Please select at least one repair order to export.",
-            });
+             toast({ variant: 'destructive', title: "No Rows Selected", description: "Please select at least one repair order to export." });
             return;
         }
-
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "RepairOrders");
         XLSX.writeFile(workbook, `RepairOrders_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
-        
-        toast({
-            title: "Export Successful",
-            description: `${dataToExport.length} repair order(s) have been exported.`,
-        });
+        toast({ title: "Export Successful", description: `${dataToExport.length} repair order(s) have been exported.` });
     };
 
-    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImportROs = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -240,38 +329,83 @@ export default function FleetManagementPage() {
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 const json = XLSX.utils.sheet_to_json(worksheet) as any[];
-
                 const newOrders: RepairOrder[] = json.map((row: any) => ({
-                    id: `RO-IMP-${Date.now()}-${Math.random()}`,
-                    poNumber: String(row["PO Number"]),
-                    vehicleId: String(row["Vehicle ID"]),
-                    issue: String(row.Issue),
-                    status: row.Status || 'Pending Estimate',
-                    assignedTo: String(row["Assigned To"]),
-                    estimate: row.Estimate ? Number(row.Estimate) : undefined,
-                    finalCost: row["Final Cost"] ? Number(row["Final Cost"]) : undefined,
-                    dateCreated: row["Date Created"] ? new Date(row["Date Created"]) : new Date(),
+                    id: `RO-IMP-${Date.now()}-${Math.random()}`, poNumber: String(row["PO Number"]), vehicleId: String(row["Vehicle ID"]), issue: String(row.Issue),
+                    status: row.Status || 'Pending Estimate', assignedTo: String(row["Assigned To"]), estimate: row.Estimate ? Number(row.Estimate) : undefined,
+                    finalCost: row["Final Cost"] ? Number(row["Final Cost"]) : undefined, dateCreated: row["Date Created"] ? new Date(row["Date Created"]) : new Date(),
                     dateCompleted: row["Date Completed"] && row["Date Completed"] !== "N/A" ? new Date(row["Date Completed"]) : undefined,
                 }));
-
                 setRepairOrders(prev => [...prev, ...newOrders]);
-
-                toast({
-                    title: "Import Successful",
-                    description: `${newOrders.length} repair order(s) imported.`,
-                });
-
+                toast({ title: "Import Successful", description: `${newOrders.length} repair order(s) imported.` });
             } catch (error) {
                 console.error("Failed to import Excel file:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Import Failed",
-                    description: "Please check the file format and try again.",
-                });
+                toast({ variant: "destructive", title: "Import Failed", description: "Please check the file format and try again." });
             } finally {
-                 if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                 }
+                 if (roFileInputRef.current) roFileInputRef.current.value = "";
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const handleSavePMSchedule = (scheduleData: Omit<PMSchedule, 'id'> | PMSchedule) => {
+        if ('id' in scheduleData) {
+            setPmSchedules(prev => prev.map(s => s.id === scheduleData.id ? scheduleData : s));
+            toast({ title: 'PM Schedule Updated', description: `Schedule for ${scheduleData.vehicleId} has been updated.` });
+        } else {
+            const newSchedule: PMSchedule = { ...scheduleData, id: `PM-${Date.now()}` };
+            setPmSchedules(prev => [newSchedule, ...prev]);
+            toast({ title: 'PM Schedule Created', description: `New schedule for ${newSchedule.vehicleId} has been created.` });
+        }
+    };
+    
+    const handleSavePMDocument = (docUri: string | null) => {
+        if (editingDocPM) {
+            setPmSchedules(prev => prev.map(s => s.id === editingDocPM.id ? { ...s, documentUri: docUri } : s));
+            toast({ title: 'Document Saved', description: `Document for ${editingDocPM.vehicleId} has been updated.`});
+            setEditingDocPM(null);
+        }
+    };
+
+    const handleExportPMs = () => {
+         const dataToExport = pmSchedules
+            .filter(pm => selectedPMs.includes(pm.id))
+            .map(pm => ({
+                'Vehicle ID': pm.vehicleId, 'Service Type': pm.serviceType, 'Interval Type': pm.intervalType, 'Interval Value': pm.intervalValue,
+                'Last Performed Value': pm.lastPerformedValue, 'Last Performed Date': format(new Date(pm.lastPerformedDate), 'yyyy-MM-dd'), 'Next Due Value': pm.nextDueValue
+            }));
+        if (dataToExport.length === 0) {
+            toast({ variant: 'destructive', title: "No Rows Selected", description: "Please select at least one PM schedule to export." });
+            return;
+        }
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "PMSchedules");
+        XLSX.writeFile(workbook, `PMSchedules_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        toast({ title: "Export Successful", description: `${dataToExport.length} PM schedule(s) have been exported.` });
+    };
+
+    const handleImportPMs = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const workbook = XLSX.read(e.target?.result, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+                const newSchedules: PMSchedule[] = json.map((row: any) => ({
+                    id: `PM-IMP-${Date.now()}-${Math.random()}`,
+                    vehicleId: String(row["Vehicle ID"]), serviceType: String(row["Service Type"]), intervalType: row["Interval Type"], intervalValue: Number(row["Interval Value"]),
+                    lastPerformedValue: Number(row["Last Performed Value"]), lastPerformedDate: new Date(row["Last Performed Date"]), nextDueValue: Number(row["Next Due Value"]),
+                }));
+                setPmSchedules(prev => [...prev, ...newSchedules]);
+                toast({ title: "Import Successful", description: `${newSchedules.length} PM schedule(s) imported.` });
+            } catch (error) {
+                console.error("Failed to import Excel file:", error);
+                toast({ variant: "destructive", title: "Import Failed", description: "Please check the file format and try again." });
+            } finally {
+                 if (pmFileInputRef.current) pmFileInputRef.current.value = "";
             }
         };
         reader.readAsBinaryString(file);
@@ -340,40 +474,17 @@ export default function FleetManagementPage() {
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
-                             <Input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept=".xlsx, .xls, .csv"
-                                onChange={handleFileImport}
-                            />
-                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                <Upload className="mr-2" />
-                                Import
-                            </Button>
-                            <Button variant="outline" onClick={handleExport} disabled={selectedRows.length === 0}>
-                                <FileDown className="mr-2"/>Export Selected ({selectedRows.length})
-                            </Button>
-                            <Button onClick={() => setIsDialogOpen(true)}><PlusCircle className="mr-2"/>New Repair Order</Button>
+                             <Input type="file" ref={roFileInputRef} className="hidden" accept=".xlsx, .xls, .csv" onChange={handleImportROs} />
+                            <Button variant="outline" onClick={() => roFileInputRef.current?.click()}><Upload className="mr-2" />Import</Button>
+                            <Button variant="outline" onClick={handleExportROs} disabled={selectedROs.length === 0}><FileDown className="mr-2"/>Export Selected ({selectedROs.length})</Button>
+                            <Button onClick={() => setRODialogOpen(true)}><PlusCircle className="mr-2"/>New Repair Order</Button>
                         </div>
                     </CardHeader>
                     <CardContent>
                          <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[50px]">
-                                        <Checkbox
-                                            checked={selectedRows.length === repairOrders.length && repairOrders.length > 0}
-                                            onCheckedChange={(checked) => {
-                                                if (checked) {
-                                                    setSelectedRows(repairOrders.map(o => o.id));
-                                                } else {
-                                                    setSelectedRows([]);
-                                                }
-                                            }}
-                                            aria-label="Select all"
-                                        />
-                                    </TableHead>
+                                    <TableHead className="w-[50px]"><Checkbox checked={selectedROs.length === repairOrders.length && repairOrders.length > 0} onCheckedChange={(checked) => setSelectedROs(checked ? repairOrders.map(o => o.id) : [])} /></TableHead>
                                     <TableHead>RO #</TableHead>
                                     <TableHead>Vehicle</TableHead>
                                     <TableHead>Issue</TableHead>
@@ -387,13 +498,7 @@ export default function FleetManagementPage() {
                             <TableBody>
                                 {repairOrders.map(order => (
                                     <TableRow key={order.id}>
-                                        <TableCell>
-                                            <Checkbox
-                                                checked={selectedRows.includes(order.id)}
-                                                onCheckedChange={() => handleRowSelect(order.id)}
-                                                aria-label="Select row"
-                                            />
-                                        </TableCell>
+                                        <TableCell><Checkbox checked={selectedROs.includes(order.id)} onCheckedChange={() => handleROSelect(order.id)} /></TableCell>
                                         <TableCell className="font-medium">{order.poNumber}</TableCell>
                                         <TableCell>{order.vehicleId}</TableCell>
                                         <TableCell className="max-w-xs truncate">{order.issue}</TableCell>
@@ -423,42 +528,59 @@ export default function FleetManagementPage() {
              </TabsContent>
             <TabsContent value="pm-schedule">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">PM & Inspection Schedule</CardTitle>
-                        <CardDescription>
-                            View upcoming and overdue preventive maintenance and inspections for all vehicles.
-                        </CardDescription>
+                    <CardHeader className="flex-row items-center justify-between">
+                         <div>
+                            <CardTitle className="font-headline">PM & Inspection Schedule</CardTitle>
+                            <CardDescription>View upcoming and overdue preventive maintenance and inspections for all vehicles.</CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                             <Input type="file" ref={pmFileInputRef} className="hidden" accept=".xlsx, .xls, .csv" onChange={handleImportPMs} />
+                            <Button variant="outline" onClick={() => pmFileInputRef.current?.click()}><Upload className="mr-2" />Import</Button>
+                            <Button variant="outline" onClick={handleExportPMs} disabled={selectedPMs.length === 0}><FileDown className="mr-2"/>Export Selected ({selectedPMs.length})</Button>
+                            <Button onClick={() => { setEditingPM(null); setPMDialogOpen(true); }}><PlusCircle className="mr-2"/>Create Schedule</Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <Table>
                              <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]"><Checkbox checked={selectedPMs.length === pmSchedules.length && pmSchedules.length > 0} onCheckedChange={(checked) => setSelectedPMs(checked ? pmSchedules.map(p => p.id) : [])} /></TableHead>
                                     <TableHead>Vehicle</TableHead>
                                     <TableHead>Service</TableHead>
                                     <TableHead>Interval</TableHead>
                                     <TableHead>Last Performed</TableHead>
                                     <TableHead>Next Due</TableHead>
+                                    <TableHead>Docs</TableHead>
                                     <TableHead><span className="sr-only">Actions</span></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {pmSchedules.map(pm => {
                                     const isDateInterval = pm.intervalType === 'date';
-                                    const nextDueDate = isDateInterval ? new Date(pm.lastPerformedDate.getTime() + pm.intervalValue * 24 * 60 * 60 * 1000) : null;
+                                    const nextDueDate = isDateInterval ? new Date(new Date(pm.lastPerformedDate).getTime() + pm.intervalValue * 24 * 60 * 60 * 1000) : null;
                                     const isOverdue = nextDueDate ? new Date() > nextDueDate : false;
                                     
                                     return (
                                         <TableRow key={pm.id} className={cn(isOverdue && 'bg-destructive/10')}>
+                                            <TableCell><Checkbox checked={selectedPMs.includes(pm.id)} onCheckedChange={() => handlePMSelect(pm.id)}/></TableCell>
                                             <TableCell className="font-medium">{pm.vehicleId}</TableCell>
                                             <TableCell>{pm.serviceType}</TableCell>
                                             <TableCell className="capitalize">{pm.intervalValue.toLocaleString()} {isDateInterval ? 'Days' : pm.intervalType}</TableCell>
-                                            <TableCell>{isDateInterval ? pm.lastPerformedDate.toLocaleDateString() : pm.lastPerformedValue.toLocaleString()} {isDateInterval ? '' : pm.intervalType}</TableCell>
+                                            <TableCell>{isDateInterval ? format(new Date(pm.lastPerformedDate), 'P') : `${pm.lastPerformedValue.toLocaleString()} ${pm.intervalType}`}</TableCell>
                                             <TableCell className={cn("font-semibold", isOverdue && 'text-destructive')}>
-                                                {isDateInterval && nextDueDate ? nextDueDate.toLocaleDateString() : pm.nextDueValue.toLocaleString()}{' '}
-                                                {isDateInterval ? '' : pm.intervalType}
+                                                {isDateInterval && nextDueDate ? format(nextDueDate, 'P') : `${pm.nextDueValue.toLocaleString()} ${pm.intervalType}`}
                                             </TableCell>
+                                            <TableCell>{pm.documentUri ? <Paperclip className="h-4 w-4 text-muted-foreground"/> : 'N/A'}</TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="outline" size="sm">Create RO</Button>
+                                                 <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DropdownMenuItem onClick={() => { setEditingPM(pm); setPMDialogOpen(true); }}><Edit className="mr-2"/>Edit Schedule</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setEditingDocPM(pm)}><FilePlus className="mr-2"/>Add/Edit Document</DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem>Log Service</DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -470,7 +592,20 @@ export default function FleetManagementPage() {
             </TabsContent>
         </Tabs>
         
-        <RepairOrderDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} onSave={handleSaveOrder} />
+        <RepairOrderDialog isOpen={isRODialogOpen} onOpenChange={setRODialogOpen} onSave={handleSaveOrder} />
+        <PMScheduleDialog isOpen={isPMDialogOpen} onOpenChange={setPMDialogOpen} scheduleToEdit={editingPM} onSave={handleSavePMSchedule} />
+
+        <Dialog open={!!editingDocPM} onOpenChange={(open) => !open && setEditingDocPM(null)}>
+            <DialogContent>
+                 <DialogHeader>
+                    <DialogTitle>Attach Document for {editingDocPM?.vehicleId}</DialogTitle>
+                    <DialogDescription>Attach an inspection report or photo for the {editingDocPM?.serviceType.toLowerCase()} service.</DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <DocumentUpload onDocumentChange={handleSavePMDocument} currentDocument={editingDocPM?.documentUri || null} />
+                </div>
+            </DialogContent>
+        </Dialog>
 
       </main>
     </div>
