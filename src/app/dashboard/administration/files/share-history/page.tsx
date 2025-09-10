@@ -1,26 +1,27 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Folder } from 'lucide-react';
-import { FileDataTable } from '@/components/dashboard/file-data-table';
+import { History } from 'lucide-react';
 
-export default function AdminFilesPage() {
+export default function AdminFileShareHistoryPage() {
   return (
     <div className="flex flex-col w-full">
-      <Header pageTitle="All Files" />
+      <Header pageTitle="File Share History" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2">
-                    <Folder />
-                    File Management
+                    <History />
+                    Share History
                 </CardTitle>
                 <CardDescription>
-                    Manage all application files and documents from this central location.
+                    A log of all files that have been shared, by whom, and with whom.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <FileDataTable />
+                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
+                    <p className="text-muted-foreground">File share history content coming soon.</p>
+                </div>
             </CardContent>
         </Card>
       </main>

@@ -71,6 +71,7 @@ import {
   Tablet,
   BookOpen,
   Fence,
+  Share2,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -225,7 +226,17 @@ const adminNavItems: NavItem[] = [
     { href: '/dashboard/administration/personnel', icon: Users, label: 'Personnel', roles: ['Admin'] },
     { href: '/dashboard/administration/expense-report', icon: CreditCard, label: 'Expense Reports', roles: ['Admin'] },
     { href: '/dashboard/administration/training', icon: GraduationCap, label: 'Assign Task Hub', roles: ['Admin'] },
-    { href: '/dashboard/administration/files', icon: Folder, label: 'Files', roles: ['Admin'] },
+    { 
+        href: '#', 
+        icon: Folder, 
+        label: 'Files', 
+        roles: ['Admin'],
+        subItems: [
+            { href: '/dashboard/administration/files', icon: Folder, label: 'All Files', roles: ['Admin'] },
+            { href: '/dashboard/administration/files/share-history', icon: History, label: 'Share History', roles: ['Admin'] },
+            { href: '/dashboard/administration/files/trash', icon: Trash2, label: 'Trash', roles: ['Admin'] },
+        ]
+    },
     { href: '/dashboard/administration/billing', icon: CreditCard, label: 'Billing', roles: ['Admin'] },
     { href: '/dashboard/administration/data-plan', icon: Database, label: 'Data Plan', roles: ['Admin'] },
     { href: '/dashboard/administration/storage-backup', icon: DatabaseBackup, label: 'Storage & Backup', roles: ['Admin'] },
@@ -363,7 +374,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files') {
         return pathname === href;
     }
     return pathname.startsWith(href);
