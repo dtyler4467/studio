@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -47,6 +48,7 @@ import { Calendar } from "../ui/calendar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
+import { Skeleton } from "../ui/skeleton"
 
 type File = {
     id: string;
@@ -73,6 +75,21 @@ const getFileIcon = (type: File['type']) => {
         default: return <FileIcon />;
     }
 }
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "PPP p"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[150px]" />;
+    }
+
+    return <>{formattedDate}</>;
+}
+
 
 export function FileDataTable() {
     const [data, setData] = React.useState(mockFiles);
@@ -142,7 +159,7 @@ export function FileDataTable() {
                 Date Added <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
         ),
-        cell: ({ row }) => format(row.original.dateAdded, "PPP p")
+        cell: ({ row }) => <ClientFormattedDate date={row.original.dateAdded} />
       },
       {
         id: "actions",
