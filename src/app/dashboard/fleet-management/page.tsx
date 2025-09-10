@@ -5,7 +5,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip, Check, Edit, FilePlus, Truck, PackagePlus } from 'lucide-react';
+import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip, Check, Edit, FilePlus, Truck, PackagePlus, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import React, { useState, useRef, useMemo } from 'react';
@@ -23,7 +23,9 @@ import * as XLSX from "xlsx";
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSchedule, Equipment } from '@/hooks/use-schedule';
-import { ColumnDef, useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
+import { ColumnDef, useReactTable, getCoreRowModel, flexRender, Row } from '@tanstack/react-table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 type RepairOrder = {
     id: string;
@@ -346,7 +348,7 @@ function AddEquipmentDialog({ onSave }: { onSave: (equipment: Omit<Equipment, 'i
                     </div>
                     <div className="space-y-2">
                         <Label>Notes</Label>
-                        <Textarea value={formState.notes} onChange={(e) => setFormState(f => ({...f, notes: e.target.value}))} placeholder="Add any relevant notes..." />
+                        <Textarea value={formState.notes || ''} onChange={(e) => setFormState(f => ({...f, notes: e.target.value}))} placeholder="Add any relevant notes..." />
                     </div>
                      <div className="space-y-2">
                         <Label>Attach Document (Optional)</Label>
@@ -363,7 +365,21 @@ function AddEquipmentDialog({ onSave }: { onSave: (equipment: Omit<Equipment, 'i
 }
 
 function EquipmentTable() {
-    const { equipment } = useSchedule();
+    const { equipment, deleteEquipment, currentUser } = useSchedule();
+    const { toast } = useToast();
+    const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
+
+    const handleDeleteClick = (equipment: Equipment) => {
+        setEquipmentToDelete(equipment);
+    }
+    
+    const confirmDelete = () => {
+        if (equipmentToDelete && currentUser) {
+            deleteEquipment(equipmentToDelete.id, currentUser.id);
+            toast({ variant: 'destructive', title: 'Equipment Deleted', description: `${equipmentToDelete.name} has been moved to the trash.`});
+        }
+        setEquipmentToDelete(null);
+    }
     
     const columns: ColumnDef<Equipment>[] = useMemo(() => [
         { accessorKey: 'name', header: 'Name/Unit #' },
@@ -373,7 +389,45 @@ function EquipmentTable() {
         { accessorKey: 'vin', header: 'VIN' },
         { accessorKey: 'registrationExpiry', header: 'Reg. Expiry', cell: ({cell}) => format(new Date(cell.getValue() as string), 'P') },
         { accessorKey: 'inspectionExpiry', header: 'Insp. Expiry', cell: ({cell}) => format(new Date(cell.getValue() as string), 'P') },
-    ], []);
+        {
+            id: 'actions',
+            cell: ({ row }: { row: Row<Equipment> }) => {
+                const equipmentItem = row.original;
+                return (
+                    <AlertDialog>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem>Edit</DropdownMenuItem>
+                                <DropdownMenuItem>View History</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(equipmentItem)} onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="mr-2" /> Delete
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                         <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will move the equipment "{equipmentToDelete?.name}" to the trash. You can restore it later.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setEquipmentToDelete(null)}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )
+            }
+        }
+    ], [currentUser, deleteEquipment, equipmentToDelete]);
 
     const table = useReactTable({
         data: equipment,

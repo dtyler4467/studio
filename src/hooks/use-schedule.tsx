@@ -114,7 +114,7 @@ export type TrainingAssignment = {
 export type DeletionLog = {
     id: string;
     deletedItemId: string;
-    itemType: 'Shift' | 'User' | 'File';
+    itemType: 'Shift' | 'User' | 'File' | 'Equipment';
     deletedBy: string; // User ID
     deletedAt: Date;
     originalData: any;
@@ -232,6 +232,7 @@ type ScheduleContextType = {
   loads: Load[];
   files: File[];
   equipment: Equipment[];
+  deleteEquipment: (equipmentId: string, deletedBy: string) => void;
   addEquipment: (equipmentData: Omit<Equipment, 'id'>) => void;
   addFile: (fileData: Omit<File, 'id'>) => void;
   deleteFile: (fileId: string, deletedBy: string) => void;
@@ -834,6 +835,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
              case 'File':
                 setFiles(prev => [...prev, logEntry.originalData]);
                 break;
+             case 'Equipment':
+                setEquipment(prev => [...prev, logEntry.originalData]);
+                break;
             default:
                 break;
         }
@@ -1008,10 +1012,26 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         };
         setEquipment(prev => [newEquipment, ...prev]);
     }
+    
+    const deleteEquipment = (equipmentId: string, deletedBy: string) => {
+        const itemToDelete = equipment.find(e => e.id === equipmentId);
+        if (itemToDelete) {
+            const logEntry: DeletionLog = {
+                id: `LOG${Date.now()}`,
+                deletedItemId: equipmentId,
+                itemType: 'Equipment',
+                deletedBy,
+                deletedAt: new Date(),
+                originalData: itemToDelete,
+            };
+            setDeletionLogs(prev => [logEntry, ...prev]);
+            setEquipment(prev => prev.filter(e => e.id !== equipmentId));
+        }
+    }
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );
