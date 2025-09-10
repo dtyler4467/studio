@@ -2,6 +2,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { History } from 'lucide-react';
+import { FileShareHistoryTable } from '@/components/dashboard/file-share-history-table';
 
 export default function AdminFileShareHistoryPage() {
   return (
@@ -19,9 +20,7 @@ export default function AdminFileShareHistoryPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                    <p className="text-muted-foreground">File share history content coming soon.</p>
-                </div>
+                <FileShareHistoryTable />
             </CardContent>
         </Card>
       </main>

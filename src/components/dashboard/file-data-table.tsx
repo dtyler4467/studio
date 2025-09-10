@@ -78,25 +78,36 @@ const getFileIcon = (type: File['type']) => {
 }
 
 const ClientFormattedDate = ({ date }: { date: Date | null }) => {
-    if (!date) {
+    const [formattedDate, setFormattedDate] = React.useState('');
+
+    React.useEffect(() => {
+        if (date) {
+            setFormattedDate(format(date, "PPP p"));
+        }
+    }, [date]);
+
+    if (!formattedDate) {
         return <Skeleton className="h-4 w-[150px]" />;
     }
-    return <>{format(date, "PPP p")}</>;
+    return <>{formattedDate}</>;
 }
 
 const ShareDialog = ({ file, isOpen, onOpenChange }: { file: File | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
-    const { employees } = useSchedule();
+    const { employees, logFileShare, currentUser } = useSchedule();
     const [recipients, setRecipients] = React.useState<string[]>([]);
     const employeeOptions: MultiSelectOption[] = React.useMemo(() => employees.map(e => ({ value: e.email || '', label: e.name })).filter(e => e.value), [employees]);
     
     const handleShare = () => {
-        if (!file) return;
+        if (!file || !currentUser) return;
+
+        logFileShare(file.name, currentUser.name, recipients);
 
         const subject = `File Shared: ${file.name}`;
         const body = `A file has been shared with you from the LogiFlow system.\n\nFile: ${file.name}\n\nThis is an automated message.`;
         
         window.location.href = `mailto:${recipients.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         onOpenChange(false);
+        setRecipients([]);
     };
     
     if (!file) return null;
