@@ -4,8 +4,8 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Printer, Mail, Upload, FileText, Download } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
+import { Printer, Mail, Upload, FileText } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,111 +19,98 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 const LogGrid = () => {
     const hours = Array.from({ length: 12 }, (_, i) => i + 1);
     const statuses = [
-        { num: 1, label: 'OFF DUTY' },
-        { num: 2, label: 'SLEEPER BERTH' },
-        { num: 3, label: 'DRIVING' },
-        { num: 4, label: 'ON DUTY (NOT DRIVING)' },
+        { num: 1, label: 'Off Duty' },
+        { num: 2, label: 'Sleeper Berth' },
+        { num: 3, label: 'Driving' },
+        { num: 4, label: 'On Duty' },
     ];
     return (
-        <div className="border-l border-r border-black text-xs">
-            <div className="grid grid-cols-25 border-b border-black bg-gray-100">
-                 <div className="col-span-1 text-center font-bold border-r border-black flex items-center justify-center text-[10px] leading-tight px-1">MIDNIGHT</div>
-                 {hours.map(hour => <div key={`top-${hour}`} className="col-span-1 text-center font-semibold border-r border-black">{hour}</div>)}
-                 <div className="col-span-1 text-center font-bold border-r border-black flex items-center justify-center text-[10px] leading-tight px-1">NOON</div>
-                 {hours.map(hour => <div key={`bottom-${hour}`} className="col-span-1 text-center font-semibold border-r border-black">{hour}</div>)}
-                 <div className="col-span-1"></div>
+        <div className="border border-black">
+            <div className="grid grid-cols-[8%_repeat(24,_minmax(0,_1fr))_5%] border-b border-black text-center text-[8px] font-semibold">
+                <div className="border-r border-black flex items-center justify-center p-1 leading-tight">Mid<br />Night</div>
+                {hours.map(h => <div key={`h-top-${h}`} className="border-r border-black flex items-center justify-center">{h === 12 ? 'Noon' : h}</div>)}
+                {hours.map(h => <div key={`h-bottom-${h}`} className="border-r border-black flex items-center justify-center">{h}</div>)}
+                <div className="flex items-center justify-center p-1 leading-tight">Total<br />Hours</div>
             </div>
             {statuses.map(status => (
-                <div key={status.num} className="grid grid-cols-25 border-b border-black min-h-[32px]">
-                    <div className="col-span-1 text-center py-0.5 border-r border-black text-[9px] font-semibold flex items-center justify-center leading-tight">{status.label}</div>
+                <div key={status.num} className="grid grid-cols-[8%_repeat(24,_minmax(0,_1fr))_5%] border-b border-black text-sm">
+                    <div className="border-r border-black flex items-center justify-center text-[10px] font-semibold p-1">{status.num} {status.label}</div>
                     {Array.from({ length: 24 }).map((_, i) => (
-                         <div key={i} className="col-span-1 border-r border-dashed border-gray-300"></div>
+                        <div key={`cell-${status.num}-${i}`} className="border-r border-black h-8 flex justify-around items-center">
+                            <div className="h-full w-px border-l border-dashed border-gray-400"></div>
+                            <div className="h-full w-px border-l border-dashed border-gray-400"></div>
+                            <div className="h-full w-px border-l border-dashed border-gray-400"></div>
+                        </div>
                     ))}
-                    <div className="col-span-1"></div>
+                    <div></div>
                 </div>
             ))}
-             <div className="grid grid-cols-12 border-b border-black bg-gray-100">
-                <div className="col-span-9 p-1 border-r border-black">
-                    <Label className="text-[9px] font-semibold">REMARKS</Label>
+            <div className="grid grid-cols-[calc(8%_+_24*100%/26)_5%]">
+                 <div className="grid grid-cols-1 border-r border-black">
+                    <div className="p-1 text-center font-semibold text-[8px]">REMARKS</div>
+                    <div className="h-16 border-t border-black"></div>
                 </div>
-                <div className="col-span-3 p-1">
-                     <Label className="text-[9px] font-semibold">TOTAL HOURS</Label>
-                </div>
-            </div>
-             <div className="grid grid-cols-12 h-20">
-                <div className="col-span-9 p-1 border-r border-black"></div>
-                <div className="col-span-3 p-1 space-y-0.5">
-                     <p className="text-[9px]">1. OFF DUTY ______</p>
-                     <p className="text-[9px]">2. SLEEPER ______</p>
-                     <p className="text-[9px]">3. DRIVING ______</p>
-                     <p className="text-[9px]">4. ON DUTY ______</p>
-                     <p className="text-[9px] font-semibold">TOTAL HRS. ______ (Must equal 24)</p>
+                 <div className="grid grid-cols-1 text-center text-[8px] font-semibold">
+                    <div className="p-1">TOTAL HOURS</div>
+                    <div className="h-16 border-t border-black"></div>
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
+
 
 const SingleLogTemplate = () => (
-    <div className="bg-white text-black p-4 space-y-2 font-sans text-[10px]">
-        <div className="text-center mb-2">
-            <h2 className="text-base font-bold font-headline tracking-wider">DRIVER'S DAILY LOG</h2>
+    <div className="bg-white text-black p-4 space-y-2 font-sans">
+        <div className="text-center mb-4">
+            <h2 className="text-lg font-bold font-headline tracking-wider">DRIVER'S DAILY LOG</h2>
+            <p className="text-sm font-bold font-headline">ONE CALENDAR DAY</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-x-2">
-            <div className="text-center flex-grow space-y-1">
-                <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                <Label className="text-[8px] font-semibold tracking-wider">1. DATE</Label>
+        <div className="flex gap-4 mb-2">
+            <div className="flex-1 space-y-1">
+                <Input className="h-8 border-black" />
+                <Label className="block text-center text-[9px] font-semibold tracking-wider">MONTH/DAY/YEAR</Label>
             </div>
-            <div className="text-center flex-grow space-y-1">
-                <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                <Label className="text-[8px] font-semibold tracking-wider">2. TOTAL MILES DRIVING TODAY</Label>
+            <div className="flex-1 space-y-1">
+                <Input className="h-8 border-black" />
+                <Label className="block text-center text-[9px] font-semibold tracking-wider">TOTAL MILES DRIVEN TODAY</Label>
             </div>
-            <div className="text-center flex-grow space-y-1">
-                <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                <Label className="text-[8px] font-semibold tracking-wider">3. TRUCK/TRACTOR AND TRAILER(S) NO.</Label>
+            <div className="flex-1 space-y-1">
+                <Input className="h-8 border-black" />
+                <Label className="block text-center text-[9px] font-semibold tracking-wider">VEHICLE NUMBERS</Label>
             </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-x-2">
-            <div className="space-y-1 border border-black p-1">
-                 <div className="text-center space-y-1">
-                    <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                    <Label className="text-[8px] font-semibold tracking-wider">4. NAME OF CARRIER</Label>
-                 </div>
-                  <div className="text-center space-y-1">
-                    <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                    <Label className="text-[8px] font-semibold tracking-wider">5. CARRIER'S ADDRESS</Label>
-                 </div>
+        <div className="flex gap-4 mb-2">
+            <div className="w-[66%] space-y-2">
+                <div className="space-y-1">
+                    <Input className="h-8 border-black" />
+                    <Label className="block text-center text-[9px] font-semibold tracking-wider">NAME OF THE CARRIER</Label>
+                </div>
+                 <div className="space-y-1">
+                    <Input className="h-8 border-black" />
+                    <Label className="block text-center text-[9px] font-semibold tracking-wider">MAIN OFFICE ADDRESS</Label>
+                </div>
             </div>
-             <div className="space-y-1 border border-black p-1">
-                <div className="text-center space-y-1">
-                    <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                    <Label className="text-[8px] font-semibold tracking-wider">6. NAME OF CO-DRIVER</Label>
-                </div>
-                 <div className="text-center space-y-1">
-                    <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                    <Label className="text-[8px] font-semibold tracking-wider">8. HOME TERMINAL ADDRESS</Label>
-                </div>
+            <div className="flex-1 flex flex-col">
+                <div className="flex-grow border border-black"></div>
+                <Label className="block text-center text-[9px] font-semibold tracking-wider mt-1">DRIVER'S SIGNATURE</Label>
             </div>
         </div>
-         <div className="text-center space-y-1">
-            <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-            <Label className="text-[8px] font-semibold tracking-wider">9. SHIPPING DOCUMENT NUMBER(S) OR NAME OF SHIPPER & COMMODITY</Label>
+        
+        <div className="flex gap-4 mb-2">
+            <div className="flex-1 space-y-1">
+                <Input className="h-8 border-black" />
+                <Label className="block text-center text-[9px] font-semibold tracking-wider">NAME OF THE CO-DRIVER</Label>
+            </div>
+            <div className="flex-1 space-y-1">
+                <Input className="h-8 border-black" />
+                <Label className="block text-center text-[9px] font-semibold tracking-wider">PRO OR SHIPPING NUMBER</Label>
+            </div>
         </div>
 
         <LogGrid />
-        
-        <div className="grid grid-cols-2 gap-x-2 items-end pt-1">
-             <div className="text-center space-y-1">
-                <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                <Label className="text-[8px] font-semibold tracking-wider">7. I CERTIFY THESE ENTRIES ARE TRUE AND CORRECT</Label>
-            </div>
-            <div className="text-center space-y-1">
-                <Input className="h-5 text-xs border-b border-black rounded-none px-1 text-center" />
-                <Label className="text-[8px] font-semibold tracking-wider">10. NAME OF DRIVER (PRINT)</Label>
-            </div>
-        </div>
     </div>
 );
 
@@ -154,6 +141,7 @@ export default function PaperLogsPage() {
     const [newLogData, setNewLogData] = useState<{ logDate: Date | null, documentUri: string | null } | null>(null);
 
     useEffect(() => {
+        // Client-side effect to prevent hydration mismatch for dates
         const clientSideInitialLogs: UploadedLog[] = [
             { id: 'LOG001', driverName: 'John Doe', logDate: new Date(new Date().setDate(new Date().getDate() - 2)), uploadDate: new Date(new Date().setDate(new Date().getDate() - 1)), documentUri: 'https://picsum.photos/seed/log1/800/1100' },
             { id: 'LOG002', driverName: 'Jane Doe', logDate: new Date(new Date().setDate(new Date().getDate() - 1)), uploadDate: new Date(), documentUri: 'https://picsum.photos/seed/log2/800/1100' },
@@ -167,12 +155,18 @@ export default function PaperLogsPage() {
         if (content) {
             const printWindow = window.open('', '', 'height=1100,width=850');
             printWindow?.document.write('<html><head><title>Print Paper Log</title>');
-            printWindow?.document.write('<style>body{font-family:sans-serif;}input,textarea{border:none;border-bottom:1px solid #000;border-radius:0;padding:2px;width:100%;font-size:10px;}label{font-size:8px;font-weight:600;text-transform:uppercase;} .font-headline{ font-family: "Space Grotesk", sans-serif;} .font-sans{font-family: sans-serif} .text-center{text-align:center;} .text-base{font-size:1rem;} .text-xs{font-size:.75rem;} .font-bold{font-weight:700;} .tracking-wider{letter-spacing:.05em;} .h-5{height:1.25rem;} .text-\\[8px\\]{font-size:8px;} .border-black{border-color:#000;} .border-b{border-bottom-width:1px;} .px-1{padding-left:.25rem;padding-right:.25rem;} .grid{display:grid;} .grid-cols-3{grid-template-columns:repeat(3,1fr);} .grid-cols-2{grid-template-columns:repeat(2,1fr);} .gap-x-2{column-gap:.5rem;} .pt-1{padding-top:.25rem;} .mb-2{margin-bottom:.5rem;} .space-y-1 > * + *{margin-top:0.25rem;} .border{border-width:1px;} .p-1{padding:0.25rem;} .items-end{align-items:flex-end;} .border-l{border-left-width:1px;} .border-r{border-right-width:1px;} .col-span-1{grid-column:span 1 / span 1;} .col-span-9{grid-column:span 9/span 9;} .col-span-3{grid-column:span 3/span 3;} .grid-cols-12{grid-template-columns:repeat(12,1fr);} .p-1{padding:0.25rem;} .h-20{height:5rem;} .space-y-0\\.5 > * + *{margin-top:0.125rem;} .text-\\[9px\\]{font-size:9px;} .grid-cols-25{grid-template-columns: 8% repeat(24, 3.833333%);} .leading-tight{line-height:1.25;} .flex{display:flex;} .items-center{align-items:center;} .justify-center{justify-content:center;} .font-semibold{font-weight:600;} .border-dashed{border-style:dashed;} .border-gray-300{border-color:#d1d5db;} .min-h-\\[32px\\]{min-height:32px;} .my-4{margin-top:1rem;margin-bottom:1rem;} .bg-gray-100{background-color:#f3f4f6;}</style>');
-            printWindow?.document.write('<body style="transform: scale(0.95); transform-origin: top left;">');
+            const styles = Array.from(document.styleSheets)
+                .map(s => s.href ? `<link rel="stylesheet" href="${s.href}">` : `<style>${Array.from(s.cssRules).map(r => r.cssText).join('')}</style>`)
+                .join('\n');
+            printWindow?.document.write(`<head>${styles}</head>`);
+            printWindow?.document.write('<body style="background-color: white; -webkit-print-color-adjust: exact;">');
             printWindow?.document.write(content.innerHTML);
             printWindow?.document.write('</body></html>');
             printWindow?.document.close();
-            printWindow?.print();
+            
+            setTimeout(() => {
+                printWindow?.print();
+            }, 500); // Delay to ensure styles are loaded
         }
     };
     
@@ -314,4 +308,5 @@ export default function PaperLogsPage() {
     </div>
   );
 }
+
 
