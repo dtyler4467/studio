@@ -15,7 +15,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, Download, Edit, Folder, MoreHorizontal, File as FileIcon, Trash2, X, CalendarIcon, FileUp, Move } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Download, Edit, Folder, MoreHorizontal, File as FileIcon, Trash2, X, CalendarIcon, FileUp, Move, Share2, Upload } from "lucide-react"
 import { format, isWithinInterval } from "date-fns"
 import { DateRange } from "react-day-picker"
 import * as XLSX from "xlsx"
@@ -40,7 +40,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
@@ -49,6 +48,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "../ui/label"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 import { Skeleton } from "../ui/skeleton"
+import { MultiSelect, MultiSelectOption } from "../ui/multi-select"
+import { useSchedule } from "@/hooks/use-schedule"
 
 type File = {
     id: string;
@@ -76,23 +77,63 @@ const getFileIcon = (type: File['type']) => {
     }
 }
 
-const ClientFormattedDate = ({ date }: { date: Date }) => {
-    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
-
-    React.useEffect(() => {
-        setFormattedDate(format(date, "PPP p"));
-    }, [date]);
-
-    if (!formattedDate) {
+const ClientFormattedDate = ({ date }: { date: Date | null }) => {
+    if (!date) {
         return <Skeleton className="h-4 w-[150px]" />;
     }
+    return <>{format(date, "PPP p")}</>;
+}
 
-    return <>{formattedDate}</>;
+const ShareDialog = ({ file, isOpen, onOpenChange }: { file: File | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
+    const { employees } = useSchedule();
+    const [recipients, setRecipients] = React.useState<string[]>([]);
+    const employeeOptions: MultiSelectOption[] = React.useMemo(() => employees.map(e => ({ value: e.email || '', label: e.name })).filter(e => e.value), [employees]);
+    
+    const handleShare = () => {
+        if (!file) return;
+
+        const subject = `File Shared: ${file.name}`;
+        const body = `A file has been shared with you from the LogiFlow system.\n\nFile: ${file.name}\n\nThis is an automated message.`;
+        
+        window.location.href = `mailto:${recipients.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        onOpenChange(false);
+    };
+    
+    if (!file) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Share File: {file.name}</DialogTitle>
+                    <DialogDescription>
+                        Select recipients to share this file with. This will open your default email client.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="recipients">Recipients</Label>
+                    <MultiSelect
+                        options={employeeOptions}
+                        selected={recipients}
+                        onChange={setRecipients}
+                        placeholder="Select or type email..."
+                        allowOther
+                    />
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleShare} disabled={recipients.length === 0}>
+                        <Share2 className="mr-2" /> Share
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 
 export function FileDataTable() {
-    const [data, setData] = React.useState(mockFiles);
+    const [data, setData] = React.useState<File[]>([]);
     const { toast } = useToast();
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -100,11 +141,112 @@ export function FileDataTable() {
     const [rowSelection, setRowSelection] = React.useState({})
     const [globalFilter, setGlobalFilter] = React.useState("");
     const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [isShareOpen, setShareOpen] = React.useState(false);
+    const [fileToShare, setFileToShare] = React.useState<File | null>(null);
+
+    React.useEffect(() => {
+        setData(mockFiles);
+    }, []);
+
+    const handleShareClick = (file: File) => {
+        setFileToShare(file);
+        setShareOpen(true);
+    }
+    
+     const exportToXlsx = () => {
+        const dataToExport = table.getFilteredRowModel().rows.map(row => {
+            const { name, type, size, path, dateAdded } = row.original;
+            return {
+                Name: name,
+                Type: type,
+                Size_MB: (size / (1024 * 1024)).toFixed(4),
+                Path: path,
+                "Date Added": format(new Date(dateAdded), "yyyy-MM-dd HH:mm:ss"),
+            };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Files");
+        XLSX.writeFile(workbook, `Files_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        
+        toast({
+            title: "Export Successful",
+            description: `${dataToExport.length} file(s) have been exported.`,
+        });
+    };
+    
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const workbook = XLSX.read(e.target?.result, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+                const newFiles: File[] = json.map((row: any, index: number) => {
+                    const name = row.Name;
+                    const type = ['PDF', 'Image', 'Excel', 'Word', 'Other'].includes(row.Type) ? row.Type : 'Other';
+
+                    return {
+                        id: `FILE-IMPORT-${Date.now()}-${index}`,
+                        name: String(name),
+                        type,
+                        size: Number(row.Size_MB) * 1024 * 1024,
+                        path: String(row.Path),
+                        dateAdded: new Date(),
+                    };
+                });
+
+                setData(prev => [...prev, ...newFiles]);
+
+                toast({
+                    title: "Import Successful",
+                    description: `${newFiles.length} file record(s) imported.`,
+                });
+
+            } catch (error) {
+                console.error("Failed to import Excel file:", error);
+                toast({ variant: "destructive", title: "Import Failed" });
+            } finally {
+                 if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                 }
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        
+        const newFile: File = {
+            id: `FILE-${Date.now()}`,
+            name: file.name,
+            type: file.type.startsWith('image/') ? 'Image' : file.type === 'application/pdf' ? 'PDF' : 'Other',
+            size: file.size,
+            path: '/uploads/',
+            dateAdded: new Date(),
+        };
+
+        setData(prev => [newFile, ...prev]);
+        toast({ title: "File Uploaded", description: `${file.name} has been added.` });
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
     const filteredData = React.useMemo(() => {
         let filtered = data;
         if (dateRange?.from) {
-            const toDate = dateRange.to || dateRange.from;
+            const toDate = dateRange.to || new Date();
             filtered = filtered.filter(file => isWithinInterval(file.dateAdded, { start: dateRange.from!, end: toDate }));
         }
         if (globalFilter) {
@@ -178,6 +320,7 @@ export function FileDataTable() {
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem><Download className="mr-2"/> Download</DropdownMenuItem>
+                     <DropdownMenuItem onClick={() => handleShareClick(file)}><Share2 className="mr-2"/> Share</DropdownMenuItem>
                     <DropdownMenuItem><Edit className="mr-2"/> Rename</DropdownMenuItem>
                     <DropdownMenuItem><Move className="mr-2"/> Move</DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -223,12 +366,12 @@ export function FileDataTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4 gap-2">
+      <div className="flex flex-wrap items-center py-4 gap-2">
         <Input
           placeholder="Filter files..."
           value={globalFilter}
           onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm"
+          className="max-w-xs"
         />
         <Popover>
             <PopoverTrigger asChild>
@@ -249,8 +392,29 @@ export function FileDataTable() {
             </PopoverContent>
         </Popover>
         {(globalFilter || dateRange) && <Button variant="ghost" onClick={() => {setGlobalFilter(""); setDateRange(undefined)}}>Reset <X className="ml-2 h-4 w-4" /></Button>}
-        <div className="ml-auto">
-            <Button><FileUp className="mr-2"/> Upload File</Button>
+        <div className="ml-auto flex items-center gap-2">
+            <Input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".xlsx, .xls, .csv"
+                onChange={handleFileImport}
+            />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2" />
+                Import
+            </Button>
+            <Button variant="outline" onClick={exportToXlsx}>
+                <Download className="mr-2" />
+                Export
+            </Button>
+            <Button onClick={() => {
+                const fileUploader = document.getElementById('file-upload-input') as HTMLInputElement;
+                fileUploader?.click();
+            }}>
+                <FileUp className="mr-2"/> Upload File
+            </Button>
+             <Input id="file-upload-input" type="file" className="hidden" onChange={handleFileUpload}/>
         </div>
       </div>
       <div className="rounded-md border">
@@ -327,6 +491,7 @@ export function FileDataTable() {
           </Button>
         </div>
       </div>
+      <ShareDialog file={fileToShare} isOpen={isShareOpen} onOpenChange={setShareOpen} />
     </div>
   )
 }
