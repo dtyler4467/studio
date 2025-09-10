@@ -70,6 +70,7 @@ import {
   Folder,
   Tablet,
   BookOpen,
+  Fence,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -122,7 +123,7 @@ const navItems: NavItem[] = [
   },
   { 
     href: '/dashboard/yard-management', 
-    icon: Truck, 
+    icon: Fence, 
     label: 'Yard Management',
     roles: ['Admin', 'Dispatcher'],
     subItems: [
