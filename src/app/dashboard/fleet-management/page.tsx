@@ -4,7 +4,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip } from 'lucide-react';
+import { Wrench, CircleDollarSign, ShieldCheck, AlarmClock, PlusCircle, MoreHorizontal, FileDown, Upload, Paperclip, Check } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import React, { useState, useRef } from 'react';
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import * as XLSX from "xlsx";
 import { format } from 'date-fns';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 type RepairOrder = {
@@ -153,11 +154,61 @@ function RepairOrderDialog({ isOpen, onOpenChange, orderToEdit, onSave }: { isOp
     )
 }
 
+const exportColumns = [
+    { key: "poNumber", label: "PO Number" },
+    { key: "vehicleId", label: "Vehicle ID" },
+    { key: "issue", label: "Issue" },
+    { key: "status", label: "Status" },
+    { key: "assignedTo", label: "Assigned To" },
+    { key: "estimate", label: "Estimate" },
+    { key: "finalCost", label: "Final Cost" },
+    { key: "dateCreated", label: "Date Created" },
+    { key: "dateCompleted", label: "Date Completed" },
+] as const;
+
+function ExportDialog({ isOpen, onOpenChange, onExport }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onExport: (selectedColumns: (typeof exportColumns)[number]['key'][]) => void }) {
+    const [selected, setSelected] = useState<(typeof exportColumns)[number]['key'][]>(exportColumns.map(c => c.key));
+
+    const handleToggle = (key: (typeof exportColumns)[number]['key']) => {
+        setSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    };
+
+    const handleExportClick = () => {
+        onExport(selected);
+        onOpenChange(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Export Repair Orders</DialogTitle>
+                    <DialogDescription>
+                        Select the columns you want to include in the Excel export.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4 py-4">
+                    {exportColumns.map(col => (
+                        <div key={col.key} className="flex items-center space-x-2">
+                            <Checkbox id={col.key} checked={selected.includes(col.key)} onCheckedChange={() => handleToggle(col.key)} />
+                            <Label htmlFor={col.key} className="font-normal">{col.label}</Label>
+                        </div>
+                    ))}
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleExportClick} disabled={selected.length === 0}>Export</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function FleetManagementPage() {
     const [repairOrders, setRepairOrders] = useState(initialRepairOrders);
     const [pmSchedules, setPmSchedules] = useState(initialPMSchedules);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isExportOpen, setIsExportOpen] = useState(false);
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -176,18 +227,28 @@ export default function FleetManagementPage() {
         toast({ title: 'Estimate Approved!', description: `Repair order ${orderId} is now in progress.` });
     };
     
-    const exportToXlsx = () => {
-        const dataToExport = repairOrders.map(order => ({
-            "PO Number": order.poNumber,
-            "Vehicle ID": order.vehicleId,
-            "Issue": order.issue,
-            "Status": order.status,
-            "Assigned To": order.assignedTo,
-            "Estimate": order.estimate,
-            "Final Cost": order.finalCost,
-            "Date Created": format(order.dateCreated, "yyyy-MM-dd HH:mm:ss"),
-            "Date Completed": order.dateCompleted ? format(order.dateCompleted, "yyyy-MM-dd HH:mm:ss") : "N/A",
-        }));
+    const handleExport = (selectedColumns: (typeof exportColumns)[number]['key'][]) => {
+        const dataToExport = repairOrders.map(order => {
+            const row: Record<string, any> = {};
+            selectedColumns.forEach(key => {
+                const colLabel = exportColumns.find(c => c.key === key)?.label || key;
+                if (key === 'dateCreated' || key === 'dateCompleted') {
+                     row[colLabel] = order[key] ? format(order[key] as Date, "yyyy-MM-dd HH:mm:ss") : "N/A";
+                } else {
+                    row[colLabel] = order[key] ?? "N/A";
+                }
+            });
+            return row;
+        });
+
+        if (dataToExport.length === 0) {
+             toast({
+                variant: 'destructive',
+                title: "No Data to Export",
+                description: "There are no repair orders to export.",
+            });
+            return;
+        }
 
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
@@ -322,7 +383,7 @@ export default function FleetManagementPage() {
                                 <Upload className="mr-2" />
                                 Import
                             </Button>
-                            <Button variant="outline" onClick={exportToXlsx}>
+                            <Button variant="outline" onClick={() => setIsExportOpen(true)}>
                                 <FileDown className="mr-2"/>Export
                             </Button>
                             <Button onClick={() => setIsDialogOpen(true)}><PlusCircle className="mr-2"/>New Repair Order</Button>
@@ -422,6 +483,7 @@ export default function FleetManagementPage() {
         </Tabs>
         
         <RepairOrderDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} onSave={handleSaveOrder} />
+        <ExportDialog isOpen={isExportOpen} onOpenChange={setIsExportOpen} onExport={handleExport} />
 
       </main>
     </div>
