@@ -17,7 +17,7 @@ import { useSchedule } from '@/hooks/use-schedule';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const LogGrid = () => {
-    const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+    const hours = Array.from({ length: 11 }, (_, i) => i + 1);
     const statuses = [
         { num: 1, label: 'Off Duty' },
         { num: 2, label: 'Sleeper Berth' },
@@ -28,8 +28,9 @@ const LogGrid = () => {
         <div className="border border-black">
             <div className="grid grid-cols-[8%_repeat(24,_minmax(0,_1fr))_5%] border-b border-black text-center text-[8px] font-semibold">
                 <div className="border-r border-black flex items-center justify-center p-1 leading-tight">Mid<br />Night</div>
-                {hours.map(h => <div key={`h-top-${h}`} className="border-r border-black flex items-center justify-center">{h === 12 ? 'Noon' : h}</div>)}
-                {hours.map(h => <div key={`h-bottom-${h}`} className="border-r border-black flex items-center justify-center">{h}</div>)}
+                {hours.map(h => <div key={`h-am-${h}`} className="border-r border-black flex items-center justify-center">{h}</div>)}
+                <div className="border-r border-black flex items-center justify-center">Noon</div>
+                {hours.map(h => <div key={`h-pm-${h}`} className="border-r border-black flex items-center justify-center">{h}</div>)}
                 <div className="flex items-center justify-center p-1 leading-tight">Total<br />Hours</div>
             </div>
             {statuses.map(status => (
@@ -45,7 +46,7 @@ const LogGrid = () => {
                     <div></div>
                 </div>
             ))}
-            <div className="grid grid-cols-[calc(8%_+_24*100%/26)_5%]">
+            <div className="grid grid-cols-[calc(8%_+_92%_-_5%)]">
                  <div className="grid grid-cols-1 border-r border-black">
                     <div className="p-1 text-center font-semibold text-[8px]">REMARKS</div>
                     <div className="h-16 border-t border-black"></div>
@@ -62,34 +63,34 @@ const LogGrid = () => {
 
 const SingleLogTemplate = () => (
     <div className="bg-white text-black p-4 space-y-2 font-sans">
-        <div className="text-center mb-4">
+        <div className="text-center mb-2">
             <h2 className="text-lg font-bold font-headline tracking-wider">DRIVER'S DAILY LOG</h2>
             <p className="text-sm font-bold font-headline">ONE CALENDAR DAY</p>
         </div>
 
-        <div className="flex gap-4 mb-2">
+        <div className="flex gap-2 mb-2">
             <div className="flex-1 space-y-1">
-                <Input className="h-8 border-black" />
+                <Input className="h-7 border-black text-xs" />
                 <Label className="block text-center text-[9px] font-semibold tracking-wider">MONTH/DAY/YEAR</Label>
             </div>
             <div className="flex-1 space-y-1">
-                <Input className="h-8 border-black" />
+                <Input className="h-7 border-black text-xs" />
                 <Label className="block text-center text-[9px] font-semibold tracking-wider">TOTAL MILES DRIVEN TODAY</Label>
             </div>
             <div className="flex-1 space-y-1">
-                <Input className="h-8 border-black" />
+                <Input className="h-7 border-black text-xs" />
                 <Label className="block text-center text-[9px] font-semibold tracking-wider">VEHICLE NUMBERS</Label>
             </div>
         </div>
         
-        <div className="flex gap-4 mb-2">
-            <div className="w-[66%] space-y-2">
+        <div className="flex gap-2 mb-2">
+            <div className="w-[66%] space-y-1">
                 <div className="space-y-1">
-                    <Input className="h-8 border-black" />
+                    <Input className="h-7 border-black text-xs" />
                     <Label className="block text-center text-[9px] font-semibold tracking-wider">NAME OF THE CARRIER</Label>
                 </div>
                  <div className="space-y-1">
-                    <Input className="h-8 border-black" />
+                    <Input className="h-7 border-black text-xs" />
                     <Label className="block text-center text-[9px] font-semibold tracking-wider">MAIN OFFICE ADDRESS</Label>
                 </div>
             </div>
@@ -99,14 +100,14 @@ const SingleLogTemplate = () => (
             </div>
         </div>
         
-        <div className="flex gap-4 mb-2">
+        <div className="flex gap-2 mb-2">
             <div className="flex-1 space-y-1">
-                <Input className="h-8 border-black" />
+                <Input className="h-7 border-black text-xs" />
                 <Label className="block text-center text-[9px] font-semibold tracking-wider">NAME OF THE CO-DRIVER</Label>
             </div>
             <div className="flex-1 space-y-1">
-                <Input className="h-8 border-black" />
-                <Label className="block text-center text-[9px] font-semibold tracking-wider">PRO OR SHIPPING NUMBER</Label>
+                <Input className="h-7 border-black text-xs" />
+                <Label className="block text-center text-[9px] font-semibold tracking-wider">SHIPPING DOCUMENT # OR PRO #</Label>
             </div>
         </div>
 
@@ -142,12 +143,11 @@ export default function PaperLogsPage() {
 
     useEffect(() => {
         // Client-side effect to prevent hydration mismatch for dates
-        const clientSideInitialLogs: UploadedLog[] = [
+        setNewLogData({ logDate: new Date(), documentUri: null });
+        setUploadedLogs([
             { id: 'LOG001', driverName: 'John Doe', logDate: new Date(new Date().setDate(new Date().getDate() - 2)), uploadDate: new Date(new Date().setDate(new Date().getDate() - 1)), documentUri: 'https://picsum.photos/seed/log1/800/1100' },
             { id: 'LOG002', driverName: 'Jane Doe', logDate: new Date(new Date().setDate(new Date().getDate() - 1)), uploadDate: new Date(), documentUri: 'https://picsum.photos/seed/log2/800/1100' },
-        ];
-        setUploadedLogs(clientSideInitialLogs);
-        setNewLogData({ logDate: new Date(), documentUri: null });
+        ]);
     }, []);
 
     const handlePrint = () => {
@@ -309,4 +309,4 @@ export default function PaperLogsPage() {
   );
 }
 
-
+    
