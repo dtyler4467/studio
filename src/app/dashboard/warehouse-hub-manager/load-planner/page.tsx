@@ -18,8 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 
 type Order = {
     id: string;
@@ -27,14 +28,15 @@ type Order = {
     destination: string;
     weight: number;
     volume: number;
-    item: string;
+    items: string[];
+    bolNumber: string;
 };
 
 const initialOrders: Order[] = [
-    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50, item: 'Bolts' },
-    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150, item: 'Washers' },
-    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100, item: 'Screws' },
-    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30, item: 'Nuts' },
+    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50, items: ['Bolts'], bolNumber: 'BOL-1625101' },
+    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150, items: ['Washers'], bolNumber: 'BOL-1625102' },
+    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100, items: ['Screws'], bolNumber: 'BOL-1625103' },
+    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30, items: ['Nuts'], bolNumber: 'BOL-1625104' },
 ];
 
 const carriers = [
@@ -43,29 +45,46 @@ const carriers = [
     { id: 'carrier-3', name: 'Speedy Shipping' },
 ]
 
-function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Order) => void }) {
+const inventoryItems: MultiSelectOption[] = [
+    { value: 'Bolts', label: 'Bolts' },
+    { value: 'Washers', label: 'Washers' },
+    { value: 'Screws', label: 'Screws' },
+    { value: 'Nuts', label: 'Nuts' },
+    { value: 'Pallet of Bricks', label: 'Pallet of Bricks' },
+]
+
+function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
+    const [bolNumber, setBolNumber] = useState('');
+    const [selectedItems, setSelectedItems] = useState<string[]>([]);
+    
+    useEffect(() => {
+        if (isOpen) {
+            setBolNumber(`BOL-${Date.now()}`);
+            setSelectedItems([]);
+        }
+    }, [isOpen]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const newOrder = {
-            id: `SO-${Math.floor(Math.random() * 900) + 100}`,
             customer: formData.get('customer') as string,
             destination: formData.get('destination') as string,
-            item: formData.get('item') as string,
+            items: selectedItems,
             weight: Number(formData.get('weight')),
             volume: Number(formData.get('volume')),
+            bolNumber: bolNumber,
         };
 
-        if (!newOrder.customer || !newOrder.destination || !newOrder.weight || !newOrder.volume || !newOrder.item) {
+        if (!newOrder.customer || !newOrder.destination || !newOrder.weight || !newOrder.volume || newOrder.items.length === 0) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields.' });
             return;
         }
 
         onAddOrder(newOrder);
-        toast({ title: 'Order Added', description: `Order ${newOrder.id} has been added.` });
+        toast({ title: 'Order Added', description: `Order ${newOrder.bolNumber} has been added.` });
         setIsOpen(false);
     };
 
@@ -74,33 +93,45 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Order) => void }) 
             <DialogTrigger asChild>
                 <Button variant="outline"><PlusCircle className="mr-2"/> Manual Entry</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Add New Order</DialogTitle>
                     <DialogDescription>
                         Enter the details for the new order you want to add to the planner.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="add-order-form" onSubmit={handleSubmit} className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="customer" className="text-right">Customer</Label>
-                        <Input id="customer" name="customer" className="col-span-3" placeholder="e.g. Customer E" />
+                <form id="add-order-form" onSubmit={handleSubmit} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="bolNumber">BOL Number</Label>
+                        <Input id="bolNumber" name="bolNumber" value={bolNumber} readOnly />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="destination" className="text-right">Destination</Label>
-                        <Input id="destination" name="destination" className="col-span-3" placeholder="e.g. San Francisco, CA" />
+                    <div className="space-y-2">
+                        <Label htmlFor="customer">Customer</Label>
+                        <Input id="customer" name="customer" placeholder="e.g. Customer E" />
                     </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="item" className="text-right">Item</Label>
-                        <Input id="item" name="item" className="col-span-3" placeholder="e.g. Pallet of Bricks" />
+                    <div className="space-y-2">
+                        <Label htmlFor="destination">Destination</Label>
+                        <Input id="destination" name="destination" placeholder="e.g. San Francisco, CA" />
                     </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="weight" className="text-right">Weight (lbs)</Label>
-                        <Input id="weight" name="weight" type="number" className="col-span-3" placeholder="e.g. 750" />
+                     <div className="space-y-2">
+                        <Label htmlFor="item">Items</Label>
+                        <MultiSelect
+                            options={inventoryItems}
+                            selected={selectedItems}
+                            onChange={setSelectedItems}
+                            placeholder="Select or add items..."
+                            allowOther
+                        />
                     </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="volume" className="text-right">Volume (cu ft)</Label>
-                        <Input id="volume" name="volume" type="number" className="col-span-3" placeholder="e.g. 80" />
+                     <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="weight">Weight (lbs)</Label>
+                            <Input id="weight" name="weight" type="number" placeholder="e.g. 750" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="volume">Volume (cu ft)</Label>
+                            <Input id="volume" name="volume" type="number" placeholder="e.g. 80" />
+                        </div>
                     </div>
                 </form>
                 <DialogFooter>
@@ -115,8 +146,9 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Order) => void }) 
 export default function LoadPlannerPage() {
   const [availableOrders, setAvailableOrders] = useState<Order[]>(initialOrders);
   
-  const handleAddOrder = (order: Order) => {
-      setAvailableOrders(prev => [order, ...prev]);
+  const handleAddOrder = (order: Omit<Order, 'id'>) => {
+      const newOrder: Order = { ...order, id: `SO-${Date.now()}` };
+      setAvailableOrders(prev => [newOrder, ...prev]);
   };
 
   return (
@@ -251,4 +283,3 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
-
