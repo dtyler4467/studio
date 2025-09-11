@@ -120,7 +120,7 @@ function ConfirmationDialog({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="notes">Notes (Optional)</Label>
-                            <Input id="notes" value={formState.notes} onChange={(e) => setFormState(s => ({...s, notes: e.target.value}))} />
+                            <Input id="notes" value={formState.notes ?? ""} onChange={(e) => setFormState(s => ({...s, notes: e.target.value}))} />
                         </div>
                     </div>
                      <div className="p-4 border rounded-md bg-muted h-full flex items-center justify-center">
@@ -145,8 +145,8 @@ function AddReceiptDialog({ onReceiptScan, isProcessing }: { onReceiptScan: (uri
     
     const handleDocumentChange = (uri: string | null) => {
         if (uri) {
-            onReceiptScan(uri);
             setIsOpen(false);
+            onReceiptScan(uri);
         }
     }
 
@@ -237,8 +237,12 @@ export default function ReceiptsPage() {
 
     const monthlyTotal = useMemo(() => {
         const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
         return receipts
-            .filter(r => new Date(r.date).getMonth() === currentMonth)
+            .filter(r => {
+                const receiptDate = new Date(r.date);
+                return receiptDate.getMonth() === currentMonth && receiptDate.getFullYear() === currentYear;
+            })
             .reduce((acc, r) => acc + r.amount, 0);
     }, [receipts]);
 

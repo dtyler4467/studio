@@ -41,7 +41,7 @@ function EditImageDialog({
     imageDataUri: string;
     onSave: (editedUri: string) => void;
 }) {
-    const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>(['crop', 'shadows', 'enhance']);
+    const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>(['self_crop', 'shadows', 'enhance']);
     const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
 
@@ -247,10 +247,12 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
         <Card>
             <CardContent className="p-4 space-y-4">
                 <p className="text-sm font-medium">Document Preview:</p>
-                <img src={currentDocument} alt="Attached document" className="rounded-md border max-h-80 w-auto mx-auto" />
-                <Button variant="destructive" onClick={clearDocument} className="w-full">
-                    <Trash2 className="mr-2" /> Remove Document
-                </Button>
+                <div className="relative">
+                    <img src={currentDocument} alt="Attached document" className="rounded-md border max-h-80 w-auto mx-auto" />
+                    <Button variant="destructive" size="icon" onClick={clearDocument} className="absolute top-2 right-2 h-7 w-7">
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
             </CardContent>
         </Card>
       );
