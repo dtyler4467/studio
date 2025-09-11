@@ -63,8 +63,14 @@ export function BolHistoryTable() {
             header: "Delivery Date",
             cell: ({ row }) => {
                 const dateString = row.original.deliveryDate;
-                // Add time to treat it as local to avoid timezone shift
-                const date = new Date(`${dateString}T00:00:00`);
+                if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                    return 'Invalid Date';
+                }
+                // The issue is that new Date('YYYY-MM-DD') parses it as UTC midnight.
+                // When format() then tries to display it in local time, it can shift the day.
+                // Splitting and re-composing ensures it's treated as a local date.
+                const [year, month, day] = dateString.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
                 return format(date, "PPP");
             },
         },
