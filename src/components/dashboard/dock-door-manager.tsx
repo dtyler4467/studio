@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { useMemo, useState } from 'react';
-import { useSchedule, YardEvent } from '@/hooks/use-schedule';
+import { useSchedule, YardEvent, YardEventStatus } from '@/hooks/use-schedule';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Truck, PlusCircle, Warehouse, Search } from 'lucide-react';
+import { Truck, PlusCircle, Warehouse, Search, MoreVertical, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '../ui/button';
@@ -13,6 +14,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
 
 
 const AddLocationDialog = ({ onAdd }: { onAdd: (id: string) => void }) => {
@@ -69,24 +73,80 @@ const AddLocationDialog = ({ onAdd }: { onAdd: (id: string) => void }) => {
     )
 }
 
+const EditStatusDialog = ({ event, isOpen, onOpenChange, onSave }: { event: YardEvent | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (status: YardEventStatus, notes?: string) => void }) => {
+    const [status, setStatus] = useState<YardEventStatus | undefined>(event?.status);
+    const [notes, setNotes] = useState(event?.statusNotes || '');
+
+    const statuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock'];
+
+    React.useEffect(() => {
+        setStatus(event?.status);
+        setNotes(event?.statusNotes || '');
+    }, [event]);
+
+    if (!event) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Update Status for Trailer {event.trailerId}</DialogTitle>
+                    <DialogDescription>
+                        Set a new status and add optional notes for this trailer.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select value={status} onValueChange={(value: YardEventStatus) => setStatus(value)}>
+                            <SelectTrigger id="status">
+                                <SelectValue placeholder="Select a status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add any relevant notes..."/>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={() => { onSave(status!, notes); onOpenChange(false); }}>Save Status</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export function DockDoorManager() {
-    const { yardEvents, warehouseDoors, addWarehouseDoor } = useSchedule();
+    const { yardEvents, warehouseDoors, addWarehouseDoor, updateYardEventStatus } = useSchedule();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
+    const [editingEvent, setEditingEvent] = useState<YardEvent | null>(null);
+    const [isStatusDialogOpen, setStatusDialogOpen] = useState(false);
 
     const currentAssignments = useMemo(() => {
         const assignments: Record<string, YardEvent> = {};
         const seenTrailers: Record<string, YardEvent> = {};
 
-        const sortedEvents = [...yardEvents].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        const sortedEvents = [...yardEvents].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
         for (const event of sortedEvents) {
+            if (event.assignmentType !== 'door_assignment' || !event.assignmentValue) continue;
+
+            // Find the most recent inbound event for this trailer
+            const latestEventForTrailer = sortedEvents.find(e => e.trailerId === event.trailerId && e.transactionType === 'inbound');
+            if (latestEventForTrailer?.assignmentValue !== event.assignmentValue || latestEventForTrailer?.assignmentType !== 'door_assignment') continue;
+
+
             if (seenTrailers[event.trailerId]) continue;
-            
             seenTrailers[event.trailerId] = event;
 
-            if (event.transactionType === 'inbound' && event.assignmentType === 'door_assignment' && event.assignmentValue) {
-                 if (!assignments[event.assignmentValue]) {
+            if (event.transactionType === 'inbound') {
+                if (!assignments[event.assignmentValue]) {
                     assignments[event.assignmentValue] = event;
                 }
             }
@@ -94,7 +154,7 @@ export function DockDoorManager() {
         
         return assignments;
     }, [yardEvents]);
-
+    
     const filteredDoors = useMemo(() => {
         if (!searchTerm.trim()) {
             return warehouseDoors;
@@ -109,7 +169,8 @@ export function DockDoorManager() {
             return (
                 event.trailerId.toLowerCase().includes(lowercasedSearch) ||
                 event.carrier.toLowerCase().includes(lowercasedSearch) ||
-                event.loadNumber.toLowerCase().includes(lowercasedSearch)
+                event.loadNumber.toLowerCase().includes(lowercasedSearch) ||
+                event.status?.toLowerCase().includes(lowercasedSearch)
             );
         });
     }, [warehouseDoors, currentAssignments, searchTerm]);
@@ -122,6 +183,18 @@ export function DockDoorManager() {
             toast({ variant: 'destructive', title: "Error", description: error.message });
         }
     };
+    
+    const handleOpenStatusDialog = (event: YardEvent) => {
+        setEditingEvent(event);
+        setStatusDialogOpen(true);
+    };
+
+    const handleSaveStatus = (status: YardEventStatus, notes?: string) => {
+        if (editingEvent) {
+            updateYardEventStatus(editingEvent.id, status, notes);
+            toast({ title: "Status Updated", description: `Trailer ${editingEvent.trailerId} status set to ${status}.`});
+        }
+    };
 
     const renderLocation = (locationId: string) => {
         const event = currentAssignments[locationId];
@@ -131,7 +204,7 @@ export function DockDoorManager() {
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                         <div className={cn(
-                            "rounded-md border p-4 h-32 flex flex-col justify-between transition-colors shadow-sm",
+                            "rounded-md border p-4 h-40 flex flex-col justify-between transition-colors shadow-sm",
                             event ? 'bg-primary/10 border-primary shadow-lg' : 'bg-muted/50'
                         )}>
                             <div className="flex justify-between items-start">
@@ -142,6 +215,9 @@ export function DockDoorManager() {
                                 <div className="text-sm">
                                     <p className="font-semibold truncate">{event.trailerId}</p>
                                     <p className="text-muted-foreground truncate">{event.carrier}</p>
+                                    {event.status && (
+                                        <p className="font-medium text-primary text-xs truncate">{event.status}</p>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center h-full">
@@ -152,11 +228,17 @@ export function DockDoorManager() {
                     </TooltipTrigger>
                     {event && (
                         <TooltipContent>
-                            <div className="space-y-1 text-sm">
+                             <div className="space-y-1 text-sm p-2">
                                 <p><strong>Trailer:</strong> {event.trailerId}</p>
                                 <p><strong>Carrier:</strong> {event.carrier}</p>
                                 <p><strong>Load/BOL:</strong> {event.loadNumber}</p>
+                                <p><strong>Status:</strong> {event.status || 'Checked In'}</p>
+                                {event.statusNotes && <p><strong>Notes:</strong> {event.statusNotes}</p>}
                                 <p><strong>Arrived:</strong> {formatDistanceToNow(event.timestamp, { addSuffix: true })}</p>
+                                <Button size="sm" className="w-full mt-2" onClick={() => handleOpenStatusDialog(event)}>
+                                    <Edit className="mr-2 h-4 w-4"/>
+                                    Update Status
+                                </Button>
                             </div>
                         </TooltipContent>
                     )}
@@ -189,6 +271,12 @@ export function DockDoorManager() {
                     <p className="text-sm text-muted-foreground">Try a different search term.</p>
                 </div>
             )}
+             <EditStatusDialog
+                event={editingEvent}
+                isOpen={isStatusDialogOpen}
+                onOpenChange={setStatusDialogOpen}
+                onSave={handleSaveStatus}
+            />
         </div>
     );
 }

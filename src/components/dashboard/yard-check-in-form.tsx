@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { UseFormReturn } from "react-hook-form";
@@ -24,6 +25,8 @@ import { User } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
+import { YardEventStatus } from "@/hooks/use-schedule";
+import { Textarea } from "../ui/textarea";
 
 export const formSchema = z.object({
   transactionType: z.enum(["inbound", "outbound"], {
@@ -37,6 +40,8 @@ export const formSchema = z.object({
   loadNumber: z.string().min(1, "Load/BOL number is required."),
   assignmentType: z.enum(["bobtail", "empty", "material", "door_assignment", "lane_assignment"]),
   assignmentValue: z.string().optional(),
+  status: z.custom<YardEventStatus>().optional(),
+  statusNotes: z.string().optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -64,6 +69,8 @@ const ClientFormattedDate = () => {
 
     return <>{format(date, 'PPP p')}</>
 }
+
+const statuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock'];
 
 export function YardCheckInForm({ form, onTransactionTypeChange }: YardCheckInFormProps) {
 
@@ -237,6 +244,41 @@ export function YardCheckInForm({ form, onTransactionTypeChange }: YardCheckInFo
                 )}
                 />
              )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Initial Status (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Set an initial status..." />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="statusNotes"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Status Notes (Optional)</FormLabel>
+                        <FormControl>
+                             <Input placeholder="Add a note for the status..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
         </div>
       </form>
     </Form>

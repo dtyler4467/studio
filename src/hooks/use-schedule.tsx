@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -50,6 +51,8 @@ export type Registration = {
     status: 'Pending' | 'Approved' | 'Denied';
 }
 
+export type YardEventStatus = 'Checked In' | 'Loaded' | 'Empty' | 'Blocked' | 'Repair Needed' | 'Rejected' | 'Late' | 'Early' | 'Product on hold' | 'Exited' | 'Waiting for dock';
+
 export type YardEvent = {
     id: string;
     transactionType: 'inbound' | 'outbound' | 'move';
@@ -64,6 +67,8 @@ export type YardEvent = {
     assignmentValue?: string;
     timestamp: Date;
     documentDataUri?: string | null;
+    status?: YardEventStatus;
+    statusNotes?: string;
 }
 
 export type ExpenseReport = {
@@ -75,7 +80,23 @@ export type ExpenseReport = {
     amount: number
     status: "Pending" | "Approved" | "Denied"
     documentDataUri?: string | null;
-}
+};
+
+export type Receipt = {
+    id: string;
+    employeeId: string;
+    date: Date;
+    time?: string;
+    vendor: string;
+    amount: number;
+    category: 'Fuel' | 'Food' | 'Maintenance' | 'Lodging' | 'Other';
+    notes?: string;
+    receiptUri: string | null;
+    status: 'Pending' | 'Approved' | 'Denied';
+    uploadDate: Date;
+    reviewedBy?: string;
+    reviewedAt?: Date;
+};
 
 export type TrainingQuestion = {
     question: string;
@@ -241,6 +262,7 @@ type ScheduleContextType = {
   registrations: Registration[];
   yardEvents: YardEvent[];
   expenseReports: ExpenseReport[];
+  receipts: Receipt[];
   trainingPrograms: TrainingProgram[];
   trainingAssignments: TrainingAssignment[];
   warehouseDoors: string[];
@@ -296,6 +318,7 @@ type ScheduleContextType = {
   getEmployeeDocument: (employeeId: string) => string | null;
   getYardEventById: (id: string) => YardEvent | null;
   addYardEvent: (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => void;
+  updateYardEventStatus: (eventId: string, status: YardEventStatus, notes?: string) => void;
   getExpenseReportById: (id: string) => ExpenseReport | null;
   setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
   getTrainingModuleById: (id: string) => TrainingModule | null;
@@ -308,6 +331,7 @@ type ScheduleContextType = {
   updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
   addAppointment: (appointment: Omit<Appointment, 'id' | 'status'>) => Appointment;
   updateAppointmentStatus: (appointmentId: string, status: Appointment['status']) => void;
+  setReceipts: React.Dispatch<React.SetStateAction<Receipt[]>>;
 };
 
 export const initialShifts: Shift[] = [
@@ -349,11 +373,11 @@ export const initialRegistrations: Registration[] = [
 ]
 
 export const initialYardEvents: YardEvent[] = [
-    { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', sealNumber: 'S12345', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD123', assignmentType: 'door_assignment', assignmentValue: 'D4', timestamp: new Date('2024-07-28T08:15:00Z'), documentDataUri: "https://picsum.photos/seed/bol/800/1100" },
-    { id: 'EVT002', transactionType: 'outbound', trailerId: 'TR48991', sealNumber: 'S67890', carrier: 'J.B. Hunt', scac: 'JBHT', driverName: 'Jane Smith', clerkName: 'Admin User', loadNumber: 'LD124', assignmentType: 'empty', timestamp: new Date('2024-07-28T09:30:00Z') },
-    { id: 'EVT003', transactionType: 'inbound', trailerId: 'TR53456', carrier: 'Schneider', scac: 'SNDR', driverName: 'Mike Johnson', clerkName: 'Jane Clerk', loadNumber: 'LD125', assignmentType: 'lane_assignment', assignmentValue: 'L12', timestamp: new Date('2024-07-27T14:00:00Z') },
-    { id: 'EVT004', transactionType: 'outbound', trailerId: 'TR53123', sealNumber: 'S54321', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'Emily Davis', clerkName: 'Jane Clerk', loadNumber: 'LD126', assignmentType: 'material', timestamp: new Date('2024-07-27T16:45:00Z') },
-    { id: 'EVT005', transactionType: 'inbound', trailerId: 'TR53789', carrier: 'Werner', scac: 'WERN', driverName: 'Chris Brown', clerkName: 'Admin User', loadNumber: 'LD127', assignmentType: 'bobtail', timestamp: new Date('2024-07-26T11:20:00Z'), documentDataUri: "https://picsum.photos/seed/doc/800/1100" },
+    { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', sealNumber: 'S12345', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD123', assignmentType: 'door_assignment', assignmentValue: 'D4', timestamp: new Date('2024-07-28T08:15:00Z'), documentDataUri: "https://picsum.photos/seed/bol/800/1100", status: "Loaded" },
+    { id: 'EVT002', transactionType: 'outbound', trailerId: 'TR48991', sealNumber: 'S67890', carrier: 'J.B. Hunt', scac: 'JBHT', driverName: 'Jane Smith', clerkName: 'Admin User', loadNumber: 'LD124', assignmentType: 'empty', timestamp: new Date('2024-07-28T09:30:00Z'), status: "Exited" },
+    { id: 'EVT003', transactionType: 'inbound', trailerId: 'TR53456', carrier: 'Schneider', scac: 'SNDR', driverName: 'Mike Johnson', clerkName: 'Jane Clerk', loadNumber: 'LD125', assignmentType: 'lane_assignment', assignmentValue: 'L12', timestamp: new Date('2024-07-27T14:00:00Z'), status: "Checked In" },
+    { id: 'EVT004', transactionType: 'outbound', trailerId: 'TR53123', sealNumber: 'S54321', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'Emily Davis', clerkName: 'Jane Clerk', loadNumber: 'LD126', assignmentType: 'material', timestamp: new Date('2024-07-27T16:45:00Z'), status: "Exited" },
+    { id: 'EVT005', transactionType: 'inbound', trailerId: 'TR53789', carrier: 'Werner', scac: 'WERN', driverName: 'Chris Brown', clerkName: 'Admin User', loadNumber: 'LD127', assignmentType: 'bobtail', timestamp: new Date('2024-07-26T11:20:00Z'), documentDataUri: "https://picsum.photos/seed/doc/800/1100", status: "Empty" },
 ];
 
 export const initialExpenseReports: ExpenseReport[] = [
@@ -366,6 +390,13 @@ export const initialExpenseReports: ExpenseReport[] = [
     { id: "EXP007", employeeName: "Jane Doe", date: "2024-07-30", description: "Office supplies", category: "Supplies", amount: 75.00, status: "Pending" },
     { id: "EXP008", employeeName: "HR", date: "2024-07-31", description: "Monthly payroll", category: "Payroll", amount: 15000.00, status: "Approved" },
 ];
+
+export const initialReceipts: Receipt[] = [
+    { id: 'REC001', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 1)), vendor: 'Pilot', amount: 150.75, category: 'Fuel', receiptUri: 'https://picsum.photos/seed/receipt1/400/600', status: 'Approved', uploadDate: new Date(), reviewedBy: 'Emily Jones', reviewedAt: new Date() },
+    { id: 'REC002', employeeId: 'USR002', date: new Date(new Date().setDate(new Date().getDate() - 2)), vendor: "Denny's", amount: 25.50, category: 'Food', receiptUri: null, status: 'Pending', uploadDate: new Date() },
+    { id: 'REC003', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 3)), vendor: 'City Auto Repair', amount: 450.00, category: 'Maintenance', receiptUri: 'https://picsum.photos/seed/receipt2/400/600', status: 'Denied', uploadDate: new Date(), reviewedBy: 'Emily Jones', reviewedAt: new Date(new Date().setDate(new Date().getDate() - 1))},
+];
+
 
 export const initialTrainingPrograms: TrainingProgram[] = [
     {
@@ -555,6 +586,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
   const [yardEvents, setYardEvents] = useState<YardEvent[]>(initialYardEvents);
   const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>(initialExpenseReports);
+  const [receipts, setReceipts] = useState<Receipt[]>(initialReceipts);
   const [trainingPrograms, setTrainingPrograms] = useState<TrainingProgram[]>(initialTrainingPrograms);
   const [trainingAssignments, setTrainingAssignments] = useState<TrainingAssignment[]>(initialTrainingAssignments);
   const [warehouseDoors, setWarehouseDoors] = useState<string[]>(initialWarehouseDoors);
@@ -567,7 +599,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [officeAppointments, setOfficeAppointments] = useState<OfficeAppointment[]>(initialOfficeAppointments);
   const [lostAndFound, setLostAndFound] = useState<YardEvent[]>(initialLostAndFound);
   const [loads, setLoads] = useState<Load[]>(initialLoads);
-  const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>([]);
+  const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
   const [files, setFiles] = useState<File[]>(initialFiles);
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>(initialJobPostings);
@@ -835,6 +867,12 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         setYardEvents(prev => [...prev, ...newEvents]);
     };
     
+    const updateYardEventStatus = (eventId: string, status: YardEventStatus, notes?: string) => {
+        const update = (events: YardEvent[]) => events.map(e => e.id === eventId ? {...e, status, statusNotes: notes ?? e.statusNotes } : e);
+        setYardEvents(update);
+        setLostAndFound(update);
+    }
+
     const getExpenseReportById = (id: string) => {
         return expenseReports.find(report => report.id === id) || null;
     }
@@ -1104,7 +1142,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, getExpenseReportById, setExpenseReports, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );

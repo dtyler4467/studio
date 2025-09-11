@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { useMemo, useState, useEffect } from 'react';
-import { useSchedule, YardEvent } from '@/hooks/use-schedule';
+import { useSchedule, YardEvent, YardEventStatus } from '@/hooks/use-schedule';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Truck, PlusCircle, ParkingCircle, Search, Move } from 'lucide-react';
+import { Truck, PlusCircle, ParkingCircle, Search, Move, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '../ui/button';
@@ -15,6 +16,7 @@ import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
 
 
 const ClientFormattedDate = ({ date }: { date: Date }) => {
@@ -96,7 +98,7 @@ const MoveTrailerDialog = ({ event, isOpen, onOpenChange }: { event: YardEvent |
     const handleMove = () => {
         if (event && moveToLane) {
             try {
-                moveTrailer(event.id, moveToLane);
+                moveTrailer(event.id, 'lane', moveToLane);
                 toast({ title: "Move Initiated", description: `Trailer ${event.trailerId} is being moved.` });
                 onOpenChange(false);
             } catch (error: any) {
@@ -147,27 +149,76 @@ const MoveTrailerDialog = ({ event, isOpen, onOpenChange }: { event: YardEvent |
     )
 }
 
+const EditStatusDialog = ({ event, isOpen, onOpenChange, onSave }: { event: YardEvent | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (status: YardEventStatus, notes?: string) => void }) => {
+    const [status, setStatus] = useState<YardEventStatus | undefined>(event?.status);
+    const [notes, setNotes] = useState(event?.statusNotes || '');
+
+    const statuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock'];
+
+    React.useEffect(() => {
+        setStatus(event?.status);
+        setNotes(event?.statusNotes || '');
+    }, [event]);
+
+    if (!event) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Update Status for Trailer {event.trailerId}</DialogTitle>
+                    <DialogDescription>
+                        Set a new status and add optional notes for this trailer.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select value={status} onValueChange={(value: YardEventStatus) => setStatus(value)}>
+                            <SelectTrigger id="status">
+                                <SelectValue placeholder="Select a status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add any relevant notes..."/>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={() => { onSave(status!, notes); onOpenChange(false); }}>Save Status</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export function ParkingLaneManager() {
-    const { yardEvents, parkingLanes, addParkingLane } = useSchedule();
+    const { yardEvents, parkingLanes, addParkingLane, updateYardEventStatus } = useSchedule();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+    const [isStatusDialogOpen, setStatusDialogOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<YardEvent | null>(null);
 
     const currentAssignments = useMemo(() => {
         const assignments: Record<string, YardEvent> = {};
         const seenTrailers: Record<string, YardEvent> = {};
 
-        const sortedEvents = [...yardEvents].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        const sortedEvents = [...yardEvents].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
         for (const event of sortedEvents) {
-            if (event.assignmentType !== 'lane_assignment' || !event.assignmentValue) continue;
+             if (event.assignmentType !== 'lane_assignment' || !event.assignmentValue) continue;
             
-            if (seenTrailers[event.trailerId]) {
-                 if (seenTrailers[event.trailerId].timestamp > event.timestamp) {
-                    continue;
-                 }
-            }
+             const latestEventForTrailer = sortedEvents.find(e => e.trailerId === event.trailerId && e.transactionType === 'inbound');
+             if (latestEventForTrailer?.assignmentValue !== event.assignmentValue || latestEventForTrailer?.assignmentType !== 'lane_assignment') continue;
+
+            if (seenTrailers[event.trailerId]) continue;
+            
             seenTrailers[event.trailerId] = event;
 
             if (event.transactionType === 'inbound') {
@@ -192,7 +243,8 @@ export function ParkingLaneManager() {
             return (
                 event.trailerId.toLowerCase().includes(lowercasedSearch) ||
                 event.carrier.toLowerCase().includes(lowercasedSearch) ||
-                event.loadNumber.toLowerCase().includes(lowercasedSearch)
+                event.loadNumber.toLowerCase().includes(lowercasedSearch) ||
+                event.status?.toLowerCase().includes(lowercasedSearch)
             );
         });
     }, [parkingLanes, currentAssignments, searchTerm]);
@@ -209,6 +261,18 @@ export function ParkingLaneManager() {
     const openMoveDialog = (event: YardEvent) => {
         setSelectedEvent(event);
         setIsMoveDialogOpen(true);
+    };
+
+    const handleOpenStatusDialog = (event: YardEvent) => {
+        setSelectedEvent(event);
+        setStatusDialogOpen(true);
+    };
+
+    const handleSaveStatus = (status: YardEventStatus, notes?: string) => {
+        if (selectedEvent) {
+            updateYardEventStatus(selectedEvent.id, status, notes);
+            toast({ title: "Status Updated", description: `Trailer ${selectedEvent.trailerId} status set to ${status}.`});
+        }
     };
 
     const renderLocation = (locationId: string) => {
@@ -230,6 +294,9 @@ export function ParkingLaneManager() {
                                 <div className="text-xs space-y-1">
                                     <p className="font-semibold truncate">{event.carrier} ({event.scac})</p>
                                     <p className="text-muted-foreground truncate">Trailer: {event.trailerId}</p>
+                                    {event.status && (
+                                        <p className="font-medium text-amber-700 truncate">{event.status}</p>
+                                    )}
                                     <div className="text-muted-foreground truncate">
                                         <ClientFormattedDate date={event.timestamp} />
                                     </div>
@@ -243,16 +310,24 @@ export function ParkingLaneManager() {
                     </TooltipTrigger>
                     {event && (
                         <TooltipContent className="space-y-2">
-                            <div className="space-y-1 text-sm">
+                           <div className="space-y-1 text-sm p-2">
                                 <p><strong>Trailer:</strong> {event.trailerId}</p>
                                 <p><strong>Carrier:</strong> {event.carrier}</p>
                                 <p><strong>Load/BOL:</strong> {event.loadNumber}</p>
+                                <p><strong>Status:</strong> {event.status || 'Checked In'}</p>
+                                {event.statusNotes && <p><strong>Notes:</strong> {event.statusNotes}</p>}
                                 <p><strong>Arrived:</strong> {formatDistanceToNow(event.timestamp, { addSuffix: true })}</p>
+                                <div className="flex gap-2 mt-2">
+                                    <Button size="sm" className="flex-1" onClick={() => openMoveDialog(event)}>
+                                        <Move className="mr-2" />
+                                        Move
+                                    </Button>
+                                     <Button size="sm" variant="outline" className="flex-1" onClick={() => handleOpenStatusDialog(event)}>
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        Status
+                                    </Button>
+                                </div>
                             </div>
-                            <Button size="sm" className="w-full" onClick={() => openMoveDialog(event)}>
-                                <Move className="mr-2" />
-                                Move Trailer
-                            </Button>
                         </TooltipContent>
                     )}
                 </Tooltip>
@@ -285,6 +360,12 @@ export function ParkingLaneManager() {
                 </div>
              )}
              <MoveTrailerDialog event={selectedEvent} isOpen={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen} />
+             <EditStatusDialog
+                event={selectedEvent}
+                isOpen={isStatusDialogOpen}
+                onOpenChange={setStatusDialogOpen}
+                onSave={handleSaveStatus}
+            />
         </div>
     );
 }
