@@ -21,10 +21,12 @@ import {
 } from "@/components/ui/table"
 import { Input } from "../ui/input"
 import { format } from "date-fns"
+import { useRouter } from "next/navigation"
 
 export function BolHistoryTable() {
     const { bolHistory } = useSchedule()
     const [globalFilter, setGlobalFilter] = React.useState("")
+    const router = useRouter()
     
     const columns: ColumnDef<BillOfLading>[] = [
         {
@@ -99,6 +101,8 @@ export function BolHistoryTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="cursor-pointer"
+                  onClick={() => router.push(`/dashboard/warehouse-hub-manager/bol/${row.original.id}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

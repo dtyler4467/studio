@@ -269,6 +269,8 @@ export type BillOfLading = {
   destination: string;
   deliveryDate: string;
   carrier: string;
+  documentUri?: string | null;
+  otherDocuments?: { name: string; uri: string }[];
 };
 
 type ScheduleContextType = {
@@ -596,8 +598,8 @@ export const initialApplicants: Applicant[] = [
 ];
 
 export const initialBolHistory: BillOfLading[] = [
-    { id: 'BOL-HIST-001', bolNumber: 'BOL12345', customer: 'Acme Inc.', origin: 'Los Angeles, CA', destination: 'Phoenix, AZ', deliveryDate: '2024-08-02', carrier: 'Knight-Swift' },
-    { id: 'BOL-HIST-002', bolNumber: 'BOL67890', customer: 'Globex Corp.', origin: 'Chicago, IL', destination: 'New York, NY', deliveryDate: '2024-08-05', carrier: 'J.B. Hunt' }
+    { id: 'BOL-HIST-001', bolNumber: 'BOL12345', customer: 'Acme Inc.', origin: 'Los Angeles, CA', destination: 'Phoenix, AZ', deliveryDate: '2024-08-02', carrier: 'Knight-Swift', documentUri: "https://picsum.photos/seed/bol/800/1100" },
+    { id: 'BOL-HIST-002', bolNumber: 'BOL67890', customer: 'Globex Corp.', origin: 'Chicago, IL', destination: 'New York, NY', deliveryDate: '2024-08-05', carrier: 'J.B. Hunt', documentUri: "https://picsum.photos/seed/bol2/800/1100" }
 ];
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
@@ -632,8 +634,8 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>(initialJobPostings);
   const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants);
-  const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   const [bolHistory, setBolHistory] = useState<BillOfLading[]>(initialBolHistory);
+  const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   
   const addCustomStatus = (newStatus: string) => {
     if (!availableStatuses.includes(newStatus as YardEventStatus)) {
