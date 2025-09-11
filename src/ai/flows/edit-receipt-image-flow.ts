@@ -1,17 +1,16 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to edit and enhance receipt images.
  *
  * It exports:
  * - `editReceiptImage` - An asynchronous function to apply enhancements to a receipt image.
- * - `EditReceiptImageInput` - The input type for the `editReceiptImage` function.
- * - `EditReceiptImageOutput` - The output type for the `editReceiptImage` function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const EditReceiptImageInputSchema = z.object({
+const EditReceiptImageInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
@@ -19,12 +18,12 @@ export const EditReceiptImageInputSchema = z.object({
     ),
   enhancements: z.array(z.string()).describe('A list of enhancements to apply to the image.'),
 });
-export type EditReceiptImageInput = z.infer<typeof EditReceiptImageInputSchema>;
+type EditReceiptImageInput = z.infer<typeof EditReceiptImageInputSchema>;
 
-export const EditReceiptImageOutputSchema = z.object({
+const EditReceiptImageOutputSchema = z.object({
     editedPhotoDataUri: z.string().describe('The edited photo of the receipt as a data URI.'),
 });
-export type EditReceiptImageOutput = z.infer<typeof EditReceiptImageOutputSchema>;
+type EditReceiptImageOutput = z.infer<typeof EditReceiptImageOutputSchema>;
 
 
 export async function editReceiptImage(input: EditReceiptImageInput): Promise<EditReceiptImageOutput> {
