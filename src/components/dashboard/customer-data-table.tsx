@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -51,23 +52,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Badge } from "../ui/badge"
 import { Skeleton } from "../ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-
-type Customer = {
-    id: string;
-    name: string;
-    company: string;
-    email: string;
-    phone: string;
-    status: 'Active' | 'Inactive';
-    dateAdded: Date;
-    items?: string[];
-}
-
-const initialData: Customer[] = [
-    { id: "CUST001", name: "John Smith", company: "Acme Inc.", email: "john.smith@acme.com", phone: "555-123-4567", status: "Active", dateAdded: new Date("2023-01-15"), items: ["Bolts", "Screws"] },
-    { id: "CUST002", name: "Jane Doe", company: "Globex Corporation", email: "jane.doe@globex.com", phone: "555-987-6543", status: "Active", dateAdded: new Date("2023-03-22"), items: ["Washers"] },
-    { id: "CUST003", name: "Mike Johnson", company: "Stark Industries", email: "mike.j@stark.com", phone: "555-555-5555", status: "Inactive", dateAdded: new Date("2022-11-01") },
-];
+import { useSchedule, Customer } from "@/hooks/use-schedule"
 
 const ClientFormattedDate = ({ date }: { date: Date }) => {
     const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
@@ -92,6 +77,7 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
         phone: "",
         status: "Active" as Customer['status'],
         items: [] as string[],
+        destination: "",
     });
     const [currentItem, setCurrentItem] = React.useState("");
 
@@ -108,7 +94,7 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
 
     const handleSave = () => {
         onSave(formData);
-        setFormData({ name: "", company: "", email: "", phone: "", status: "Active", items: [] });
+        setFormData({ name: "", company: "", email: "", phone: "", status: "Active", items: [], destination: "" });
     }
 
     return (
@@ -120,7 +106,7 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
                         Fill in the details for the new customer.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="name" className="text-right">Name</Label>
                         <Input id="name" value={formData.name} onChange={e => setFormData(f => ({...f, name: e.target.value}))} className="col-span-3" />
@@ -137,8 +123,12 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
                         <Label htmlFor="phone" className="text-right">Phone</Label>
                         <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData(f => ({...f, phone: e.target.value}))} className="col-span-3" />
                     </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="destination" className="text-right">Destination</Label>
+                        <Input id="destination" value={formData.destination} onChange={e => setFormData(f => ({...f, destination: e.target.value}))} className="col-span-3" placeholder="e.g. Los Angeles, CA" />
+                    </div>
                     <div className="grid grid-cols-4 items-start gap-4">
-                        <Label htmlFor="item" className="text-right pt-2">Items</Label>
+                        <Label htmlFor="item" className="text-right pt-2">Default Items</Label>
                         <div className="col-span-3 space-y-2">
                              <div className="flex gap-2">
                                 <Input 
@@ -174,7 +164,7 @@ const AddCustomerDialog = ({ onSave, onOpenChange, isOpen }: { onSave: (customer
 }
 
 export function CustomerDataTable() {
-    const [data, setData] = React.useState<Customer[]>(initialData);
+    const { customers, addCustomer, updateCustomerStatus } = useSchedule();
     const { toast } = useToast();
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -183,22 +173,13 @@ export function CustomerDataTable() {
     const [isAddOpen, setAddOpen] = React.useState(false);
 
     const handleAddCustomer = (customer: Omit<Customer, 'id' | 'dateAdded'>) => {
-        const newCustomer: Customer = {
-            ...customer,
-            id: `CUST${(data.length + 101).toString()}`,
-            dateAdded: new Date(),
-        };
-        setData(prev => [newCustomer, ...prev]);
+        addCustomer(customer);
         setAddOpen(false);
         toast({ title: "Customer Added", description: `${customer.name} has been added.` });
     };
     
     const handleStatusChange = (customerId: string, status: Customer['status']) => {
-        setData(currentData =>
-            currentData.map(customer =>
-                customer.id === customerId ? { ...customer, status } : customer
-            )
-        );
+        updateCustomerStatus(customerId, status);
         toast({ title: "Status Updated", description: "Customer status has been changed."});
     };
 
@@ -335,7 +316,7 @@ export function CustomerDataTable() {
     ]
 
   const table = useReactTable({
-    data,
+    data: customers,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -488,5 +469,3 @@ export function CustomerDataTable() {
     </div>
   )
 }
-
-    

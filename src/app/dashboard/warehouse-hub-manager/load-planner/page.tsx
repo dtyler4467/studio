@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Header } from '@/components/layout/header';
@@ -21,6 +22,12 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 import { useRouter } from 'next/navigation';
+import { useSchedule, Customer } from '@/hooks/use-schedule';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 
 type OrderItem = { name: string; quantity: number };
 
@@ -47,27 +54,41 @@ const carriers = [
     { id: 'carrier-3', name: 'Speedy Shipping' },
 ]
 
-const inventoryItems: MultiSelectOption[] = [
-    { value: 'Bolts', label: 'Bolts (1250 available)' },
-    { value: 'Washers', label: 'Washers (450 available)' },
-    { value: 'Screws', label: 'Screws (3000 available)' },
-    { value: 'Nuts', label: 'Nuts (0 available)' },
-    { value: 'Pallet of Bricks', label: 'Pallet of Bricks (Not Tracked)' },
-];
-
 function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
+    const { inventoryItems, customers } = useSchedule();
     const [bolNumber, setBolNumber] = useState('');
     const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
+    const [customerSearch, setCustomerSearch] = useState("");
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
+    const [destination, setDestination] = useState("");
     
+    const inventoryOptions: MultiSelectOption[] = inventoryItems.map(item => ({
+        value: item.description,
+        label: `${item.description} (${item.qty} available)`,
+    }));
+
     useEffect(() => {
         if (isOpen) {
             setBolNumber(`BOL-${Date.now()}`);
             setSelectedItems([]);
+            setCustomerSearch("");
+            setSelectedCustomer(null);
+            setDestination("");
         }
     }, [isOpen]);
+    
+    useEffect(() => {
+        if (selectedCustomer) {
+            setCustomerSearch(selectedCustomer.name);
+            setDestination(selectedCustomer.destination || "");
+        } else {
+             setCustomerSearch("");
+        }
+    }, [selectedCustomer]);
 
     const handleItemSelect = (itemName: string) => {
         // Prevent adding duplicates
@@ -84,13 +105,12 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         setSelectedItems(prev => prev.filter(item => item.name !== itemName));
     };
 
-
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const newOrder = {
-            customer: formData.get('customer') as string,
-            destination: formData.get('destination') as string,
+            customer: customerSearch,
+            destination: destination,
             items: selectedItems,
             weight: Number(formData.get('weight')),
             volume: Number(formData.get('volume')),
@@ -136,13 +156,47 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                         <Label htmlFor="bolNumber">BOL Number</Label>
                         <Input id="bolNumber" name="bolNumber" value={bolNumber} readOnly />
                     </div>
-                    <div className="space-y-2">
+                     <div className="space-y-2">
                         <Label htmlFor="customer">Customer</Label>
-                        <Input id="customer" name="customer" placeholder="e.g. Customer E" />
+                         <Popover open={isCustomerPopoverOpen} onOpenChange={setIsCustomerPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={isCustomerPopoverOpen}
+                                className="w-full justify-between"
+                                >
+                                {selectedCustomer ? selectedCustomer.name : "Select customer..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                <CommandInput placeholder="Search customer..." value={customerSearch} onValueChange={setCustomerSearch} />
+                                <CommandEmpty>No customer found.</CommandEmpty>
+                                <CommandList>
+                                    {customers
+                                        .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()))
+                                        .map((customer) => (
+                                    <CommandItem
+                                        key={customer.id}
+                                        value={customer.name}
+                                        onSelect={() => {
+                                            setSelectedCustomer(customer);
+                                            setIsCustomerPopoverOpen(false)
+                                        }}
+                                    >
+                                        {customer.name}
+                                    </CommandItem>
+                                    ))}
+                                </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="destination">Destination</Label>
-                        <Input id="destination" name="destination" placeholder="e.g. San Francisco, CA" />
+                        <Input id="destination" name="destination" placeholder="e.g. San Francisco, CA" value={destination} onChange={(e) => setDestination(e.target.value)}/>
                     </div>
                     <div className="space-y-2">
                         <Label>Items</Label>
@@ -151,7 +205,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                                 <SelectValue placeholder="Select an item to add..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {inventoryItems.map(item => (
+                                {inventoryOptions.map(item => (
                                     <SelectItem key={item.value} value={item.value}>
                                         {item.label}
                                     </SelectItem>
@@ -198,10 +252,15 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
 
 export default function LoadPlannerPage() {
   const [availableOrders, setAvailableOrders] = useState<Order[]>(initialOrders);
+  const { updateInventory } = useSchedule();
   
   const handleAddOrder = (order: Omit<Order, 'id'>) => {
       const newOrder: Order = { ...order, id: `SO-${Date.now()}` };
       setAvailableOrders(prev => [newOrder, ...prev]);
+      // Update inventory
+      order.items.forEach(item => {
+          updateInventory(item.name, -item.quantity);
+      });
   };
 
   return (
@@ -336,7 +395,3 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
-
-    
-
-    

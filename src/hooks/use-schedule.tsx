@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -289,6 +290,18 @@ export type InventoryItem = {
     price?: number;
 };
 
+export type Customer = {
+    id: string;
+    name: string;
+    company: string;
+    email: string;
+    phone: string;
+    status: 'Active' | 'Inactive';
+    dateAdded: Date;
+    items?: string[];
+    destination?: string;
+}
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
@@ -318,7 +331,10 @@ type ScheduleContextType = {
   bolHistory: BillOfLading[];
   bolTemplates: BolTemplate[];
   inventoryItems: InventoryItem[];
+  customers: Customer[];
   availableStatuses: YardEventStatus[];
+  addCustomer: (customerData: Omit<Customer, 'id' | 'dateAdded'>) => void;
+  updateCustomerStatus: (customerId: string, status: Customer['status']) => void;
   addCustomStatus: (newStatus: string) => void;
   addApplicant: (applicantData: Omit<Applicant, 'id' | 'applicationDate'>) => void;
   updateApplicantStatus: (applicantId: string, status: ApplicantStatus) => void;
@@ -634,6 +650,13 @@ export const initialInventoryItems: InventoryItem[] = [
     { sku: 'SKU11111', description: 'Pallet of Bricks', location: 'Yard', qty: 10, reorderPoint: 2, status: 'In Stock', price: 100 },
 ];
 
+export const initialCustomers: Customer[] = [
+    { id: "CUST001", name: "John Smith", company: "Acme Inc.", email: "john.smith@acme.com", phone: "555-123-4567", status: "Active", dateAdded: new Date("2023-01-15"), items: ["Bolts", "Screws"], destination: "Phoenix, AZ" },
+    { id: "CUST002", name: "Jane Doe", company: "Globex Corporation", email: "jane.doe@globex.com", phone: "555-987-6543", status: "Active", dateAdded: new Date("2023-03-22"), items: ["Washers"], destination: "New York, NY" },
+    { id: "CUST003", name: "Mike Johnson", company: "Stark Industries", email: "mike.j@stark.com", phone: "555-555-5555", status: "Inactive", dateAdded: new Date("2022-11-01"), destination: "Atlanta, GA" },
+];
+
+
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
 
@@ -661,7 +684,6 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [officeAppointments, setOfficeAppointments] = useState<OfficeAppointment[]>(initialOfficeAppointments);
   const [lostAndFound, setLostAndFound] = useState<YardEvent[]>(initialLostAndFound);
   const [loads, setLoads] = useState<Load[]>(initialLoads);
-  const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
   const [files, setFiles] = useState<File[]>(initialFiles);
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>(initialJobPostings);
@@ -669,8 +691,22 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [bolHistory, setBolHistory] = useState<BillOfLading[]>(initialBolHistory);
   const [bolTemplates, setBolTemplates] = useState<BolTemplate[]>(initialBolTemplates);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(initialInventoryItems);
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   
+  const addCustomer = (customerData: Omit<Customer, 'id' | 'dateAdded'>) => {
+    const newCustomer: Customer = {
+        ...customerData,
+        id: `CUST${Date.now()}`,
+        dateAdded: new Date(),
+    };
+    setCustomers(prev => [newCustomer, ...prev]);
+  };
+  
+  const updateCustomerStatus = (customerId: string, status: Customer['status']) => {
+      setCustomers(prev => prev.map(c => c.id === customerId ? {...c, status} : c));
+  }
+
   const addCustomStatus = (newStatus: string) => {
     if (!availableStatuses.includes(newStatus as YardEventStatus)) {
         setAvailableStatuses(prev => [...prev, newStatus as YardEventStatus]);
@@ -1303,7 +1339,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, availableStatuses, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, addCustomer, updateCustomerStatus, availableStatuses, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );
