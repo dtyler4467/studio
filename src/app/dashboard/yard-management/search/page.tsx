@@ -32,7 +32,7 @@ export default function YardSearchPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [searched, setSearched] = useState(false);
-    const { yardEvents, loads } = useSchedule();
+    const { yardEvents, loads, bolHistory } = useSchedule();
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,7 +46,18 @@ export default function YardSearchPage() {
         let filteredLoads: Load[] = [];
 
         if (searchType === 'bol') {
-            filteredLoads = loads.filter(load => load.id.toLowerCase().includes(lowercasedSearch));
+            const foundBol = bolHistory.find(bol => bol.bolNumber.toLowerCase().includes(lowercasedSearch));
+            if (foundBol) {
+                // Find the corresponding load from the main loads list
+                const foundLoad = loads.find(load => load.id === foundBol.bolNumber || load.id.toLowerCase() === foundBol.bolNumber.toLowerCase());
+                if (foundLoad) {
+                    filteredLoads.push(foundLoad);
+                } else {
+                     // Fallback to searching the loads table directly if not in bolHistory
+                     const directLoad = loads.find(load => load.id.toLowerCase().includes(lowercasedSearch));
+                     if(directLoad) filteredLoads.push(directLoad);
+                }
+            }
         } else if (searchType === 'trailer') {
             const eventWithTrailer = yardEvents.find(event => event.trailerId.toLowerCase().includes(lowercasedSearch));
             if (eventWithTrailer) {
