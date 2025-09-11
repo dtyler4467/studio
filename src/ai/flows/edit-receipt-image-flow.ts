@@ -38,7 +38,7 @@ const editReceiptImageFlow = ai.defineFlow(
   },
   async ({ photoDataUri, enhancements }) => {
     
-    const promptText = `Please edit the following receipt image. Apply these enhancements: ${enhancements.join(', ')}. If 'Self-Cropping' is requested, find the four corners of the receipt and crop the image to show only the receipt. Return only the edited image.`;
+    const promptText = `Please edit the following receipt image. Apply these enhancements: ${enhancements.join(', ')}. If 'Self-Cropping' is requested, identify the receipt from the background, find its four corners, and crop the image to show only the receipt, removing the background completely. Return only the edited image.`;
 
     const { media } = await ai.generate({
         model: 'googleai/gemini-2.5-flash-image-preview',
