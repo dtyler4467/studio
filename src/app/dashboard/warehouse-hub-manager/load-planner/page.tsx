@@ -46,12 +46,12 @@ const carriers = [
 ]
 
 const inventoryItems: MultiSelectOption[] = [
-    { value: 'Bolts', label: 'Bolts' },
-    { value: 'Washers', label: 'Washers' },
-    { value: 'Screws', label: 'Screws' },
-    { value: 'Nuts', label: 'Nuts' },
-    { value: 'Pallet of Bricks', label: 'Pallet of Bricks' },
-]
+    { value: 'Bolts', label: 'Bolts (1250 available)' },
+    { value: 'Washers', label: 'Washers (450 available)' },
+    { value: 'Screws', label: 'Screws (3000 available)' },
+    { value: 'Nuts', label: 'Nuts (0 available)' },
+    { value: 'Pallet of Bricks', label: 'Pallet of Bricks (Not Tracked)' },
+];
 
 function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>) => void }) {
     const [isOpen, setIsOpen] = useState(false);
