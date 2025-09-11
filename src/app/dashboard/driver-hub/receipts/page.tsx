@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Image from 'next/image';
 import { extractReceiptData, ReceiptData } from '@/ai/flows/extract-receipt-data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EnhancePhotoDialog } from '@/components/dashboard/enhance-photo-dialog';
+
 
 type Receipt = {
     id: string;
@@ -140,13 +142,13 @@ function ConfirmationDialog({
     );
 }
 
-function AddReceiptDialog({ onReceiptScan, isProcessing }: { onReceiptScan: (uri: string) => void, isProcessing: boolean }) {
+function AddReceiptDialog({ onScan }: { onScan: (uri: string) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     
     const handleDocumentChange = (uri: string | null) => {
         if (uri) {
             setIsOpen(false);
-            onReceiptScan(uri);
+            onScan(uri);
         }
     }
 
@@ -165,15 +167,6 @@ function AddReceiptDialog({ onReceiptScan, isProcessing }: { onReceiptScan: (uri
                 <div className="py-4">
                    <DocumentUpload onDocumentChange={handleDocumentChange} currentDocument={null} />
                 </div>
-                {isProcessing && (
-                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                        <div className="text-center space-y-2">
-                            <p className="font-semibold">AI is analyzing your receipt...</p>
-                            <Skeleton className="h-4 w-48 mx-auto" />
-                            <Skeleton className="h-4 w-32 mx-auto" />
-                        </div>
-                    </div>
-                )}
             </DialogContent>
         </Dialog>
     )
@@ -184,6 +177,7 @@ export default function ReceiptsPage() {
     const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
     const [receiptToView, setReceiptToView] = useState<Receipt | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [imageToEnhance, setImageToEnhance] = useState<string | null>(null);
     const [extractedData, setExtractedData] = useState< (ReceiptData & { receiptUri: string | null }) | null>(null);
     const [isConfirmOpen, setConfirmOpen] = useState(false);
     const { toast } = useToast();
@@ -193,11 +187,16 @@ export default function ReceiptsPage() {
         setReceipts(initialReceipts);
     }, []);
 
-    const handleReceiptScan = async (receiptUri: string) => {
+    const handleReceiptScan = (receiptUri: string) => {
+        setImageToEnhance(receiptUri);
+    };
+    
+    const handleEnhancementComplete = async (editedUri: string) => {
+        setImageToEnhance(null); // Close the enhancement dialog
         setIsProcessing(true);
         try {
-            const data = await extractReceiptData({ photoDataUri: receiptUri });
-            setExtractedData({ ...data, receiptUri });
+            const data = await extractReceiptData({ photoDataUri: editedUri });
+            setExtractedData({ ...data, receiptUri: editedUri });
             setConfirmOpen(true);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Extraction Failed', description: 'Could not extract data from the receipt. Please enter it manually.' });
@@ -208,7 +207,7 @@ export default function ReceiptsPage() {
                 amount: '',
                 category: 'Other',
                 notes: 'AI extraction failed',
-                receiptUri: receiptUri,
+                receiptUri: editedUri,
             });
             setConfirmOpen(true);
         } finally {
@@ -311,7 +310,7 @@ export default function ReceiptsPage() {
                         A log of all your submitted receipts for expense reporting.
                     </CardDescription>
                 </div>
-                <AddReceiptDialog onReceiptScan={handleReceiptScan} isProcessing={isProcessing} />
+                <AddReceiptDialog onScan={handleReceiptScan} />
             </CardHeader>
             <CardContent>
                 <div className="rounded-md border">
@@ -348,6 +347,15 @@ export default function ReceiptsPage() {
                         </TableBody>
                     </Table>
                 </div>
+                 {(isProcessing) && (
+                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                            <p className="font-semibold">AI is analyzing your receipt...</p>
+                            <Skeleton className="h-4 w-48 mx-auto" />
+                            <Skeleton className="h-4 w-32 mx-auto" />
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
 
@@ -388,6 +396,15 @@ export default function ReceiptsPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        
+        {imageToEnhance && (
+            <EnhancePhotoDialog
+                isOpen={!!imageToEnhance}
+                onOpenChange={(open) => { if (!open) setImageToEnhance(null); }}
+                imageDataUri={imageToEnhance}
+                onSave={handleEnhancementComplete}
+            />
+        )}
 
       </main>
     </div>
