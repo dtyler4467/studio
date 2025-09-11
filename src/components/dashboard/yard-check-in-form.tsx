@@ -23,7 +23,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { User } from "lucide-react";
 import { format } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
 import { useSchedule, YardEventStatus } from "@/hooks/use-schedule";
 import { Textarea } from "../ui/textarea";
@@ -71,8 +71,34 @@ const ClientFormattedDate = () => {
 }
 
 export function YardCheckInForm({ form, onTransactionTypeChange }: YardCheckInFormProps) {
-  const { availableStatuses } = useSchedule();
+  const { availableStatuses, warehouseDoors, parkingLanes, yardEvents } = useSchedule();
   const assignmentType = form.watch("assignmentType");
+
+  const availableDoors = useMemo(() => {
+    const occupiedDoors = new Set(yardEvents.filter(e => e.assignmentType === 'door_assignment' && e.transactionType === 'inbound').map(e => e.assignmentValue));
+    return warehouseDoors.filter(door => !occupiedDoors.has(door));
+  }, [warehouseDoors, yardEvents]);
+
+  const availableLanes = useMemo(() => {
+    const occupiedLanes = new Set(yardEvents.filter(e => e.assignmentType === 'lane_assignment' && e.transactionType === 'inbound').map(e => e.assignmentValue));
+    return parkingLanes.filter(lane => !occupiedLanes.has(lane));
+  }, [parkingLanes, yardEvents]);
+
+  const handleSendToChange = (value: string) => {
+    if (value === 'door_assignment') {
+        form.setValue('assignmentType', 'door_assignment');
+        form.setValue('assignmentValue', '');
+    } else if (value === 'lane_assignment') {
+        form.setValue('assignmentType', 'lane_assignment');
+        form.setValue('assignmentValue', '');
+    } else {
+        form.setValue('assignmentType', value as "bobtail" | "empty" | "material");
+        form.setValue('assignmentValue', '');
+    }
+  }
+
+  const sendToValue = form.watch('assignmentType');
+
 
   return (
     <Form {...form}>
@@ -203,40 +229,53 @@ export function YardCheckInForm({ form, onTransactionTypeChange }: YardCheckInFo
             )}
             />
         <div className="grid grid-cols-2 gap-4">
-            <FormField
-            control={form.control}
-            name="assignmentType"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Assignment</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormItem>
+                <FormLabel>Send To</FormLabel>
+                 <Select onValueChange={handleSendToChange} value={sendToValue}>
                     <FormControl>
                     <SelectTrigger>
                         <SelectValue placeholder="Select an assignment type" />
                     </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                        <SelectItem value="door_assignment">Assign Dock Door #</SelectItem>
+                        <SelectItem value="lane_assignment">Assign Lane #</SelectItem>
                         <SelectItem value="bobtail">Bobtail</SelectItem>
                         <SelectItem value="empty">Empty</SelectItem>
                         <SelectItem value="material">Material</SelectItem>
-                        <SelectItem value="door_assignment">Door Assignment</SelectItem>
-                        <SelectItem value="lane_assignment">Lane Assignment</SelectItem>
                     </SelectContent>
                 </Select>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-             {(assignmentType === 'door_assignment' || assignmentType === 'lane_assignment') && (
+            </FormItem>
+
+             {(sendToValue === 'door_assignment' || sendToValue === 'lane_assignment') && (
                 <FormField
                 control={form.control}
                 name="assignmentValue"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>{assignmentType === 'door_assignment' ? "Door Number" : "Lane Number"}</FormLabel>
-                    <FormControl>
-                        <Input placeholder={assignmentType === 'door_assignment' ? "e.g. 42" : "e.g. B3"} {...field} />
-                    </FormControl>
+                    <FormLabel>{sendToValue === 'door_assignment' ? "Available Doors" : "Available Lanes"}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder={`Select a ${sendToValue === 'door_assignment' ? 'door' : 'lane'}`} />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {sendToValue === 'door_assignment' ? (
+                                availableDoors.length > 0 ? (
+                                    availableDoors.map(door => <SelectItem key={door} value={door}>{door}</SelectItem>)
+                                ) : (
+                                    <SelectItem value="none" disabled>No doors available</SelectItem>
+                                )
+                            ) : (
+                                 availableLanes.length > 0 ? (
+                                    availableLanes.map(lane => <SelectItem key={lane} value={lane}>{lane}</SelectItem>)
+                                ) : (
+                                    <SelectItem value="none" disabled>No lanes available</SelectItem>
+                                )
+                            )}
+                        </SelectContent>
+                    </Select>
                     <FormMessage />
                     </FormItem>
                 )}
