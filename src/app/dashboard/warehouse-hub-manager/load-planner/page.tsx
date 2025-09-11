@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Header } from '@/components/layout/header';
@@ -21,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { useRouter } from 'next/navigation';
 
 type Order = {
     id: string;
@@ -46,16 +46,17 @@ const carriers = [
 ]
 
 const inventoryItems: MultiSelectOption[] = [
-    { value: 'Bolts', label: 'Bolts (1250 available)' },
-    { value: 'Washers', label: 'Washers (450 available)' },
-    { value: 'Screws', label: 'Screws (3000 available)' },
-    { value: 'Nuts', label: 'Nuts (0 available)' },
-    { value: 'Pallet of Bricks', label: 'Pallet of Bricks (Not Tracked)' },
+    { value: 'Bolts (1250 available)', label: 'Bolts (1250 available)' },
+    { value: 'Washers (450 available)', label: 'Washers (450 available)' },
+    { value: 'Screws (3000 available)', label: 'Screws (3000 available)' },
+    { value: 'Nuts (0 available)', label: 'Nuts (0 available)' },
+    { value: 'Pallet of Bricks (Not Tracked)', label: 'Pallet of Bricks (Not Tracked)' },
 ];
 
 function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
     const [bolNumber, setBolNumber] = useState('');
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     
@@ -84,7 +85,16 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         }
 
         onAddOrder(newOrder);
-        toast({ title: 'Order Added', description: `Order ${newOrder.bolNumber} has been added.` });
+        toast({ title: 'Order Added', description: `Order ${newOrder.bolNumber} has been added. Redirecting to create BOL...` });
+        
+        const query = new URLSearchParams();
+        query.set('bolNumber', newOrder.bolNumber);
+        query.set('consigneeName', newOrder.customer);
+        query.set('consigneeDestination', newOrder.destination);
+        newOrder.items.forEach(item => query.append('items', item));
+        
+        router.push(`/dashboard/warehouse-hub-manager/bol?${query.toString()}`);
+        
         setIsOpen(false);
     };
 
@@ -283,3 +293,5 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
+
+    
