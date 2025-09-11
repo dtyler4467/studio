@@ -16,6 +16,9 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  captionLayout,
+  fromYear,
+  toYear,
   ...props
 }: CalendarProps) {
   return (
@@ -97,6 +100,9 @@ function Calendar({
           )
         },
       }}
+      captionLayout={captionLayout}
+      fromYear={fromYear}
+      toYear={toYear}
       {...props}
     />
   )
