@@ -273,6 +273,16 @@ export type BillOfLading = {
   otherDocuments?: { name: string; uri: string }[];
 };
 
+export type InventoryItem = {
+    sku: string;
+    description: string;
+    location: string;
+    qty: number;
+    reorderPoint: number;
+    status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+    price?: number;
+};
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
@@ -300,6 +310,7 @@ type ScheduleContextType = {
   jobPostings: JobPosting[];
   applicants: Applicant[];
   bolHistory: BillOfLading[];
+  inventoryItems: InventoryItem[];
   availableStatuses: YardEventStatus[];
   addCustomStatus: (newStatus: string) => void;
   addApplicant: (applicantData: Omit<Applicant, 'id' | 'applicationDate'>) => void;
@@ -355,6 +366,7 @@ type ScheduleContextType = {
   restoreDeletedItem: (logId: string) => void;
   addTimeClockEvent: (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => void;
   updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
+  updateInventory: (itemName: string, quantityChange: number) => void;
 };
 
 export const initialShifts: Shift[] = [
@@ -602,6 +614,14 @@ export const initialBolHistory: BillOfLading[] = [
     { id: 'BOL-HIST-002', bolNumber: 'BOL67890', customer: 'Globex Corp.', origin: 'Chicago, IL', destination: 'New York, NY', deliveryDate: '2024-08-05', carrier: 'J.B. Hunt', documentUri: "https://picsum.photos/seed/bol2/800/1100" }
 ];
 
+export const initialInventoryItems: InventoryItem[] = [
+    { sku: 'SKU12345', description: '1/2" Steel Bolts', location: 'Aisle 3, Bin 4', qty: 1250, reorderPoint: 500, status: 'In Stock', price: 0.50 },
+    { sku: 'SKU67890', description: '3/4" Nylon Washers', location: 'Aisle 5, Bin 2', qty: 450, reorderPoint: 500, status: 'Low Stock', price: 0.10 },
+    { sku: 'SKU54321', description: '2" Wood Screws', location: 'Aisle 1, Bin 1', qty: 3000, reorderPoint: 1000, status: 'In Stock', price: 0.25 },
+    { sku: 'SKU98765', description: 'M8 Hex Nuts', location: 'Aisle 3, Bin 5', qty: 0, reorderPoint: 200, status: 'Out of Stock', price: 0.15 },
+    { sku: 'SKU11111', description: 'Pallet of Bricks', location: 'Yard', qty: 10, reorderPoint: 2, status: 'In Stock', price: 100 },
+];
+
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
 
@@ -635,6 +655,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [jobPostings, setJobPostings] = useState<JobPosting[]>(initialJobPostings);
   const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants);
   const [bolHistory, setBolHistory] = useState<BillOfLading[]>(initialBolHistory);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(initialInventoryItems);
   const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   
   const addCustomStatus = (newStatus: string) => {
@@ -1217,9 +1238,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
+    const updateInventory = (itemName: string, quantityChange: number) => {
+        setInventoryItems(prevItems => {
+            const newItems = prevItems.map(item => {
+                if (item.description === itemName) {
+                    const newQty = item.qty + quantityChange;
+                    const newStatus = newQty <= 0 ? 'Out of Stock' : newQty <= item.reorderPoint ? 'Low Stock' : 'In Stock';
+                    return { ...item, qty: newQty, status: newStatus };
+                }
+                return item;
+            });
+            return newItems;
+        });
+    };
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, availableStatuses, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, inventoryItems, availableStatuses, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory }}>
       {children}
     </ScheduleContext.Provider>
   );
