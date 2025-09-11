@@ -245,6 +245,12 @@ export default function ReceiptsPage() {
             })
             .reduce((acc, r) => acc + r.amount, 0);
     }, [receipts]);
+    
+    const lastSubmissionDate = useMemo(() => {
+        if (receipts.length === 0) return 'N/A';
+        const sortedReceipts = [...receipts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return format(new Date(sortedReceipts[0].date), 'MMM d');
+    }, [receipts]);
 
     const pendingCount = receipts.filter(r => r.status === 'Pending').length;
 
@@ -290,7 +296,7 @@ export default function ReceiptsPage() {
                     <CalendarDays className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{receipts.length > 0 ? format(receipts[0].date, 'MMM d') : 'N/A'}</div>
+                    <div className="text-2xl font-bold">{lastSubmissionDate}</div>
                      <p className="text-xs text-muted-foreground">Date of the most recent receipt</p>
                 </CardContent>
             </Card>
@@ -387,4 +393,3 @@ export default function ReceiptsPage() {
     </div>
   );
 }
-

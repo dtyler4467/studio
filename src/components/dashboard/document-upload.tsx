@@ -23,7 +23,6 @@ type DocumentUploadProps = {
 
 const enhancementOptions = [
     { id: 'self_crop', label: 'Self-Cropping' },
-    { id: 'crop', label: 'Auto-Crop Receipt' },
     { id: 'shadows', label: 'Remove Shadows' },
     { id: 'enhance', label: 'Enhance Clarity' },
     { id: 'grayscale', label: 'Convert to Grayscale' },
