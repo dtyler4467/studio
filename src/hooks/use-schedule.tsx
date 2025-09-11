@@ -53,6 +53,14 @@ export type Registration = {
 
 export type YardEventStatus = 'Checked In' | 'Loaded' | 'Empty' | 'Blocked' | 'Repair Needed' | 'Rejected' | 'Late' | 'Early' | 'Product on hold' | 'Exited' | 'Waiting for dock' | 'At Dock Door' | 'At Parking Lane';
 
+export type YardEventHistory = {
+    type: 'status' | 'assignment' | 'created';
+    change: string;
+    notes?: string;
+    changedBy: string;
+    timestamp: Date;
+}
+
 export type YardEvent = {
     id: string;
     transactionType: 'inbound' | 'outbound' | 'move';
@@ -69,6 +77,7 @@ export type YardEvent = {
     documentDataUri?: string | null;
     status?: YardEventStatus;
     statusNotes?: string;
+    history?: YardEventHistory[];
 }
 
 export type ExpenseReport = {
@@ -375,11 +384,11 @@ export const initialRegistrations: Registration[] = [
 ]
 
 export const initialYardEvents: YardEvent[] = [
-    { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', sealNumber: 'S12345', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD004', assignmentType: 'door_assignment', assignmentValue: 'D4', timestamp: new Date('2024-07-28T08:15:00Z'), documentDataUri: "https://picsum.photos/seed/bol/800/1100", status: "Loaded" },
-    { id: 'EVT002', transactionType: 'outbound', trailerId: 'TR48991', sealNumber: 'S67890', carrier: 'J.B. Hunt', scac: 'JBHT', driverName: 'Jane Smith', clerkName: 'Admin User', loadNumber: 'LD002', assignmentType: 'empty', timestamp: new Date('2024-07-28T09:30:00Z'), status: "Exited" },
-    { id: 'EVT003', transactionType: 'inbound', trailerId: 'TR53456', carrier: 'Schneider', scac: 'SNDR', driverName: 'Mike Johnson', clerkName: 'Jane Clerk', loadNumber: 'LD125', assignmentType: 'lane_assignment', assignmentValue: 'L12', timestamp: new Date('2024-07-27T14:00:00Z'), status: "Checked In" },
-    { id: 'EVT004', transactionType: 'outbound', trailerId: 'TR53123', sealNumber: 'S54321', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'Emily Davis', clerkName: 'Jane Clerk', loadNumber: 'LD126', assignmentType: 'material', timestamp: new Date('2024-07-27T16:45:00Z'), status: "Exited" },
-    { id: 'EVT005', transactionType: 'inbound', trailerId: 'TR53789', carrier: 'Werner', scac: 'WERN', driverName: 'Chris Brown', clerkName: 'Admin User', loadNumber: 'LD001', assignmentType: 'bobtail', timestamp: new Date('2024-07-26T11:20:00Z'), documentDataUri: "https://picsum.photos/seed/doc/800/1100", status: "Empty" },
+    { id: 'EVT001', transactionType: 'inbound', trailerId: 'TR53123', sealNumber: 'S12345', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'John Doe', clerkName: 'Admin User', loadNumber: 'LD004', assignmentType: 'door_assignment', assignmentValue: 'D4', timestamp: new Date('2024-07-28T08:15:00Z'), documentDataUri: "https://picsum.photos/seed/bol/800/1100", status: "Loaded", history: [] },
+    { id: 'EVT002', transactionType: 'outbound', trailerId: 'TR48991', sealNumber: 'S67890', carrier: 'J.B. Hunt', scac: 'JBHT', driverName: 'Jane Smith', clerkName: 'Admin User', loadNumber: 'LD002', assignmentType: 'empty', timestamp: new Date('2024-07-28T09:30:00Z'), status: "Exited", history: [] },
+    { id: 'EVT003', transactionType: 'inbound', trailerId: 'TR53456', carrier: 'Schneider', scac: 'SNDR', driverName: 'Mike Johnson', clerkName: 'Jane Clerk', loadNumber: 'LD125', assignmentType: 'lane_assignment', assignmentValue: 'L12', timestamp: new Date('2024-07-27T14:00:00Z'), status: "Checked In", history: [] },
+    { id: 'EVT004', transactionType: 'outbound', trailerId: 'TR53123', sealNumber: 'S54321', carrier: 'Knight-Swift', scac: 'KNX', driverName: 'Emily Davis', clerkName: 'Jane Clerk', loadNumber: 'LD126', assignmentType: 'material', timestamp: new Date('2024-07-27T16:45:00Z'), status: "Exited", history: [] },
+    { id: 'EVT005', transactionType: 'inbound', trailerId: 'TR53789', carrier: 'Werner', scac: 'WERN', driverName: 'Chris Brown', clerkName: 'Admin User', loadNumber: 'LD001', assignmentType: 'bobtail', timestamp: new Date('2024-07-26T11:20:00Z'), documentDataUri: "https://picsum.photos/seed/doc/800/1100", status: "Empty", history: [] },
 ];
 
 export const initialExpenseReports: ExpenseReport[] = [
@@ -841,7 +850,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         };
 
         const newEvents: YardEvent[] = [];
-        let finalEvent: YardEvent = { ...newEventBase, id: `EVT${Date.now()}`, timestamp: new Date() };
+        let finalEvent: YardEvent = { ...newEventBase, id: `EVT${Date.now()}`, timestamp: new Date(), history: [] };
 
         if ((finalEvent.assignmentType === 'door_assignment' || finalEvent.assignmentType === 'lane_assignment') && finalEvent.assignmentValue && finalEvent.transactionType === 'inbound') {
             const locationId = finalEvent.assignmentValue;
@@ -869,6 +878,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
                     assignmentValue: `displaced from ${locationId}`,
                     timestamp: new Date(),
                     clerkName: currentUser?.name || 'System',
+                    history: []
                 };
                 setLostAndFound(prev => [...prev, lostEvent]);
             }
@@ -879,7 +889,20 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     };
     
     const updateYardEventStatus = (eventId: string, status: YardEventStatus, notes?: string) => {
-        const update = (events: YardEvent[]) => events.map(e => e.id === eventId ? {...e, status, statusNotes: notes ?? e.statusNotes } : e);
+        const historyEntry: YardEventHistory = {
+            type: 'status',
+            change: `Status changed to ${status}`,
+            notes,
+            changedBy: currentUser?.name || 'System',
+            timestamp: new Date(),
+        };
+
+        const update = (events: YardEvent[]) => events.map(e => e.id === eventId ? {
+            ...e, 
+            status, 
+            statusNotes: notes ?? e.statusNotes,
+            history: [...(e.history || []), historyEntry]
+        } : e);
         setYardEvents(update);
         setLostAndFound(update);
     }
@@ -1033,6 +1056,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     
         if (!eventToMove) throw new Error("Trailer event to move not found.");
 
+        const historyEntry: YardEventHistory = {
+            type: 'assignment',
+            change: `Moved to ${toLocationType.replace(/_/g, ' ')} ${toLocationId}`,
+            notes: `Moved from ${eventToMove.assignmentType.replace(/_/g, ' ')} ${eventToMove.assignmentValue}`,
+            changedBy: currentUser?.name || 'System',
+            timestamp: new Date(),
+        };
+
         const getLatestInboundEventForLocation = (type: 'lane' | 'door', id: string) => {
             const eventsInLocation = yardEvents
                 .filter(e => e.assignmentType === `${type}_assignment` && e.assignmentValue === id)
@@ -1054,6 +1085,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             transactionType: 'outbound',
             timestamp: new Date(),
             clerkName: currentUser?.name || 'System',
+            history: [...(eventToMove.history || []), historyEntry],
         };
         newEvents.push(outboundEvent);
 
@@ -1066,6 +1098,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
                 assignmentValue: `moved from ${eventToMove.assignmentValue}`,
                 timestamp: new Date(),
                 clerkName: currentUser?.name || 'System',
+                history: [...(eventToMove.history || []), historyEntry],
             };
             setLostAndFound(prev => [...prev, lostEvent]);
             setYardEvents(prev => [...prev, outboundEvent]);
@@ -1080,6 +1113,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
                 transactionType: 'outbound',
                 timestamp: new Date(),
                 clerkName: currentUser?.name || 'System',
+                 history: [...(occupyingEvent.history || []), {
+                    type: 'assignment',
+                    change: `Moved to Lost & Found`,
+                    notes: `Displaced by trailer ${eventToMove.trailerId} moving to ${toLocationId}`,
+                    changedBy: currentUser?.name || 'System',
+                    timestamp: new Date()
+                }],
             };
             newEvents.push(occupyingOutboundEvent);
 
@@ -1091,6 +1131,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
                 assignmentValue: `displaced from ${toLocationId}`,
                 timestamp: new Date(),
                 clerkName: currentUser?.name || 'System',
+                history: [...(occupyingEvent.history || []), {
+                    type: 'assignment',
+                    change: `Moved to Lost & Found`,
+                    notes: `Displaced by trailer ${eventToMove.trailerId} moving to ${toLocationId}`,
+                    changedBy: currentUser?.name || 'System',
+                    timestamp: new Date()
+                }],
             };
             setLostAndFound(prev => [...prev, lostEvent]);
         }
@@ -1103,6 +1150,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             assignmentValue: toLocationId,
             timestamp: new Date(),
             clerkName: currentUser?.name || 'System',
+            history: [...(eventToMove.history || []), historyEntry],
         };
         newEvents.push(inboundEvent);
         
@@ -1166,3 +1214,4 @@ export const useSchedule = () => {
   }
   return context;
 };
+

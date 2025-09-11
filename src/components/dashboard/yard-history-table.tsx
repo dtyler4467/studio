@@ -16,7 +16,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { format, isSameDay } from "date-fns"
-import { ArrowUpDown, ChevronDown, Filter, X, Printer, Mail } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Filter, X, Printer, Mail, MoreHorizontal, History } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -43,8 +43,10 @@ import { Calendar } from "../ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Skeleton } from "../ui/skeleton"
 import { useRouter } from "next/navigation"
-import { useSchedule, YardEvent } from "@/hooks/use-schedule"
+import { useSchedule, YardEvent, YardEventHistory } from "@/hooks/use-schedule"
 import { useToast } from "@/hooks/use-toast"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog"
+import { ScrollArea } from "../ui/scroll-area"
 
 
 const filterableColumns = [
@@ -70,6 +72,52 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
     }
 
     return <div>{formattedDate}</div>;
+}
+
+const HistoryDialog = ({ event, isOpen, onOpenChange }: { event: YardEvent | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
+    if (!event) return null;
+
+    const sortedHistory = [...(event.history || [])].sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>History for Trailer {event.trailerId}</DialogTitle>
+                    <DialogDescription>
+                        A chronological log of all status and assignment changes for this event.
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-96 pr-6">
+                    <div className="space-y-4">
+                        {[...sortedHistory, {
+                            type: 'created',
+                            change: `Event created as ${event.transactionType}`,
+                            notes: `Assigned to ${event.assignmentType.replace(/_/g, ' ')}${event.assignmentValue ? `: ${event.assignmentValue}` : ''}`,
+                            changedBy: event.clerkName,
+                            timestamp: event.timestamp
+                        }].sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((historyItem, index) => (
+                            <div key={index} className="flex gap-4">
+                                <div className="flex flex-col items-center">
+                                    <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center ring-4 ring-primary/10">
+                                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                    </div>
+                                    <div className="flex-1 w-px bg-border my-1"></div>
+                                </div>
+                                <div className="pb-4">
+                                    <p className="font-semibold capitalize">{historyItem.change}</p>
+                                    <p className="text-sm text-muted-foreground">{historyItem.notes}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        By {historyItem.changedBy} on <ClientFormattedDate date={new Date(historyItem.timestamp)} />
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 const createPrintableHTML = (events: YardEvent[]) => {
@@ -127,6 +175,8 @@ export function YardHistoryTable() {
     const router = useRouter();
     const { toast } = useToast();
     const [activeFilters, setActiveFilters] = React.useState<string[]>([]);
+    const [isHistoryDialogOpen, setIsHistoryDialogOpen] = React.useState(false);
+    const [selectedEventForHistory, setSelectedEventForHistory] = React.useState<YardEvent | null>(null);
     
     const [sorting, setSorting] = React.useState<SortingState>([ { id: 'timestamp', desc: true } ])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -175,9 +225,15 @@ export function YardHistoryTable() {
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     };
 
+    const openHistoryDialog = (event: YardEvent) => {
+        setSelectedEventForHistory(event);
+        setIsHistoryDialogOpen(true);
+    }
+    
+
     const table = useReactTable({
         data: yardEvents,
-        columns: getColumns(onFilterChange),
+        columns: getColumns(onFilterChange, openHistoryDialog),
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onRowSelectionChange: setRowSelection,
@@ -198,6 +254,7 @@ export function YardHistoryTable() {
 
 
   return (
+    <>
     <div className="w-full">
       <div className="flex items-center justify-between py-4 gap-2">
         <div className="flex items-center gap-2">
@@ -307,9 +364,12 @@ export function YardHistoryTable() {
                   {row.getVisibleCells().map((cell) => (
                     <TableCell 
                         key={cell.id}
-                        onClick={() => {
-                            if (cell.column.id !== 'select') {
+                        onClick={(e) => {
+                            if (cell.column.id !== 'select' && cell.column.id !== 'actions') {
                                 router.push(`/dashboard/yard-management/documents/${row.original.id}`)
+                            }
+                            if (cell.column.id === 'actions') {
+                                e.stopPropagation();
                             }
                         }}
                         className={cell.column.id !== 'select' ? 'cursor-pointer' : ''}
@@ -325,7 +385,7 @@ export function YardHistoryTable() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={getColumns(onFilterChange).length}
+                  colSpan={getColumns(onFilterChange, openHistoryDialog).length}
                   className="h-24 text-center"
                 >
                   No results.
@@ -360,6 +420,8 @@ export function YardHistoryTable() {
         </div>
       </div>
     </div>
+    <HistoryDialog event={selectedEventForHistory} isOpen={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen} />
+    </>
   )
 }
 
@@ -430,7 +492,7 @@ function FilterInput({ columnId, onFilterChange, table }: { columnId: string, on
     }
 }
 
-const getColumns = (onFilterChange: (columnId: string, value: any) => void): ColumnDef<YardEvent>[] => [
+const getColumns = (onFilterChange: (columnId: string, value: any) => void, onOpenHistory: (event: YardEvent) => void): ColumnDef<YardEvent>[] => [
     {
       id: "select",
       header: ({ table }) => (
@@ -515,6 +577,16 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void): Col
         },
         accessorFn: (row) => `${row.assignmentType}${row.assignmentValue || ''}`,
     },
+     {
+        id: "actions",
+        cell: ({ row }) => {
+            return (
+                <Button variant="ghost" size="icon" onClick={() => onOpenHistory(row.original)}>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            )
+        }
+    }
 ];
 
     
