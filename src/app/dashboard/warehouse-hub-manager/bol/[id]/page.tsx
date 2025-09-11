@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useSchedule, BillOfLading } from "@/hooks/use-schedule";
@@ -23,35 +24,23 @@ const DetailItem = ({ label, value }: { label: string, value: string | number | 
 );
 
 const createPrintableHTML = (bol: BillOfLading) => {
-    return `
-      <html>
-        <head>
-          <title>Bill of Lading - ${bol.bolNumber}</title>
-          <style>
-            body { font-family: sans-serif; margin: 2rem; }
-            h1, h2 { color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; margin-top: 1rem; }
-          </style>
-        </head>
-        <body>
-          <h1>Bill of Lading: ${bol.bolNumber}</h1>
-          <p>Generated on: ${format(new Date(), 'PPP p')}</p>
-          <table>
-            <tr><th>Attribute</th><th>Value</th></tr>
-            <tr><td>Customer</td><td>${bol.customer}</td></tr>
-            <tr><td>Origin</td><td>${bol.origin}</td></tr>
-            <tr><td>Destination</td><td>${bol.destination}</td></tr>
-            <tr><td>Carrier</td><td>${bol.carrier}</td></tr>
-            <tr><td>Delivery Date</td><td>${format(new Date(bol.deliveryDate), 'PPP')}</td></tr>
-          </table>
-          ${bol.documentUri ? `<h2>BOL Document</h2><img src="${bol.documentUri}" alt="BOL Document" />` : '<h2>No Document Attached</h2>'}
-          ${bol.otherDocuments ? bol.otherDocuments.map(doc => `<h2>Attached Document</h2><img src="${doc.uri}" alt="${doc.name}" />`).join('') : ''}
-        </body>
-      </html>
-    `;
+    // This is a simplified HTML generator. For a real app, a more robust templating engine would be used.
+    if (!bol.documentUri) {
+        // Fallback for non-HTML BOLs
+        return `
+        <html><head><title>BOL ${bol.bolNumber}</title></head><body>
+        <h1>BOL: ${bol.bolNumber}</h1>
+        <p>Customer: ${bol.customer}</p>
+        <p>Origin: ${bol.origin}</p>
+        <p>Destination: ${bol.destination}</p>
+        <p>Carrier: ${bol.carrier}</p>
+        <p>Delivery Date: ${format(new Date(bol.deliveryDate), 'PPP')}</p>
+        <p>No printable document associated with this BOL.</p>
+        </body></html>
+        `;
+    }
+    const decodedHtml = atob(bol.documentUri.split(',')[1]);
+    return decodedHtml;
 };
 
 
@@ -75,10 +64,10 @@ export default function BolDocumentPage() {
         return;
     }
     const printableHTML = createPrintableHTML(bol);
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open('', '_blank', 'width=800,height=1100');
     printWindow?.document.write(printableHTML);
     printWindow?.document.close();
-    printWindow?.print();
+    setTimeout(() => printWindow?.print(), 500); // Timeout to allow content to render
   };
 
   const handleEmail = () => {
@@ -155,22 +144,20 @@ export default function BolDocumentPage() {
                     </div>
 
                     <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">BOL Document</h3>
+                        <h3 className="text-lg font-semibold">BOL Document Preview</h3>
                         <div className="border rounded-md p-2 bg-muted h-[600px] flex items-center justify-center">
                             {bol.documentUri ? (
-                                <Image
-                                    src={bol.documentUri}
-                                    alt="BOL document"
-                                    width={800}
-                                    height={1100}
-                                    className="object-contain max-h-full max-w-full rounded-md"
+                                <iframe
+                                    srcDoc={createPrintableHTML(bol)}
+                                    className="w-full h-full border-0"
+                                    title={`BOL Preview - ${bol.bolNumber}`}
                                 />
                             ) : (
                                 <Alert variant="default" className="max-w-sm mx-auto">
                                     <FileQuestion className="h-4 w-4" />
-                                    <AlertTitle>No Document Attached</AlertTitle>
+                                    <AlertTitle>No Printable Document</AlertTitle>
                                     <AlertDescription>
-                                        There was no document uploaded for this BOL.
+                                        This BOL was saved without a printable document, or was created before this feature was available.
                                     </AlertDescription>
                                 </Alert>
                             )}

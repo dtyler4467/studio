@@ -17,6 +17,8 @@ import { useSchedule, BolTemplate } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <h3 className="text-lg font-semibold text-primary col-span-full">{children}</h3>
@@ -151,92 +153,6 @@ export default function BolPage() {
         setCommodities(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
     };
 
-    const generateBolHtml = () => {
-        return `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Bill of Lading - ${bolNumber}</title>
-            <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 2rem; background-color: #f8f9fa; color: #212529; }
-                .container { max-width: 1000px; margin: auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-                h1, h2 { color: #0d6efd; border-bottom: 2px solid #dee2e6; padding-bottom: 0.5rem; margin-top: 1.5rem; }
-                h1 { font-size: 2rem; display: flex; align-items: center; }
-                h2 { font-size: 1.5rem; }
-                table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-                th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; }
-                th { background-color: #f8f9fa; font-weight: 600; }
-                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-                .grid-item { display: flex; flex-direction: column; }
-                .grid-item p { margin: 0.25rem 0; }
-                .grid-item strong { color: #495057; }
-                .notes { margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; }
-                .logo { margin-right: 1rem; width: 40px; height: 40px; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>
-                    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
-                    Master Bill of Lading
-                </h1>
-                <p><strong>BOL #:</strong> ${bolNumber}</p>
-
-                <div class="grid">
-                    <div class="grid-item">
-                        <h2>Shipper / Consignor</h2>
-                        <p><strong>Name:</strong> ${shipperName}</p>
-                        <p><strong>Address:</strong> ${shipperAddress}</p>
-                        <p>${shipperCity}, ${shipperState} ${shipperZip}</p>
-                        <p><strong>Phone:</strong> ${shipperPhone}</p>
-                    </div>
-                    <div class="grid-item">
-                        <h2>Consignee</h2>
-                        <p><strong>Name:</strong> ${consigneeName}</p>
-                        <p><strong>Address:</strong> ${consigneeAddress}</p>
-                        <p>${consigneeCity}, ${consigneeState} ${consigneeZip}</p>
-                        <p><strong>Phone:</strong> ${consigneePhone}</p>
-                    </div>
-                </div>
-
-                <h2>Shipment & Carrier Details</h2>
-                <table>
-                    <tr><th>Carrier Name</th><td>${carrierName}</td><th>Trailer Number</th><td>${trailerNumber}</td></tr>
-                    <tr><th>Seal Number</th><td>${sealNumber}</td><th>PO Number</th><td>${poNumber}</td></tr>
-                    <tr><th>Reference Number</th><td colspan="3">${refNumber}</td></tr>
-                </table>
-
-                <h2>Commodities</h2>
-                <table>
-                    <thead>
-                        <tr><th>Units</th><th>Pkg. Type</th><th>HM</th><th>Description</th><th>Weight (lbs)</th><th>Class</th></tr>
-                    </thead>
-                    <tbody>
-                        ${commodities.map(c => `
-                            <tr>
-                                <td>${c.units}</td>
-                                <td>${c.pkgType}</td>
-                                <td>${c.hm ? 'X' : ''}</td>
-                                <td>${c.description}</td>
-                                <td>${c.weight}</td>
-                                <td>${c.class}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                
-                <div class="notes">
-                    <h2>Notes & Special Instructions</h2>
-                    <p>${notes.replace(/\n/g, '<br>')}</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        `;
-    };
-
     const handleSaveBol = () => {
         if (!bolNumber || !consigneeName || !carrierName) {
             toast({
@@ -247,27 +163,75 @@ export default function BolPage() {
             return;
         }
 
-        const newBolData = {
+        const wb = XLSX.utils.book_new();
+        
+        const bolData = [
+            ["Master Bill of Lading", `BOL #: ${bolNumber}`],
+            [],
+            ["Shipper / Consignor", "Consignee"],
+            [`Name: ${shipperName}`, `Name: ${consigneeName}`],
+            [`Address: ${shipperAddress}`, `Address: ${consigneeAddress}`],
+            [`${shipperCity}, ${shipperState} ${shipperZip}`, `${consigneeCity}, ${consigneeState} ${consigneeZip}`],
+            [`Phone: ${shipperPhone}`, `Phone: ${consigneePhone}`],
+            [],
+            ["Shipment & Carrier Details"],
+        ];
+        
+        const carrierData = [
+            { "Carrier Name": carrierName, "Trailer Number": trailerNumber, "Seal Number": sealNumber, "PO Number": poNumber, "Reference Number": refNumber },
+        ];
+
+        const commodityHeaders = ["Units", "Pkg. Type", "HM", "Description", "Weight (lbs)", "Class"];
+        const commodityData = commodities.map(c => ({
+            Units: c.units,
+            "Pkg. Type": c.pkgType,
+            HM: c.hm ? 'X' : '',
+            Description: c.description,
+            "Weight (lbs)": c.weight,
+            Class: c.class,
+        }));
+        
+        const notesData = [
+            [],
+            ["Notes & Special Instructions"],
+            [notes]
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(bolData);
+        XLSX.utils.sheet_add_json(ws, carrierData, { origin: "A10", skipHeader: false });
+        XLSX.utils.sheet_add_json(ws, commodityData, { origin: "A12", skipHeader: false, header: commodityHeaders });
+        XLSX.utils.sheet_add_aoa(ws, notesData, { origin: -1 });
+
+        // Add formatting
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, // Merge for title
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } }, // Merge for Shipper title
+            { s: { r: 2, c: 2 }, e: { r: 2, c: 3 } }, // Merge for Consignee title
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Bill of Lading");
+        XLSX.writeFile(wb, `BOL_${bolNumber}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+
+        const newBolDataForHistory = {
             bolNumber,
             customer: consigneeName,
             origin: `${shipperCity}, ${shipperState}`,
             destination: `${consigneeCity}, ${consigneeState}`,
-            deliveryDate: new Date().toISOString(),
+            deliveryDate: format(new Date(), 'yyyy-MM-dd'),
             carrier: carrierName,
         };
 
-        const bolHtml = generateBolHtml();
-        const documentUri = `data:text/html;base64,${btoa(bolHtml)}`;
-
-        const savedBol = saveBol(newBolData, documentUri);
+        // We save to history but don't generate a documentUri since the file is downloaded
+        saveBol(newBolDataForHistory, null);
+        
         sessionStorage.removeItem('bolCommodities');
         
         toast({
-            title: 'BOL Saved',
-            description: `Bill of Lading ${savedBol.bolNumber} has been saved to history.`
+            title: 'BOL Saved & Downloaded',
+            description: `BOL ${bolNumber} has been saved to history and downloaded as an Excel file.`
         });
         
-        router.push(`/dashboard/warehouse-hub-manager/bol/${savedBol.id}`);
+        router.push(`/dashboard/warehouse-hub-manager/bol/history`);
     };
 
     const handleSaveTemplate = () => {
@@ -499,7 +463,6 @@ export default function BolPage() {
                     <CardFooter className="flex justify-between">
                         <div>
                             <Button onClick={handleSaveBol}><Save className="mr-2"/>Save BOL</Button>
-                            <Button variant="secondary" className="ml-2">Print BOL</Button>
                             <Button variant="ghost" onClick={clearForm}>Clear Form</Button>
                         </div>
                         <div>

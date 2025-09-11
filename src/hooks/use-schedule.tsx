@@ -390,7 +390,7 @@ type ScheduleContextType = {
   addTimeClockEvent: (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => void;
   updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
   updateInventory: (itemName: string, quantityChange: number) => void;
-  saveBol: (bolData: Omit<BillOfLading, 'id'| 'documentUri'>, documentUri?: string | null) => BillOfLading;
+  saveBol: (bolData: Omit<BillOfLading, 'id' | 'documentUri'>, documentUri: string | null) => BillOfLading;
   saveBolTemplate: (templateData: Omit<BolTemplate, 'id'>) => void;
   deleteBolTemplate: (templateId: string) => void;
 };
@@ -643,7 +643,7 @@ export const initialBolHistory: BillOfLading[] = [
 export const initialBolTemplates: BolTemplate[] = [];
 
 export const initialInventoryItems: InventoryItem[] = [
-    { sku: 'SKU12345', description: '1/2" Steel Bolts', location: 'Aisle 3, Bin 4', qty: 1250, reorderPoint: 500, price: 0.50 },
+    { sku: 'SKU12345', description: '1/2" Steel Bolts', location: 'Aisle 3, Bin 4', qty: 1250, reorderPoint: 500, status: 'In Stock', price: 0.50 },
     { sku: 'SKU67890', description: '3/4" Nylon Washers', location: 'Aisle 5, Bin 2', qty: 450, reorderPoint: 500, status: 'Low Stock', price: 0.10 },
     { sku: 'SKU54321', description: '2" Wood Screws', location: 'Aisle 1, Bin 1', qty: 3000, reorderPoint: 1000, status: 'In Stock', price: 0.25 },
     { sku: 'SKU98765', description: 'M8 Hex Nuts', location: 'Aisle 3, Bin 5', qty: 0, reorderPoint: 200, status: 'Out of Stock', price: 0.15 },
@@ -1305,7 +1305,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    const saveBol = (bolData: Omit<BillOfLading, 'id' | 'documentUri'>, documentUri?: string | null) => {
+    const saveBol = (bolData: Omit<BillOfLading, 'id' | 'documentUri'>, documentUri: string | null) => {
         const newBol: BillOfLading = {
             ...bolData,
             id: `BOL-HIST-${Date.now()}`,
