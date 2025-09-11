@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Header } from '@/components/layout/header';
@@ -53,6 +54,8 @@ export default function BolPage() {
     const [consigneeState, setConsigneeState] = useState('');
     const [consigneeZip, setConsigneeZip] = useState('');
     const [consigneePhone, setConsigneePhone] = useState('');
+    const [consigneeContact, setConsigneeContact] = useState('');
+
 
     const [bolNumber, setBolNumber] = useState('');
     const [carrierName, setCarrierName] = useState('');
@@ -65,19 +68,30 @@ export default function BolPage() {
     const [commodities, setCommodities] = useState<Commodity[]>([]);
     
     useEffect(() => {
-        // This effect runs once on mount to handle initial query params like order details
+        // This effect runs once on mount to handle initial query params
         const bol = searchParams.get('bolNumber');
-        const name = searchParams.get('consigneeName');
-        const destination = searchParams.get('consigneeDestination');
+        const cName = searchParams.get('consigneeName');
+        const cAddress = searchParams.get('consigneeAddress');
+        const cCity = searchParams.get('consigneeCity');
+        const cState = searchParams.get('consigneeState');
+        const cZip = searchParams.get('consigneeZip');
+        const cPhone = searchParams.get('consigneePhone');
+        const formNotes = searchParams.get('notes');
+
         const items = searchParams.getAll('items');
         const quantities = searchParams.getAll('quantities');
         
-        // Persist commodities if we are coming back from the template page
         const existingCommodities = JSON.parse(sessionStorage.getItem('bolCommodities') || '[]');
 
         if (bol) setBolNumber(bol);
-        if (name) setConsigneeName(name);
-        if (destination) setConsigneeCity(destination);
+        if (cName) setConsigneeName(cName);
+        if (cAddress) setConsigneeAddress(cAddress);
+        if (cCity) setConsigneeCity(cCity);
+        if (cState) setConsigneeState(cState);
+        if (cZip) setConsigneeZip(cZip);
+        if (cPhone) setConsigneePhone(cPhone);
+        if (formNotes) setNotes(formNotes);
+        
 
         if (items.length > 0) {
             const initialCommodities = items.map((item, index) => ({
@@ -97,7 +111,6 @@ export default function BolPage() {
             setCommodities([{ id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
         }
         
-        // Handle template application
         const templateId = searchParams.get('templateId');
         if (templateId) {
             const templateData = sessionStorage.getItem(`bolTemplate_${templateId}`);

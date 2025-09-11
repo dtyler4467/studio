@@ -44,7 +44,6 @@ type Order = {
     contact: string;
     phone: string;
     notes?: string;
-    appointmentTime?: Date;
     weight: number;
     volume: number;
     items: OrderItem[];
@@ -83,7 +82,6 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         weight: 0,
         volume: 0,
         notes: '',
-        appointmentTime: undefined,
     });
     
     const [customerSearch, setCustomerSearch] = useState("");
@@ -109,7 +107,6 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                 weight: 0,
                 volume: 0,
                 notes: '',
-                appointmentTime: undefined,
             });
             setCustomerSearch('');
         }
@@ -174,6 +171,9 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         query.set('consigneeState', newOrder.state);
         query.set('consigneeZip', newOrder.zip);
         query.set('consigneePhone', newOrder.phone);
+        if (newOrder.notes) {
+            query.set('notes', newOrder.notes);
+        }
         
         newOrder.items.forEach(item => {
             query.append('items', item.name);
@@ -185,25 +185,6 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         setIsOpen(false);
     };
     
-    const handleAppointmentDateSelect = (date: Date | undefined) => {
-        if (!date) {
-            handleInputChange('appointmentTime', undefined);
-            return;
-        }
-        const existingTime = formData.appointmentTime || new Date();
-        const newDate = new Date(date);
-        newDate.setHours(existingTime.getHours());
-        newDate.setMinutes(existingTime.getMinutes());
-        handleInputChange('appointmentTime', newDate);
-    }
-    
-    const handleAppointmentTimeChange = (time: string) => {
-        const [hours, minutes] = time.split(':');
-        const newDate = formData.appointmentTime ? new Date(formData.appointmentTime) : new Date();
-        newDate.setHours(parseInt(hours, 10));
-        newDate.setMinutes(parseInt(minutes, 10));
-        handleInputChange('appointmentTime', newDate);
-    }
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -489,3 +470,4 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
+
