@@ -390,7 +390,7 @@ type ScheduleContextType = {
   addTimeClockEvent: (event: Omit<TimeClockEvent, 'id' | 'timestamp'>) => void;
   updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
   updateInventory: (itemName: string, quantityChange: number) => void;
-  saveBol: (bolData: Omit<BillOfLading, 'id'>) => BillOfLading;
+  saveBol: (bolData: Omit<BillOfLading, 'id'| 'documentUri'>, documentUri?: string | null) => BillOfLading;
   saveBolTemplate: (templateData: Omit<BolTemplate, 'id'>) => void;
   deleteBolTemplate: (templateId: string) => void;
 };
@@ -1305,10 +1305,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    const saveBol = (bolData: Omit<BillOfLading, 'id'>) => {
+    const saveBol = (bolData: Omit<BillOfLading, 'id' | 'documentUri'>, documentUri?: string | null) => {
         const newBol: BillOfLading = {
             ...bolData,
             id: `BOL-HIST-${Date.now()}`,
+            documentUri: documentUri
         };
         setBolHistory(prev => [newBol, ...prev]);
         return newBol;

@@ -151,6 +151,44 @@ export default function BolPage() {
         setCommodities(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
     };
 
+    const generateBolHtml = () => {
+        // This function creates a simple HTML representation of the BOL
+        return `
+            <h1>Bill of Lading: ${bolNumber}</h1>
+            <h2>Shipper</h2>
+            <p>${shipperName}<br>${shipperAddress}, ${shipperCity}, ${shipperState} ${shipperZip}</p>
+            <h2>Consignee</h2>
+            <p>${consigneeName}<br>${consigneeAddress}, ${consigneeCity}, ${consigneeState} ${consigneeZip}</p>
+            <h2>Carrier Details</h2>
+            <p>Carrier: ${carrierName}<br>Trailer: ${trailerNumber}</p>
+            <h2>Commodities</h2>
+            <table border="1" cellpadding="5" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Units</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Weight</th>
+                        <th>Class</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${commodities.map(c => `
+                        <tr>
+                            <td>${c.units}</td>
+                            <td>${c.pkgType}</td>
+                            <td>${c.description}</td>
+                            <td>${c.weight}</td>
+                            <td>${c.class}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <h2>Notes</h2>
+            <p>${notes}</p>
+        `;
+    };
+
     const handleSaveBol = () => {
         if (!bolNumber || !consigneeName || !carrierName) {
             toast({
@@ -161,17 +199,19 @@ export default function BolPage() {
             return;
         }
 
-        const newBol = {
+        const newBolData = {
             bolNumber,
             customer: consigneeName,
             origin: `${shipperCity}, ${shipperState}`,
             destination: `${consigneeCity}, ${consigneeState}`,
-            deliveryDate: new Date().toISOString(), // Or a date picker
+            deliveryDate: new Date().toISOString(),
             carrier: carrierName,
-            // In a real app, documentUri would come from an upload
         };
 
-        const savedBol = saveBol(newBol);
+        const bolHtml = generateBolHtml();
+        const documentUri = `data:text/html;base64,${btoa(bolHtml)}`;
+
+        const savedBol = saveBol(newBolData, documentUri);
         sessionStorage.removeItem('bolCommodities');
         
         toast({
