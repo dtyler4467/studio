@@ -25,8 +25,10 @@ import { useRouter } from 'next/navigation';
 import { useSchedule, Customer } from '@/hooks/use-schedule';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { format } from 'date-fns';
 
 
 type OrderItem = { name: string; quantity: number };
@@ -34,7 +36,15 @@ type OrderItem = { name: string; quantity: number };
 type Order = {
     id: string;
     customer: string;
-    destination: string;
+    destination: string; // city, state
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    contact: string;
+    phone: string;
+    notes?: string;
+    appointmentTime?: Date;
     weight: number;
     volume: number;
     items: OrderItem[];
@@ -42,10 +52,10 @@ type Order = {
 };
 
 const initialOrders: Order[] = [
-    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50, items: [{ name: 'Bolts', quantity: 50 }], bolNumber: 'BOL-1625101' },
-    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150, items: [{ name: 'Washers', quantity: 100 }], bolNumber: 'BOL-1625102' },
-    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100, items: [{ name: 'Screws', quantity: 200 }], bolNumber: 'BOL-1625103' },
-    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30, items: [{ name: 'Nuts', quantity: 500 }], bolNumber: 'BOL-1625104' },
+    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50, items: [{ name: 'Bolts', quantity: 50 }], bolNumber: 'BOL-1625101', address: '123 Main St', city: 'New York', state: 'NY', zip: '10001', contact: 'John Doe', phone: '555-1111' },
+    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150, items: [{ name: 'Washers', quantity: 100 }], bolNumber: 'BOL-1625102', address: '456 Oak Ave', city: 'Chicago', state: 'IL', zip: '60601', contact: 'Jane Smith', phone: '555-2222' },
+    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100, items: [{ name: 'Screws', quantity: 200 }], bolNumber: 'BOL-1625103', address: '789 Pine Ln', city: 'Miami', state: 'FL', zip: '33101', contact: 'Jim Brown', phone: '555-3333' },
+    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30, items: [{ name: 'Nuts', quantity: 500 }], bolNumber: 'BOL-1625104', address: '101 Maple Rd', city: 'New York', state: 'NY', zip: '10002', contact: 'Sue Green', phone: '555-4444' },
 ];
 
 const carriers = [
@@ -59,12 +69,25 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
     const { toast } = useToast();
     const router = useRouter();
     const { inventoryItems, customers } = useSchedule();
-    const [bolNumber, setBolNumber] = useState('');
-    const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
+    
+    const [formData, setFormData] = useState<Omit<Order, 'id' | 'destination'>>({
+        bolNumber: '',
+        customer: '',
+        address: '',
+        city: '',
+        state: '',
+        zip: '',
+        contact: '',
+        phone: '',
+        items: [],
+        weight: 0,
+        volume: 0,
+        notes: '',
+        appointmentTime: new Date(),
+    });
+    
     const [customerSearch, setCustomerSearch] = useState("");
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
-    const [destination, setDestination] = useState("");
     
     const inventoryOptions: MultiSelectOption[] = inventoryItems.map(item => ({
         value: item.description,
@@ -73,52 +96,70 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
 
     useEffect(() => {
         if (isOpen) {
-            setBolNumber(`BOL-${Date.now()}`);
-            setSelectedItems([]);
-            setCustomerSearch("");
-            setSelectedCustomer(null);
-            setDestination("");
+            setFormData({
+                bolNumber: `BOL-${Date.now()}`,
+                customer: '',
+                address: '',
+                city: '',
+                state: '',
+                zip: '',
+                contact: '',
+                phone: '',
+                items: [],
+                weight: 0,
+                volume: 0,
+                notes: '',
+                appointmentTime: new Date(),
+            });
+            setCustomerSearch('');
         }
     }, [isOpen]);
-    
-    useEffect(() => {
-        if (selectedCustomer) {
-            setCustomerSearch(selectedCustomer.name);
-            setDestination(selectedCustomer.destination || "");
+
+    const handleSelectCustomer = (customer: Customer | null) => {
+        if (customer) {
+            const [city, state] = customer.destination?.split(', ') || ['', ''];
+            setFormData(prev => ({
+                ...prev,
+                customer: customer.name,
+                phone: customer.phone,
+                city: city,
+                state: state,
+            }));
+            setCustomerSearch(customer.name);
         } else {
-             setCustomerSearch("");
+             setFormData(prev => ({ ...prev, customer: customerSearch, phone: '', city: '', state: '' }));
         }
-    }, [selectedCustomer]);
+    };
+    
+    const handleInputChange = (field: keyof typeof formData, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
 
     const handleItemSelect = (itemName: string) => {
-        // Prevent adding duplicates
-        if (!selectedItems.some(item => item.name === itemName)) {
-            setSelectedItems(prev => [...prev, { name: itemName, quantity: 1 }]);
+        if (!formData.items.some(item => item.name === itemName)) {
+            handleInputChange('items', [...formData.items, { name: itemName, quantity: 1 }]);
         }
     };
 
     const handleQuantityChange = (itemName: string, quantity: number) => {
-        setSelectedItems(prev => prev.map(item => item.name === itemName ? { ...item, quantity } : item));
+        const newItems = formData.items.map(item => item.name === itemName ? { ...item, quantity } : item);
+        handleInputChange('items', newItems);
     };
 
     const handleRemoveItem = (itemName: string) => {
-        setSelectedItems(prev => prev.filter(item => item.name !== itemName));
+        handleInputChange('items', formData.items.filter(item => item.name !== itemName));
     };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+        
         const newOrder = {
-            customer: customerSearch,
-            destination: destination,
-            items: selectedItems,
-            weight: Number(formData.get('weight')),
-            volume: Number(formData.get('volume')),
-            bolNumber: bolNumber,
+            ...formData,
+            destination: `${formData.city}, ${formData.state}`,
         };
 
-        if (!newOrder.customer || !newOrder.destination || !newOrder.weight || !newOrder.volume || newOrder.items.length === 0) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields.' });
+        if (!newOrder.customer || !newOrder.city || !newOrder.state || !newOrder.weight || !newOrder.volume || newOrder.items.length === 0) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all required fields.' });
             return;
         }
 
@@ -128,7 +169,12 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         const query = new URLSearchParams();
         query.set('bolNumber', newOrder.bolNumber);
         query.set('consigneeName', newOrder.customer);
-        query.set('consigneeDestination', newOrder.destination);
+        query.set('consigneeAddress', newOrder.address);
+        query.set('consigneeCity', newOrder.city);
+        query.set('consigneeState', newOrder.state);
+        query.set('consigneeZip', newOrder.zip);
+        query.set('consigneePhone', newOrder.phone);
+        
         newOrder.items.forEach(item => {
             query.append('items', item.name);
             query.append('quantities', item.quantity.toString());
@@ -144,7 +190,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
             <DialogTrigger asChild>
                 <Button variant="outline"><PlusCircle className="mr-2"/> Manual Entry</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Add New Order</DialogTitle>
                     <DialogDescription>
@@ -154,7 +200,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                 <form id="add-order-form" onSubmit={handleSubmit} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                      <div className="space-y-2">
                         <Label htmlFor="bolNumber">BOL Number</Label>
-                        <Input id="bolNumber" name="bolNumber" value={bolNumber} readOnly />
+                        <Input id="bolNumber" name="bolNumber" value={formData.bolNumber} readOnly />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="customer">Customer</Label>
@@ -166,7 +212,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                                 aria-expanded={isCustomerPopoverOpen}
                                 className="w-full justify-between"
                                 >
-                                {selectedCustomer ? selectedCustomer.name : "Select customer..."}
+                                {formData.customer || "Select customer..."}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
@@ -182,7 +228,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                                         key={customer.id}
                                         value={customer.name}
                                         onSelect={() => {
-                                            setSelectedCustomer(customer);
+                                            handleSelectCustomer(customer);
                                             setIsCustomerPopoverOpen(false)
                                         }}
                                     >
@@ -195,8 +241,32 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                         </Popover>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="destination">Destination</Label>
-                        <Input id="destination" name="destination" placeholder="e.g. San Francisco, CA" value={destination} onChange={(e) => setDestination(e.target.value)}/>
+                        <Label htmlFor="address">Address</Label>
+                        <Input id="address" name="address" placeholder="e.g. 123 Main St" value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="city">City</Label>
+                            <Input id="city" name="city" placeholder="e.g. Anytown" value={formData.city} onChange={(e) => handleInputChange('city', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="state">State</Label>
+                            <Input id="state" name="state" placeholder="e.g. CA" value={formData.state} onChange={(e) => handleInputChange('state', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="zip">Zip Code</Label>
+                            <Input id="zip" name="zip" placeholder="e.g. 12345" value={formData.zip} onChange={(e) => handleInputChange('zip', e.target.value)} />
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="contact">Contact Name</Label>
+                            <Input id="contact" name="contact" placeholder="e.g. John Doe" value={formData.contact} onChange={(e) => handleInputChange('contact', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input id="phone" name="phone" type="tel" placeholder="e.g. 555-123-4567" value={formData.phone} onChange={(e) => handleInputChange('phone', e.target.value)} />
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label>Items</Label>
@@ -213,7 +283,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                             </SelectContent>
                         </Select>
                         <div className="space-y-2 mt-2">
-                            {selectedItems.map(item => (
+                            {formData.items.map(item => (
                                 <div key={item.name} className="flex items-center gap-2">
                                     <Input value={item.name} readOnly className="flex-1" />
                                     <Input 
@@ -223,7 +293,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                                         className="w-20"
                                         min="1"
                                     />
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.name)}>
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(item.name)}>
                                         <MinusCircle className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </div>
@@ -233,12 +303,51 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                      <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-2">
                             <Label htmlFor="weight">Weight (lbs)</Label>
-                            <Input id="weight" name="weight" type="number" placeholder="e.g. 750" />
+                            <Input id="weight" name="weight" type="number" placeholder="e.g. 750" value={formData.weight > 0 ? formData.weight : ''} onChange={(e) => handleInputChange('weight', Number(e.target.value))} />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="volume">Volume (cu ft)</Label>
-                            <Input id="volume" name="volume" type="number" placeholder="e.g. 80" />
+                            <Input id="volume" name="volume" type="number" placeholder="e.g. 80" value={formData.volume > 0 ? formData.volume : ''} onChange={(e) => handleInputChange('volume', Number(e.target.value))} />
                         </div>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea id="notes" name="notes" placeholder="Add any notes for this order..." value={formData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Appointment Time</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn("w-full justify-start text-left font-normal")}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {formData.appointmentTime ? format(formData.appointmentTime, "PPP p") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={formData.appointmentTime}
+                                    onSelect={(date) => date && handleInputChange('appointmentTime', date)}
+                                    initialFocus
+                                />
+                                <div className="p-2 border-t border-border">
+                                    <Input
+                                        type="time"
+                                        value={format(formData.appointmentTime || new Date(), "HH:mm")}
+                                        onChange={(e) => {
+                                            const newDate = new Date(formData.appointmentTime || new Date());
+                                            const [hours, minutes] = e.target.value.split(':');
+                                            newDate.setHours(parseInt(hours, 10));
+                                            newDate.setMinutes(parseInt(minutes, 10));
+                                            handleInputChange('appointmentTime', newDate);
+                                        }}
+                                    />
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </form>
                 <DialogFooter>
