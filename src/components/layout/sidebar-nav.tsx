@@ -131,6 +131,7 @@ const navItems: NavItem[] = [
             roles: ['Admin', 'Dispatcher', 'Manager'],
             subItems: [
                 { href: '/dashboard/warehouse-hub-manager/bol', icon: PlusCircle, label: 'Create BOL', roles: ['Admin', 'Dispatcher', 'Manager'] },
+                { href: '/dashboard/warehouse-hub-manager/bol/templates', icon: FileText, label: 'BOL created templates', roles: ['Admin', 'Dispatcher', 'Manager'] },
                 { href: '/dashboard/warehouse-hub-manager/bol/history', icon: History, label: 'BOL History', roles: ['Admin', 'Dispatcher', 'Manager'] },
             ]
         },
