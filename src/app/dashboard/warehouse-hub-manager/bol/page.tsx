@@ -152,40 +152,88 @@ export default function BolPage() {
     };
 
     const generateBolHtml = () => {
-        // This function creates a simple HTML representation of the BOL
         return `
-            <h1>Bill of Lading: ${bolNumber}</h1>
-            <h2>Shipper</h2>
-            <p>${shipperName}<br>${shipperAddress}, ${shipperCity}, ${shipperState} ${shipperZip}</p>
-            <h2>Consignee</h2>
-            <p>${consigneeName}<br>${consigneeAddress}, ${consigneeCity}, ${consigneeState} ${consigneeZip}</p>
-            <h2>Carrier Details</h2>
-            <p>Carrier: ${carrierName}<br>Trailer: ${trailerNumber}</p>
-            <h2>Commodities</h2>
-            <table border="1" cellpadding="5" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>Units</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                        <th>Weight</th>
-                        <th>Class</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${commodities.map(c => `
-                        <tr>
-                            <td>${c.units}</td>
-                            <td>${c.pkgType}</td>
-                            <td>${c.description}</td>
-                            <td>${c.weight}</td>
-                            <td>${c.class}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-            <h2>Notes</h2>
-            <p>${notes}</p>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Bill of Lading - ${bolNumber}</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 2rem; background-color: #f8f9fa; color: #212529; }
+                .container { max-width: 1000px; margin: auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                h1, h2 { color: #0d6efd; border-bottom: 2px solid #dee2e6; padding-bottom: 0.5rem; margin-top: 1.5rem; }
+                h1 { font-size: 2rem; display: flex; align-items: center; }
+                h2 { font-size: 1.5rem; }
+                table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+                th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; }
+                th { background-color: #f8f9fa; font-weight: 600; }
+                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+                .grid-item { display: flex; flex-direction: column; }
+                .grid-item p { margin: 0.25rem 0; }
+                .grid-item strong { color: #495057; }
+                .notes { margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; }
+                .logo { margin-right: 1rem; width: 40px; height: 40px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>
+                    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+                    Master Bill of Lading
+                </h1>
+                <p><strong>BOL #:</strong> ${bolNumber}</p>
+
+                <div class="grid">
+                    <div class="grid-item">
+                        <h2>Shipper / Consignor</h2>
+                        <p><strong>Name:</strong> ${shipperName}</p>
+                        <p><strong>Address:</strong> ${shipperAddress}</p>
+                        <p>${shipperCity}, ${shipperState} ${shipperZip}</p>
+                        <p><strong>Phone:</strong> ${shipperPhone}</p>
+                    </div>
+                    <div class="grid-item">
+                        <h2>Consignee</h2>
+                        <p><strong>Name:</strong> ${consigneeName}</p>
+                        <p><strong>Address:</strong> ${consigneeAddress}</p>
+                        <p>${consigneeCity}, ${consigneeState} ${consigneeZip}</p>
+                        <p><strong>Phone:</strong> ${consigneePhone}</p>
+                    </div>
+                </div>
+
+                <h2>Shipment & Carrier Details</h2>
+                <table>
+                    <tr><th>Carrier Name</th><td>${carrierName}</td><th>Trailer Number</th><td>${trailerNumber}</td></tr>
+                    <tr><th>Seal Number</th><td>${sealNumber}</td><th>PO Number</th><td>${poNumber}</td></tr>
+                    <tr><th>Reference Number</th><td colspan="3">${refNumber}</td></tr>
+                </table>
+
+                <h2>Commodities</h2>
+                <table>
+                    <thead>
+                        <tr><th>Units</th><th>Pkg. Type</th><th>HM</th><th>Description</th><th>Weight (lbs)</th><th>Class</th></tr>
+                    </thead>
+                    <tbody>
+                        ${commodities.map(c => `
+                            <tr>
+                                <td>${c.units}</td>
+                                <td>${c.pkgType}</td>
+                                <td>${c.hm ? 'X' : ''}</td>
+                                <td>${c.description}</td>
+                                <td>${c.weight}</td>
+                                <td>${c.class}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                
+                <div class="notes">
+                    <h2>Notes & Special Instructions</h2>
+                    <p>${notes.replace(/\n/g, '<br>')}</p>
+                </div>
+            </div>
+        </body>
+        </html>
         `;
     };
 
