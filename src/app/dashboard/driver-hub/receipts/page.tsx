@@ -177,7 +177,6 @@ export default function ReceiptsPage() {
     const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
     const [receiptToView, setReceiptToView] = useState<Receipt | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [imageToEnhance, setImageToEnhance] = useState<string | null>(null);
     const [extractedData, setExtractedData] = useState< (ReceiptData & { receiptUri: string | null }) | null>(null);
     const [isConfirmOpen, setConfirmOpen] = useState(false);
     const { toast } = useToast();
@@ -187,16 +186,12 @@ export default function ReceiptsPage() {
         setReceipts(initialReceipts);
     }, []);
 
-    const handleReceiptScan = (receiptUri: string) => {
-        setImageToEnhance(receiptUri);
-    };
-    
-    const handleEnhancementComplete = async (editedUri: string) => {
-        setImageToEnhance(null); // Close the enhancement dialog
+    const handleReceiptScan = async (receiptUri: string) => {
+        toast({ title: "Enhancements Coming Soon!", description: "AI-powered image editing will be available in a future update." });
         setIsProcessing(true);
         try {
-            const data = await extractReceiptData({ photoDataUri: editedUri });
-            setExtractedData({ ...data, receiptUri: editedUri });
+            const data = await extractReceiptData({ photoDataUri: receiptUri });
+            setExtractedData({ ...data, receiptUri: receiptUri });
             setConfirmOpen(true);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Extraction Failed', description: 'Could not extract data from the receipt. Please enter it manually.' });
@@ -207,7 +202,7 @@ export default function ReceiptsPage() {
                 amount: '',
                 category: 'Other',
                 notes: 'AI extraction failed',
-                receiptUri: editedUri,
+                receiptUri: receiptUri,
             });
             setConfirmOpen(true);
         } finally {
@@ -397,16 +392,9 @@ export default function ReceiptsPage() {
             </AlertDialogContent>
         </AlertDialog>
         
-        {imageToEnhance && (
-            <EnhancePhotoDialog
-                isOpen={!!imageToEnhance}
-                onOpenChange={(open) => { if (!open) setImageToEnhance(null); }}
-                imageDataUri={imageToEnhance}
-                onSave={handleEnhancementComplete}
-            />
-        )}
-
       </main>
     </div>
   );
 }
+
+    
