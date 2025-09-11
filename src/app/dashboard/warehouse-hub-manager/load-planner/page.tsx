@@ -186,8 +186,12 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
     };
     
     const handleAppointmentDateSelect = (date: Date | undefined) => {
+        if (!date) {
+            handleInputChange('appointmentTime', undefined);
+            return;
+        }
         const existingTime = formData.appointmentTime || new Date();
-        const newDate = date || new Date();
+        const newDate = date;
         newDate.setHours(existingTime.getHours());
         newDate.setMinutes(existingTime.getMinutes());
         handleInputChange('appointmentTime', newDate);
@@ -344,6 +348,9 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                                 <Calendar
+                                    captionLayout="dropdown-buttons"
+                                    fromYear={new Date().getFullYear()}
+                                    toYear={new Date().getFullYear() + 5}
                                     mode="single"
                                     selected={formData.appointmentTime}
                                     onSelect={handleAppointmentDateSelect}
@@ -513,4 +520,3 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
-
