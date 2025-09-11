@@ -39,6 +39,7 @@ export default function BolPage() {
         const name = searchParams.get('consigneeName');
         const destination = searchParams.get('consigneeDestination');
         const items = searchParams.getAll('items');
+        const quantities = searchParams.getAll('quantities');
 
         if (bol) setBolNumber(bol);
         if (name) setConsigneeName(name);
@@ -47,10 +48,10 @@ export default function BolPage() {
         if (items.length > 0) {
             const initialCommodities = items.map((item, index) => ({
                 id: Date.now() + index,
-                units: '1',
+                units: quantities[index] || '1',
                 pkgType: 'Pallet',
                 hm: false,
-                description: item.replace(/ \(\d+ available\)/, ''), // Remove inventory count
+                description: item,
                 weight: '',
                 class: ''
             }));
@@ -251,5 +252,7 @@ export default function BolPage() {
         </div>
     );
 }
+
+    
 
     

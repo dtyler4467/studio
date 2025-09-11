@@ -3,7 +3,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { ClipboardList, PlusCircle, Truck, Package, Weight, Calendar, Save, XCircle } from 'lucide-react';
+import { ClipboardList, PlusCircle, Truck, Package, Weight, Calendar, Save, XCircle, MinusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -22,21 +22,23 @@ import { useToast } from '@/hooks/use-toast';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 import { useRouter } from 'next/navigation';
 
+type OrderItem = { name: string; quantity: number };
+
 type Order = {
     id: string;
     customer: string;
     destination: string;
     weight: number;
     volume: number;
-    items: string[];
+    items: OrderItem[];
     bolNumber: string;
 };
 
 const initialOrders: Order[] = [
-    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50, items: ['Bolts'], bolNumber: 'BOL-1625101' },
-    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150, items: ['Washers'], bolNumber: 'BOL-1625102' },
-    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100, items: ['Screws'], bolNumber: 'BOL-1625103' },
-    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30, items: ['Nuts'], bolNumber: 'BOL-1625104' },
+    { id: 'SO-101', customer: 'Customer A', destination: 'New York, NY', weight: 500, volume: 50, items: [{ name: 'Bolts', quantity: 50 }], bolNumber: 'BOL-1625101' },
+    { id: 'SO-102', customer: 'Customer B', destination: 'Chicago, IL', weight: 1200, volume: 150, items: [{ name: 'Washers', quantity: 100 }], bolNumber: 'BOL-1625102' },
+    { id: 'SO-103', customer: 'Customer C', destination: 'Miami, FL', weight: 800, volume: 100, items: [{ name: 'Screws', quantity: 200 }], bolNumber: 'BOL-1625103' },
+    { id: 'SO-104', customer: 'Customer D', destination: 'New York, NY', weight: 250, volume: 30, items: [{ name: 'Nuts', quantity: 500 }], bolNumber: 'BOL-1625104' },
 ];
 
 const carriers = [
@@ -46,11 +48,11 @@ const carriers = [
 ]
 
 const inventoryItems: MultiSelectOption[] = [
-    { value: 'Bolts (1250 available)', label: 'Bolts (1250 available)' },
-    { value: 'Washers (450 available)', label: 'Washers (450 available)' },
-    { value: 'Screws (3000 available)', label: 'Screws (3000 available)' },
-    { value: 'Nuts (0 available)', label: 'Nuts (0 available)' },
-    { value: 'Pallet of Bricks (Not Tracked)', label: 'Pallet of Bricks (Not Tracked)' },
+    { value: 'Bolts', label: 'Bolts (1250 available)' },
+    { value: 'Washers', label: 'Washers (450 available)' },
+    { value: 'Screws', label: 'Screws (3000 available)' },
+    { value: 'Nuts', label: 'Nuts (0 available)' },
+    { value: 'Pallet of Bricks', label: 'Pallet of Bricks (Not Tracked)' },
 ];
 
 function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>) => void }) {
@@ -58,7 +60,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
     const { toast } = useToast();
     const router = useRouter();
     const [bolNumber, setBolNumber] = useState('');
-    const [selectedItems, setSelectedItems] = useState<string[]>([]);
+    const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
     
     useEffect(() => {
         if (isOpen) {
@@ -66,6 +68,22 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
             setSelectedItems([]);
         }
     }, [isOpen]);
+
+    const handleItemSelect = (itemName: string) => {
+        // Prevent adding duplicates
+        if (!selectedItems.some(item => item.name === itemName)) {
+            setSelectedItems(prev => [...prev, { name: itemName, quantity: 1 }]);
+        }
+    };
+
+    const handleQuantityChange = (itemName: string, quantity: number) => {
+        setSelectedItems(prev => prev.map(item => item.name === itemName ? { ...item, quantity } : item));
+    };
+
+    const handleRemoveItem = (itemName: string) => {
+        setSelectedItems(prev => prev.filter(item => item.name !== itemName));
+    };
+
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -91,7 +109,10 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         query.set('bolNumber', newOrder.bolNumber);
         query.set('consigneeName', newOrder.customer);
         query.set('consigneeDestination', newOrder.destination);
-        newOrder.items.forEach(item => query.append('items', item));
+        newOrder.items.forEach(item => {
+            query.append('items', item.name);
+            query.append('quantities', item.quantity.toString());
+        });
         
         router.push(`/dashboard/warehouse-hub-manager/bol?${query.toString()}`);
         
@@ -103,7 +124,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
             <DialogTrigger asChild>
                 <Button variant="outline"><PlusCircle className="mr-2"/> Manual Entry</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Add New Order</DialogTitle>
                     <DialogDescription>
@@ -123,15 +144,37 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                         <Label htmlFor="destination">Destination</Label>
                         <Input id="destination" name="destination" placeholder="e.g. San Francisco, CA" />
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="item">Items</Label>
-                        <MultiSelect
-                            options={inventoryItems}
-                            selected={selectedItems}
-                            onChange={setSelectedItems}
-                            placeholder="Select or add items..."
-                            allowOther
-                        />
+                    <div className="space-y-2">
+                        <Label>Items</Label>
+                        <Select onValueChange={handleItemSelect}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select an item to add..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {inventoryItems.map(item => (
+                                    <SelectItem key={item.value} value={item.value}>
+                                        {item.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <div className="space-y-2 mt-2">
+                            {selectedItems.map(item => (
+                                <div key={item.name} className="flex items-center gap-2">
+                                    <Input value={item.name} readOnly className="flex-1" />
+                                    <Input 
+                                        type="number" 
+                                        value={item.quantity} 
+                                        onChange={(e) => handleQuantityChange(item.name, parseInt(e.target.value, 10) || 0)}
+                                        className="w-20"
+                                        min="1"
+                                    />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.name)}>
+                                        <MinusCircle className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                      <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-2">
@@ -293,5 +336,7 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
+
+    
 
     
