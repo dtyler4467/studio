@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -143,7 +142,7 @@ export type TrainingAssignment = {
 export type DeletionLog = {
     id: string;
     deletedItemId: string;
-    itemType: 'Shift' | 'User' | 'File' | 'Equipment';
+    itemType: 'Shift' | 'User' | 'File' | 'Equipment' | 'BolTemplate';
     deletedBy: string; // User ID
     deletedAt: Date;
     originalData: any;
@@ -273,6 +272,13 @@ export type BillOfLading = {
   otherDocuments?: { name: string; uri: string }[];
 };
 
+export type BolTemplate = {
+    id: string;
+    name: string;
+    shipper: { name: string; address: string; city: string; state: string; zip: string; phone: string; };
+    consignee: { name: string; address: string; city: string; state: string; zip: string; phone: string; };
+}
+
 export type InventoryItem = {
     sku: string;
     description: string;
@@ -310,6 +316,7 @@ type ScheduleContextType = {
   jobPostings: JobPosting[];
   applicants: Applicant[];
   bolHistory: BillOfLading[];
+  bolTemplates: BolTemplate[];
   inventoryItems: InventoryItem[];
   availableStatuses: YardEventStatus[];
   addCustomStatus: (newStatus: string) => void;
@@ -368,6 +375,8 @@ type ScheduleContextType = {
   updateTimeClockStatus: (clockInId: string, status: 'Approved' | 'Denied') => void;
   updateInventory: (itemName: string, quantityChange: number) => void;
   saveBol: (bolData: Omit<BillOfLading, 'id'>) => BillOfLading;
+  saveBolTemplate: (templateData: Omit<BolTemplate, 'id'>) => void;
+  deleteBolTemplate: (templateId: string) => void;
 };
 
 export const initialShifts: Shift[] = [
@@ -615,8 +624,10 @@ export const initialBolHistory: BillOfLading[] = [
     { id: 'BOL-HIST-002', bolNumber: 'BOL67890', customer: 'Globex Corp.', origin: 'Chicago, IL', destination: 'New York, NY', deliveryDate: '2024-08-05', carrier: 'J.B. Hunt', documentUri: "https://picsum.photos/seed/bol2/800/1100" }
 ];
 
+export const initialBolTemplates: BolTemplate[] = [];
+
 export const initialInventoryItems: InventoryItem[] = [
-    { sku: 'SKU12345', description: '1/2" Steel Bolts', location: 'Aisle 3, Bin 4', qty: 1250, reorderPoint: 500, status: 'In Stock', price: 0.50 },
+    { sku: 'SKU12345', description: '1/2" Steel Bolts', location: 'Aisle 3, Bin 4', qty: 1250, reorderPoint: 500, price: 0.50 },
     { sku: 'SKU67890', description: '3/4" Nylon Washers', location: 'Aisle 5, Bin 2', qty: 450, reorderPoint: 500, status: 'Low Stock', price: 0.10 },
     { sku: 'SKU54321', description: '2" Wood Screws', location: 'Aisle 1, Bin 1', qty: 3000, reorderPoint: 1000, status: 'In Stock', price: 0.25 },
     { sku: 'SKU98765', description: 'M8 Hex Nuts', location: 'Aisle 3, Bin 5', qty: 0, reorderPoint: 200, status: 'Out of Stock', price: 0.15 },
@@ -656,6 +667,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [jobPostings, setJobPostings] = useState<JobPosting[]>(initialJobPostings);
   const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants);
   const [bolHistory, setBolHistory] = useState<BillOfLading[]>(initialBolHistory);
+  const [bolTemplates, setBolTemplates] = useState<BolTemplate[]>(initialBolTemplates);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(initialInventoryItems);
   const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   
@@ -1023,6 +1035,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
              case 'Equipment':
                 setEquipment(prev => [...prev, logEntry.originalData]);
                 break;
+            case 'BolTemplate':
+                setBolTemplates(prev => [...prev, logEntry.originalData]);
+                break;
             default:
                 break;
         }
@@ -1262,9 +1277,33 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return newBol;
     };
 
+    const saveBolTemplate = (templateData: Omit<BolTemplate, 'id'>) => {
+        const newTemplate: BolTemplate = {
+            ...templateData,
+            id: `BOL-TPL-${Date.now()}`,
+        };
+        setBolTemplates(prev => [...prev, newTemplate]);
+    }
+
+    const deleteBolTemplate = (templateId: string) => {
+        const templateToDelete = bolTemplates.find(t => t.id === templateId);
+        if (templateToDelete) {
+            const logEntry: DeletionLog = {
+                id: `LOG${Date.now()}`,
+                deletedItemId: templateId,
+                itemType: 'BolTemplate',
+                deletedBy: currentUser?.id || 'system',
+                deletedAt: new Date(),
+                originalData: templateToDelete,
+            };
+            setDeletionLogs(prev => [logEntry, ...prev]);
+            setBolTemplates(prev => prev.filter(t => t.id !== templateId));
+        }
+    }
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, inventoryItems, availableStatuses, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, availableStatuses, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );

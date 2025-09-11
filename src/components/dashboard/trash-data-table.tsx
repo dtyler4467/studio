@@ -39,6 +39,8 @@ const getDeletedItemDescription = (item: DeletionLog) => {
             return `User: ${item.originalData.name} (${item.originalData.email})`;
         case 'File':
             return `File: ${item.originalData.name}`;
+        case 'BolTemplate':
+            return `BOL Template: ${item.originalData.name}`;
         default:
             return `Item ID: ${item.deletedItemId}`;
     }

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Header } from '@/components/layout/header';
@@ -10,11 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Save, Trash2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2, MoreVertical } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSchedule } from '@/hooks/use-schedule';
+import { useSchedule, BolTemplate } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <h3 className="text-lg font-semibold text-primary col-span-full">{children}</h3>
@@ -33,8 +34,10 @@ type Commodity = {
 export default function BolPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { saveBol } = useSchedule();
+    const { saveBol, saveBolTemplate } = useSchedule();
     const { toast } = useToast();
+    const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
+    const [templateName, setTemplateName] = useState("");
 
     // State for all form fields
     const [shipperName, setShipperName] = useState('');
@@ -60,13 +63,17 @@ export default function BolPage() {
     const [notes, setNotes] = useState('');
 
     const [commodities, setCommodities] = useState<Commodity[]>([]);
-
+    
     useEffect(() => {
+        // This effect runs once on mount to handle initial query params like order details
         const bol = searchParams.get('bolNumber');
         const name = searchParams.get('consigneeName');
         const destination = searchParams.get('consigneeDestination');
         const items = searchParams.getAll('items');
         const quantities = searchParams.getAll('quantities');
+        
+        // Persist commodities if we are coming back from the template page
+        const existingCommodities = JSON.parse(sessionStorage.getItem('bolCommodities') || '[]');
 
         if (bol) setBolNumber(bol);
         if (name) setConsigneeName(name);
@@ -83,11 +90,37 @@ export default function BolPage() {
                 class: ''
             }));
             setCommodities(initialCommodities);
+            sessionStorage.setItem('bolCommodities', JSON.stringify(initialCommodities));
+        } else if (existingCommodities.length > 0) {
+            setCommodities(existingCommodities);
         } else {
             setCommodities([{ id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
         }
-    }, [searchParams]);
-    
+        
+        // Handle template application
+        const templateId = searchParams.get('templateId');
+        if (templateId) {
+            const templateData = sessionStorage.getItem(`bolTemplate_${templateId}`);
+            if (templateData) {
+                const template: BolTemplate = JSON.parse(templateData);
+                setShipperName(template.shipper.name);
+                setShipperAddress(template.shipper.address);
+                setShipperCity(template.shipper.city);
+                setShipperState(template.shipper.state);
+                setShipperZip(template.shipper.zip);
+                setShipperPhone(template.shipper.phone);
+                setConsigneeName(template.consignee.name);
+                setConsigneeAddress(template.consignee.address);
+                setConsigneeCity(template.consignee.city);
+                setConsigneeState(template.consignee.state);
+                setConsigneeZip(template.consignee.zip);
+                setConsigneePhone(template.consignee.phone);
+            }
+        }
+        
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const handleAddCommodity = () => {
         setCommodities(prev => [...prev, { id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
     };
@@ -121,6 +154,7 @@ export default function BolPage() {
         };
 
         const savedBol = saveBol(newBol);
+        sessionStorage.removeItem('bolCommodities');
         
         toast({
             title: 'BOL Saved',
@@ -129,6 +163,55 @@ export default function BolPage() {
         
         router.push(`/dashboard/warehouse-hub-manager/bol/${savedBol.id}`);
     };
+
+    const handleSaveTemplate = () => {
+        if (!templateName.trim()) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a name for the template.' });
+            return;
+        }
+
+        const templateData: Omit<BolTemplate, 'id'> = {
+            name: templateName,
+            shipper: { name: shipperName, address: shipperAddress, city: shipperCity, state: shipperState, zip: shipperZip, phone: shipperPhone },
+            consignee: { name: consigneeName, address: consigneeAddress, city: consigneeCity, state: consigneeState, zip: consigneeZip, phone: consigneePhone },
+        };
+        
+        saveBolTemplate(templateData);
+        toast({ title: 'Template Saved', description: `Template "${templateName}" has been saved.` });
+        setIsSaveTemplateOpen(false);
+        setTemplateName("");
+    }
+
+    const handleUseTemplate = () => {
+        // Save current commodities to session storage before navigating
+        sessionStorage.setItem('bolCommodities', JSON.stringify(commodities));
+        router.push('/dashboard/warehouse-hub-manager/bol/templates');
+    }
+
+    const clearForm = () => {
+        setShipperName('');
+        setShipperAddress('');
+        setShipperCity('');
+        setShipperState('');
+        setShipperZip('');
+        setShipperPhone('');
+        setConsigneeName('');
+        setConsigneeAddress('');
+        setConsigneeCity('');
+        setConsigneeState('');
+        setConsigneeZip('');
+        setConsigneePhone('');
+        setBolNumber('');
+        setCarrierName('');
+        setTrailerNumber('');
+        setSealNumber('');
+        setPoNumber('');
+        setRefNumber('');
+        setNotes('');
+        setCommodities([{ id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
+        sessionStorage.removeItem('bolCommodities');
+        router.replace('/dashboard/warehouse-hub-manager/bol');
+    }
 
 
     return (
@@ -299,12 +382,55 @@ export default function BolPage() {
                         </div>
 
                     </CardContent>
-                    <CardFooter className="gap-2">
-                        <Button onClick={handleSaveBol}><Save className="mr-2"/>Save BOL</Button>
-                        <Button variant="secondary">Print BOL</Button>
-                        <Button variant="ghost">Clear Form</Button>
+                    <CardFooter className="flex justify-between">
+                        <div>
+                            <Button onClick={handleSaveBol}><Save className="mr-2"/>Save BOL</Button>
+                            <Button variant="secondary" className="ml-2">Print BOL</Button>
+                            <Button variant="ghost" onClick={clearForm}>Clear Form</Button>
+                        </div>
+                        <div>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        Template Task
+                                        <MoreVertical className="ml-2" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setIsSaveTemplateOpen(true)}>Save Template</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleUseTemplate}>Use Template</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </CardFooter>
                 </Card>
+
+                <Dialog open={isSaveTemplateOpen} onOpenChange={setIsSaveTemplateOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Save BOL Template</DialogTitle>
+                            <DialogDescription>
+                                Give your new template a name. This will save the current Shipper and Consignee information.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="template-name" className="text-right">Template Name</Label>
+                                <Input
+                                    id="template-name"
+                                    value={templateName}
+                                    onChange={(e) => setTemplateName(e.target.value)}
+                                    className="col-span-3"
+                                    placeholder="e.g., Acme Inc. to Phoenix"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="ghost" onClick={() => setIsSaveTemplateOpen(false)}>Cancel</Button>
+                            <Button onClick={handleSaveTemplate}>Save</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );
