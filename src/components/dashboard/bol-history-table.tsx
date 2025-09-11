@@ -60,7 +60,12 @@ export function BolHistoryTable() {
         {
             accessorKey: "deliveryDate",
             header: "Delivery Date",
-            cell: ({ row }) => format(new Date(row.original.deliveryDate), "PPP"),
+            cell: ({ row }) => {
+                const dateString = row.original.deliveryDate;
+                // Add time to treat it as local to avoid timezone shift
+                const date = new Date(`${dateString}T00:00:00`);
+                return format(date, "PPP");
+            },
         },
         {
             id: 'actions',
@@ -96,7 +101,7 @@ export function BolHistoryTable() {
 
   return (
     <div className="w-full">
-        <div className="flex items-center py-4">
+        <div className="flex items-center justify-between py-4">
             <Input
             placeholder="Search by BOL, customer, origin, destination..."
             value={globalFilter ?? ''}
@@ -105,6 +110,11 @@ export function BolHistoryTable() {
             }
             className="max-w-sm"
             />
+             <Button variant="outline" asChild>
+                <Link href="/dashboard/yard-management/search">
+                    Back to Search
+                </Link>
+            </Button>
       </div>
       <div className="rounded-md border">
         <Table>
