@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview An AI flow to edit and enhance receipt images.
+ * @fileOverview An AI flow to edit and enhance receipt images, similar to a document scanner app.
  *
  * It exports:
  * - `editReceiptImage` - An asynchronous function to apply enhancements to a receipt image.
@@ -38,7 +38,16 @@ const editReceiptImageFlow = ai.defineFlow(
   },
   async ({ photoDataUri, enhancements }) => {
     
-    const promptText = `Please edit the following receipt image. Apply these enhancements: ${enhancements.join(', ')}. If 'Self-Cropping' is requested, identify the receipt from the background, find its four corners, and crop the image to show only the receipt, removing the background completely. Return only the edited image.`;
+    const promptText = `Act as a document scanner application like CamScanner. Your task is to edit the following receipt image.
+Apply these enhancements diligently: ${enhancements.join(', ')}.
+
+If 'Self-Cropping' is requested, you must perform the following steps:
+1. Identify the receipt document from any background in the image.
+2. Find the four corners of the receipt, even if it's at an angle.
+3. Perform a perspective warp to make the receipt appear as a flat, top-down scan.
+4. Crop the image to show *only* the flattened receipt, removing all background completely.
+
+Return only the fully edited image. Do not return any text or commentary.`;
 
     const { media } = await ai.generate({
         model: 'googleai/gemini-2.5-flash-image-preview',
