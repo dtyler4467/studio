@@ -25,7 +25,7 @@ import { User } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
-import { YardEventStatus } from "@/hooks/use-schedule";
+import { useSchedule, YardEventStatus } from "@/hooks/use-schedule";
 import { Textarea } from "../ui/textarea";
 
 export const formSchema = z.object({
@@ -70,10 +70,8 @@ const ClientFormattedDate = () => {
     return <>{format(date, 'PPP p')}</>
 }
 
-const statuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock'];
-
 export function YardCheckInForm({ form, onTransactionTypeChange }: YardCheckInFormProps) {
-
+  const { availableStatuses } = useSchedule();
   const assignmentType = form.watch("assignmentType");
 
   return (
@@ -259,7 +257,7 @@ export function YardCheckInForm({ form, onTransactionTypeChange }: YardCheckInFo
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            {availableStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <FormMessage />

@@ -51,7 +51,7 @@ export type Registration = {
     status: 'Pending' | 'Approved' | 'Denied';
 }
 
-export type YardEventStatus = 'Checked In' | 'Loaded' | 'Empty' | 'Blocked' | 'Repair Needed' | 'Rejected' | 'Late' | 'Early' | 'Product on hold' | 'Exited' | 'Waiting for dock';
+export type YardEventStatus = 'Checked In' | 'Loaded' | 'Empty' | 'Blocked' | 'Repair Needed' | 'Rejected' | 'Late' | 'Early' | 'Product on hold' | 'Exited' | 'Waiting for dock' | 'At Dock Door' | 'At Parking Lane';
 
 export type YardEvent = {
     id: string;
@@ -279,6 +279,8 @@ type ScheduleContextType = {
   equipment: Equipment[];
   jobPostings: JobPosting[];
   applicants: Applicant[];
+  availableStatuses: YardEventStatus[];
+  addCustomStatus: (newStatus: string) => void;
   addApplicant: (applicantData: Omit<Applicant, 'id' | 'applicationDate'>) => void;
   updateApplicantStatus: (applicantId: string, status: ApplicantStatus) => void;
   addJobPosting: (jobPostingData: Omit<JobPosting, 'id' | 'datePosted'>) => void;
@@ -574,6 +576,8 @@ export const initialApplicants: Applicant[] = [
     { id: 'APP006', name: 'Fiona Glenanne', email: 'fiona@email.com', phone: '555-6666', applyingFor: 'JOB001', status: 'Rejected', applicationDate: new Date('2024-07-18') },
 ];
 
+const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -604,7 +608,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>(initialJobPostings);
   const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants);
+  const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   
+  const addCustomStatus = (newStatus: string) => {
+    if (!availableStatuses.includes(newStatus as YardEventStatus)) {
+        setAvailableStatuses(prev => [...prev, newStatus as YardEventStatus]);
+    }
+  }
+
   React.useEffect(() => {
     // In a real app, this would be determined by an auth state listener.
     // For now, we'll mock the current user as the first Admin.
@@ -1142,7 +1153,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, availableStatuses, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus }}>
       {children}
     </ScheduleContext.Provider>
   );

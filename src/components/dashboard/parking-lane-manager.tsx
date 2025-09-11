@@ -150,18 +150,32 @@ const MoveTrailerDialog = ({ event, isOpen, onOpenChange }: { event: YardEvent |
     )
 }
 
-const EditStatusDialog = ({ event, isOpen, onOpenChange, onSave }: { event: YardEvent | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (status: YardEventStatus, notes?: string) => void }) => {
+const EditStatusDialog = ({ event, isOpen, onOpenChange, onSave, onAddNewStatus }: { event: YardEvent | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (status: YardEventStatus, notes?: string) => void, onAddNewStatus: (newStatus: string) => void }) => {
     const [status, setStatus] = useState<YardEventStatus | undefined>(event?.status);
     const [notes, setNotes] = useState(event?.statusNotes || '');
+    const [isAddingNew, setIsAddingNew] = useState(false);
+    const [newStatus, setNewStatus] = useState('');
 
-    const statuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock'];
+    const statuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
     React.useEffect(() => {
         setStatus(event?.status);
         setNotes(event?.statusNotes || '');
+        setIsAddingNew(false);
+        setNewStatus('');
     }, [event]);
 
     if (!event) return null;
+
+    const handleSave = () => {
+        if(isAddingNew && newStatus.trim()) {
+            onAddNewStatus(newStatus.trim());
+            onSave(newStatus.trim() as YardEventStatus, notes);
+        } else if (status) {
+            onSave(status, notes);
+        }
+         onOpenChange(false);
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -173,16 +187,35 @@ const EditStatusDialog = ({ event, isOpen, onOpenChange, onSave }: { event: Yard
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                    <div className="space-y-2">
+                     <div className="space-y-2">
                         <Label htmlFor="status">Status</Label>
-                        <Select value={status} onValueChange={(value: YardEventStatus) => setStatus(value)}>
-                            <SelectTrigger id="status">
-                                <SelectValue placeholder="Select a status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2">
+                            <Select value={isAddingNew ? 'new' : status} onValueChange={(value) => {
+                                if (value === 'new') {
+                                    setIsAddingNew(true);
+                                    setStatus(undefined);
+                                } else {
+                                    setIsAddingNew(false);
+                                    setStatus(value as YardEventStatus);
+                                }
+                            }}>
+                                <SelectTrigger id="status">
+                                    <SelectValue placeholder="Select a status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                     <SelectItem value="new">Add new status...</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {isAddingNew && (
+                             <Input 
+                                placeholder="Enter new status name..."
+                                value={newStatus}
+                                onChange={e => setNewStatus(e.target.value)}
+                                className="mt-2"
+                             />
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="notes">Notes</Label>
@@ -191,7 +224,7 @@ const EditStatusDialog = ({ event, isOpen, onOpenChange, onSave }: { event: Yard
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={() => { onSave(status!, notes); onOpenChange(false); }}>Save Status</Button>
+                    <Button onClick={handleSave}>Save Status</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -199,7 +232,7 @@ const EditStatusDialog = ({ event, isOpen, onOpenChange, onSave }: { event: Yard
 }
 
 export function ParkingLaneManager() {
-    const { yardEvents, parkingLanes, addParkingLane, updateYardEventStatus } = useSchedule();
+    const { yardEvents, parkingLanes, addParkingLane, updateYardEventStatus, addCustomStatus } = useSchedule();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
@@ -366,6 +399,7 @@ export function ParkingLaneManager() {
                 isOpen={isStatusDialogOpen}
                 onOpenChange={setStatusDialogOpen}
                 onSave={handleSaveStatus}
+                onAddNewStatus={addCustomStatus}
             />
         </div>
     );
