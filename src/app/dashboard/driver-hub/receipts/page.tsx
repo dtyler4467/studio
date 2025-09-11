@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Image from 'next/image';
+import { extractReceiptData, ReceiptData } from '@/ai/flows/extract-receipt-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Receipt = {
     id: string;
@@ -37,125 +39,141 @@ const initialReceipts: Receipt[] = [
 
 const categories: Receipt['category'][] = ['Fuel', 'Food', 'Maintenance', 'Lodging', 'Other'];
 
-function ReceiptDialog({ onSave, receiptToEdit }: { onSave: (receipt: Omit<Receipt, 'id' | 'status'> | Receipt) => void, receiptToEdit?: Receipt | null }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [formState, setFormState] = useState({
-        vendor: '',
-        amount: '',
-        category: 'Fuel' as Receipt['category'],
-        notes: '',
-        receiptUri: null as string | null,
-    });
+function ConfirmationDialog({
+    receiptData,
+    onSave,
+    isOpen,
+    onOpenChange,
+}: {
+    receiptData: ReceiptData & { receiptUri: string | null };
+    onSave: (receipt: Omit<Receipt, 'id' | 'status'>) => void;
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const [formState, setFormState] = useState(receiptData);
     const { toast } = useToast();
 
     useEffect(() => {
-        if (receiptToEdit) {
-            setFormState({
-                vendor: receiptToEdit.vendor,
-                amount: receiptToEdit.amount.toString(),
-                category: receiptToEdit.category,
-                notes: receiptToEdit.notes || '',
-                receiptUri: receiptToEdit.receiptUri,
-            });
-            setIsOpen(true);
-        } else {
-            // Reset form for new entry
-            setFormState({ vendor: '', amount: '', category: 'Fuel', notes: '', receiptUri: null });
-        }
-    }, [receiptToEdit, isOpen]);
+        setFormState(receiptData);
+    }, [receiptData]);
 
     const handleSave = () => {
         if (!formState.vendor || !formState.amount || !formState.category || !formState.receiptUri) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields and attach a receipt image.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all required fields and ensure a receipt is attached.' });
             return;
         }
 
-        const receiptData = {
-            date: new Date(),
+        const newReceipt = {
+            date: new Date(formState.date || Date.now()),
             vendor: formState.vendor,
             amount: parseFloat(formState.amount),
-            category: formState.category,
+            category: formState.category as Receipt['category'],
             notes: formState.notes,
             receiptUri: formState.receiptUri,
         };
-        
-        onSave(receiptToEdit ? { ...receiptData, id: receiptToEdit.id, status: receiptToEdit.status } : receiptData);
-        setIsOpen(false);
+
+        onSave(newReceipt);
+        onOpenChange(false);
     };
 
+    if (!isOpen) return null;
+
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>Confirm Receipt Details</DialogTitle>
+                    <DialogDescription>
+                        AI has extracted the following data. Please review and confirm before saving.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto pr-4">
+                    <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="vendor">Vendor/Store Name</Label>
+                                <Input id="vendor" value={formState.vendor} onChange={(e) => setFormState(s => ({...s, vendor: e.target.value}))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="amount">Amount</Label>
+                                <Input id="amount" type="number" value={formState.amount} onChange={(e) => setFormState(s => ({...s, amount: e.target.value}))} />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="date">Date</Label>
+                                <Input id="date" type="date" value={formState.date ? format(new Date(formState.date), 'yyyy-MM-dd') : ''} onChange={(e) => setFormState(s => ({...s, date: e.target.value}))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="category">Category</Label>
+                                <Select value={formState.category} onValueChange={(value: Receipt['category']) => setFormState(s => ({...s, category: value}))}>
+                                    <SelectTrigger id="category">
+                                        <SelectValue placeholder="Select a category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map(cat => (
+                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="notes">Notes (Optional)</Label>
+                            <Input id="notes" value={formState.notes} onChange={(e) => setFormState(s => ({...s, notes: e.target.value}))} />
+                        </div>
+                    </div>
+                     <div className="p-4 border rounded-md bg-muted h-full flex items-center justify-center">
+                        {formState.receiptUri ? (
+                            <Image src={formState.receiptUri} alt={`Receipt for ${formState.vendor}`} width={600} height={800} className="max-h-full max-w-full object-contain" />
+                        ) : (
+                            <p>No image available for this receipt.</p>
+                        )}
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Receipt</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function AddReceiptDialog({ onReceiptScan, isProcessing }: { onReceiptScan: (uri: string) => void, isProcessing: boolean }) {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const handleDocumentChange = (uri: string | null) => {
+        if (uri) {
+            onReceiptScan(uri);
+            setIsOpen(false);
+        }
+    }
+
+    return (
+         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button><PlusCircle className="mr-2"/> Log Receipt</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{receiptToEdit ? 'Edit Receipt' : 'Log New Receipt'}</DialogTitle>
+                    <DialogTitle>Upload or Capture Receipt</DialogTitle>
                     <DialogDescription>
-                        Enter the details for the expense and upload a photo of the receipt.
+                        Use your camera to take a photo of the receipt, or upload a file from your device.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                     <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                            <Label htmlFor="vendor">Vendor/Store Name</Label>
-                            <Input id="vendor" value={formState.vendor} onChange={(e) => setFormState(s => ({...s, vendor: e.target.value}))} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="amount">Amount</Label>
-                            <Input id="amount" type="number" value={formState.amount} onChange={(e) => setFormState(s => ({...s, amount: e.target.value}))} />
-                        </div>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Select value={formState.category} onValueChange={(value: Receipt['category']) => setFormState(s => ({...s, category: value}))}>
-                            <SelectTrigger id="category">
-                                <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {categories.map(cat => (
-                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="notes">Notes (Optional)</Label>
-                        <Input id="notes" value={formState.notes} onChange={(e) => setFormState(s => ({...s, notes: e.target.value}))} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Receipt Image</Label>
-                        <DocumentUpload onDocumentChange={(uri) => setFormState(s => ({...s, receiptUri: uri}))} currentDocument={formState.receiptUri} />
-                    </div>
+                <div className="py-4">
+                   <DocumentUpload onDocumentChange={handleDocumentChange} currentDocument={null} />
                 </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Receipt</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-function ViewReceiptDialog({ receipt, isOpen, onOpenChange }: { receipt: Receipt | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-    if (!receipt) return null;
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>Receipt from {receipt.vendor}</DialogTitle>
-                    <DialogDescription>
-                        Date: {format(receipt.date, 'PPP')} | Amount: ${receipt.amount.toFixed(2)} | Status: {receipt.status}
-                    </DialogDescription>
-                </DialogHeader>
-                 <div className="p-4 border rounded-md bg-muted h-[70vh] flex items-center justify-center">
-                    {receipt.receiptUri ? (
-                        <Image src={receipt.receiptUri} alt={`Receipt for ${receipt.vendor}`} width={600} height={800} className="max-h-full max-w-full object-contain" />
-                    ) : (
-                        <p>No image available for this receipt.</p>
-                    )}
-                </div>
+                {isProcessing && (
+                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                            <p className="font-semibold">AI is analyzing your receipt...</p>
+                            <Skeleton className="h-4 w-48 mx-auto" />
+                            <Skeleton className="h-4 w-32 mx-auto" />
+                        </div>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     )
@@ -163,26 +181,45 @@ function ViewReceiptDialog({ receipt, isOpen, onOpenChange }: { receipt: Receipt
 
 export default function ReceiptsPage() {
     const [receipts, setReceipts] = useState<Receipt[]>(initialReceipts);
-    const [receiptToEdit, setReceiptToEdit] = useState<Receipt | null>(null);
     const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
     const [receiptToView, setReceiptToView] = useState<Receipt | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [extractedData, setExtractedData] = useState< (ReceiptData & { receiptUri: string | null }) | null>(null);
+    const [isConfirmOpen, setConfirmOpen] = useState(false);
     const { toast } = useToast();
 
-    const handleSave = (receiptData: Omit<Receipt, 'id' | 'status'> | Receipt) => {
-        if ('id' in receiptData) {
-            // Editing existing receipt
-            setReceipts(prev => prev.map(r => r.id === receiptData.id ? receiptData : r));
-            toast({ title: 'Receipt Updated', description: `Receipt from ${receiptData.vendor} has been updated.` });
-        } else {
-            // Adding new receipt
-            const newReceipt: Receipt = {
-                ...receiptData,
-                id: `REC${Date.now()}`,
-                status: 'Pending',
-            };
-            setReceipts(prev => [newReceipt, ...prev]);
-            toast({ title: 'Receipt Logged', description: `Receipt from ${newReceipt.vendor} has been submitted for approval.` });
+    const handleReceiptScan = async (receiptUri: string) => {
+        setIsProcessing(true);
+        try {
+            const data = await extractReceiptData({ photoDataUri: receiptUri });
+            setExtractedData({ ...data, receiptUri });
+            setConfirmOpen(true);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Extraction Failed', description: 'Could not extract data from the receipt. Please enter it manually.' });
+             // Fallback to manual entry
+            setExtractedData({
+                vendor: '',
+                date: format(new Date(), 'yyyy-MM-dd'),
+                amount: '',
+                category: 'Other',
+                notes: 'AI extraction failed',
+                receiptUri: receiptUri,
+            });
+            setConfirmOpen(true);
+        } finally {
+            setIsProcessing(false);
         }
+    };
+
+
+    const handleSave = (receiptData: Omit<Receipt, 'id' | 'status'>) => {
+        const newReceipt: Receipt = {
+            ...receiptData,
+            id: `REC${Date.now()}`,
+            status: 'Pending',
+        };
+        setReceipts(prev => [newReceipt, ...prev]);
+        toast({ title: 'Receipt Logged', description: `Receipt from ${newReceipt.vendor} has been submitted for approval.` });
     };
     
     const handleDelete = () => {
@@ -259,7 +296,7 @@ export default function ReceiptsPage() {
                         A log of all your submitted receipts for expense reporting.
                     </CardDescription>
                 </div>
-                <ReceiptDialog onSave={handleSave} receiptToEdit={receiptToEdit} />
+                <AddReceiptDialog onReceiptScan={handleReceiptScan} isProcessing={isProcessing} />
             </CardHeader>
             <CardContent>
                 <div className="rounded-md border">
@@ -290,8 +327,6 @@ export default function ReceiptsPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="outline" size="sm" onClick={() => setReceiptToView(receipt)} disabled={!receipt.receiptUri}>View</Button>
-                                        <Button variant="ghost" size="icon" onClick={() => setReceiptToEdit(receipt)}><Edit className="h-4 w-4"/></Button>
-                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setReceiptToDelete(receipt)}><Trash2 className="h-4 w-4"/></Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -302,7 +337,28 @@ export default function ReceiptsPage() {
         </Card>
 
         {/* Dialogs */}
-        <ViewReceiptDialog receipt={receiptToView} isOpen={!!receiptToView} onOpenChange={(open) => !open && setReceiptToView(null)} />
+        {receiptToView && (
+            <Dialog open={!!receiptToView} onOpenChange={() => setReceiptToView(null)}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Receipt from {receiptToView.vendor}</DialogTitle>
+                        <DialogDescription>
+                            Date: {format(receiptToView.date, 'PPP')} | Amount: ${receiptToView.amount.toFixed(2)} | Status: {receiptToView.status}
+                        </DialogDescription>
+                    </DialogHeader>
+                     <div className="p-4 border rounded-md bg-muted h-[70vh] flex items-center justify-center">
+                        {receiptToView.receiptUri ? (
+                            <Image src={receiptToView.receiptUri} alt={`Receipt for ${receiptToView.vendor}`} width={600} height={800} className="max-h-full max-w-full object-contain" />
+                        ) : (
+                            <p>No image available for this receipt.</p>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        )}
+        
+        {extractedData && <ConfirmationDialog receiptData={extractedData} onSave={handleSave} isOpen={isConfirmOpen} onOpenChange={setConfirmOpen} />}
+        
         <AlertDialog open={!!receiptToDelete} onOpenChange={(open) => !open && setReceiptToDelete(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -322,3 +378,5 @@ export default function ReceiptsPage() {
     </div>
   );
 }
+
+    
