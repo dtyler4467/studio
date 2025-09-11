@@ -123,7 +123,16 @@ const navItems: NavItem[] = [
         { href: '/dashboard/warehouse-hub-manager/shipping', icon: ArrowUpFromLine, label: 'Shipping', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/load-planner', icon: ClipboardList, label: 'Load Planner', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/procurement', icon: ShoppingCart, label: 'Procurement', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/warehouse-hub-manager/bol', icon: FileText, label: 'Bill of Lading', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { 
+            href: '#', 
+            icon: FileText, 
+            label: 'Bill of Lading', 
+            roles: ['Admin', 'Dispatcher', 'Manager'],
+            subItems: [
+                { href: '/dashboard/warehouse-hub-manager/bol', icon: PlusCircle, label: 'Create BOL', roles: ['Admin', 'Dispatcher', 'Manager'] },
+                { href: '/dashboard/warehouse-hub-manager/bol/history', icon: History, label: 'BOL History', roles: ['Admin', 'Dispatcher', 'Manager'] },
+            ]
+        },
         { href: '/dashboard/warehouse-hub-manager/customers', icon: Users, label: 'Customers', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/carriers', icon: Truck, label: 'Carriers', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
@@ -333,7 +342,8 @@ export function SidebarNav() {
   const [isAccountantOpen, setIsAccountantOpen] = useState(false);
   const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
-    const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
+  const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
+  const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
   const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<LocalLoadBoard | null>(null);
   
@@ -375,6 +385,15 @@ export function SidebarNav() {
             }
         });
     setOpenYardSubMenus(newOpenYardSubMenus);
+
+    const newOpenWarehouseSubMenus: Record<string, boolean> = {};
+        navItems.find(i => i.href === '/dashboard/warehouse-hub-manager')?.subItems?.forEach(item => {
+            if (item.subItems) {
+                const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
+                newOpenWarehouseSubMenus[item.label] = isActive;
+            }
+        });
+    setOpenWarehouseSubMenus(newOpenWarehouseSubMenus);
   }, [pathname]);
 
   if (!currentUser) {
@@ -386,7 +405,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -537,8 +556,15 @@ export function SidebarNav() {
                                     {filteredSubItems.map((subItem) => {
                                         const isSubOverview = subItem.label === 'Dashboard' || subItem.label === 'Overview';
                                         if (subItem.subItems) {
-                                            const isSubOpen = openYardSubMenus[subItem.label] || false;
-                                            const setIsSubOpen = (open: boolean) => setOpenYardSubMenus(prev => ({ ...prev, [subItem.label]: open }));
+                                            const isSubOpen = openYardSubMenus[subItem.label] || openWarehouseSubMenus[subItem.label] || false;
+                                            const setIsSubOpen = (open: boolean) => {
+                                                if (item.label === 'Yard Management') {
+                                                    setOpenYardSubMenus(prev => ({ ...prev, [subItem.label]: open }));
+                                                }
+                                                 if (item.label === 'Warehouse Hub Manager') {
+                                                    setOpenWarehouseSubMenus(prev => ({ ...prev, [subItem.label]: open }));
+                                                }
+                                            };
                                             return (
                                                 <Collapsible key={subItem.label} open={isSubOpen} onOpenChange={setIsSubOpen}>
                                                     <CollapsibleTrigger asChild>
