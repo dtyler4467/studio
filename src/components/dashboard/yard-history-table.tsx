@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -71,7 +72,7 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
         return <Skeleton className="h-4 w-[120px]" />;
     }
 
-    return <div>{formattedDate}</div>;
+    return <span>{formattedDate}</span>;
 }
 
 const HistoryDialog = ({ event, isOpen, onOpenChange }: { event: YardEvent | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
@@ -107,9 +108,9 @@ const HistoryDialog = ({ event, isOpen, onOpenChange }: { event: YardEvent | nul
                                 <div className="pb-4">
                                     <p className="font-semibold capitalize">{historyItem.change}</p>
                                     <p className="text-sm text-muted-foreground">{historyItem.notes}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <div className="text-xs text-muted-foreground mt-1">
                                         By {historyItem.changedBy} on <ClientFormattedDate date={new Date(historyItem.timestamp)} />
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
                         ))}
