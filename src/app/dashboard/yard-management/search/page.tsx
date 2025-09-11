@@ -7,23 +7,18 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, ArrowRight, Truck, FileText } from 'lucide-react';
+import { Search, ArrowRight, Truck, FileText, Info } from 'lucide-react';
 import Link from 'next/link';
+import { useSchedule, Load, YardEvent } from '@/hooks/use-schedule';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-type Load = {
-  id: string
-  origin: string
-  destination: string
-  pickupDate: string
-  deliveryDate: string
-  rate: number
-  status: "Available" | "Assigned" | "In-Transit" | "Delivered" | "Pending" | "Deleted"
-  assignedTo?: string;
-  carrier?: string;
-  scac?: string;
-  dispatcher?: string;
-}
+type SearchResult = {
+    load: Load;
+    yardEvent?: YardEvent;
+};
 
+// This is now coming from the hook, but we'll keep a reference here for component logic
 const mockLoads: Load[] = [
     { id: "LD001", origin: "Los Angeles, CA", destination: "Phoenix, AZ", pickupDate: "2024-08-01", deliveryDate: "2024-08-02", rate: 1200, status: "Available", carrier: "Knight-Swift", scac: "KNX" },
     { id: "LD002", origin: "Chicago, IL", destination: "New York, NY", pickupDate: "2024-08-03", deliveryDate: "2024-08-05", rate: 2500, status: "Available", carrier: "J.B. Hunt", scac: "JBHT" },
@@ -35,8 +30,9 @@ const mockLoads: Load[] = [
 export default function YardSearchPage() {
     const [searchType, setSearchType] = useState('bol');
     const [searchTerm, setSearchTerm] = useState('');
-    const [results, setResults] = useState<Load[]>([]);
+    const [results, setResults] = useState<SearchResult[]>([]);
     const [searched, setSearched] = useState(false);
+    const { yardEvents, loads } = useSchedule();
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,20 +42,29 @@ export default function YardSearchPage() {
             return;
         }
 
-        const filtered = mockLoads.filter(load => {
-            if (searchType === 'bol') {
-                return load.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const lowercasedSearch = searchTerm.toLowerCase();
+        let filteredLoads: Load[] = [];
+
+        if (searchType === 'bol') {
+            filteredLoads = loads.filter(load => load.id.toLowerCase().includes(lowercasedSearch));
+        } else if (searchType === 'trailer') {
+            const eventWithTrailer = yardEvents.find(event => event.trailerId.toLowerCase().includes(lowercasedSearch));
+            if (eventWithTrailer) {
+                const foundLoad = loads.find(load => load.id === eventWithTrailer.loadNumber);
+                if (foundLoad) {
+                    filteredLoads.push(foundLoad);
+                }
             }
-            // For simplicity, we'll pretend some loads have an associated trailer ID.
-            // In a real app, the load data would include the trailer ID.
-            if (searchType === 'trailer') {
-                 return (load.id === 'LD004' && 'TR53123'.toLowerCase().includes(searchTerm.toLowerCase())) || 
-                        (load.id === 'LD001' && 'TR48991'.toLowerCase().includes(searchTerm.toLowerCase()));
-            }
-            return false;
+        }
+        
+        const searchResults: SearchResult[] = filteredLoads.map(load => {
+            const latestEvent = yardEvents
+                .filter(e => e.loadNumber === load.id)
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+            return { load, yardEvent: latestEvent };
         });
 
-        setResults(filtered);
+        setResults(searchResults);
     };
 
   return (
@@ -105,22 +110,38 @@ export default function YardSearchPage() {
                 <h2 className="text-xl font-semibold mb-4 font-headline">Search Results</h2>
                 {results.length > 0 ? (
                     <div className="grid gap-4 md:grid-cols-2">
-                        {results.map(load => (
+                        {results.map(({load, yardEvent}) => (
                             <Card key={load.id}>
                                 <CardHeader>
-                                    <CardTitle>Load ID: {load.id}</CardTitle>
-                                    <CardDescription>{load.origin} to {load.destination}</CardDescription>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <CardTitle>Load ID: {load.id}</CardTitle>
+                                            <CardDescription>{load.origin} to {load.destination}</CardDescription>
+                                        </div>
+                                        <Badge variant={yardEvent ? 'default' : 'secondary'}>
+                                            {yardEvent ? yardEvent.status || 'Checked In' : load.status}
+                                        </Badge>
+                                    </div>
                                 </CardHeader>
-                                <CardContent className="text-sm space-y-1">
-                                    <p><strong>Carrier:</strong> {load.carrier} (SCAC: {load.scac})</p>
-                                    <p><strong>Status:</strong> {load.status}</p>
-                                    <p><strong>Assigned Driver:</strong> {load.assignedTo || 'N/A'}</p>
-                                    {/* Mocking trailer ID for search results */}
-                                     <p><strong>Trailer ID:</strong> {load.id === 'LD004' ? 'TR53123' : (load.id === 'LD001' ? 'TR48991' : 'N/A')}</p>
+                                <CardContent className="text-sm space-y-4">
+                                    <div className="space-y-1">
+                                        <p><strong>Carrier:</strong> {load.carrier} (SCAC: {load.scac})</p>
+                                        <p><strong>Trailer ID:</strong> {yardEvent?.trailerId || 'N/A'}</p>
+                                        <p><strong>Assigned Driver:</strong> {load.assignedTo || 'N/A'}</p>
+                                    </div>
+                                     {yardEvent?.statusNotes && (
+                                        <Alert>
+                                            <Info className="h-4 w-4" />
+                                            <AlertTitle>Latest Note</AlertTitle>
+                                            <AlertDescription>
+                                                {yardEvent.statusNotes}
+                                            </AlertDescription>
+                                        </Alert>
+                                     )}
                                 </CardContent>
                                 <CardFooter>
                                     <Button asChild className="w-full">
-                                        <Link href={`/dashboard/yard-management/check-in?loadNumber=${load.id}&trailerId=${load.id === 'LD004' ? 'TR53123' : (load.id === 'LD001' ? 'TR48991' : '')}&carrier=${load.carrier}&scac=${load.scac}&driver=${load.assignedTo || ''}`}>
+                                        <Link href={`/dashboard/yard-management/check-in?loadNumber=${load.id}&trailerId=${yardEvent?.trailerId || ''}&carrier=${load.carrier}&scac=${load.scac}&driver=${load.assignedTo || ''}`}>
                                             Process Gate Transaction <ArrowRight className="ml-2" />
                                         </Link>
                                     </Button>
