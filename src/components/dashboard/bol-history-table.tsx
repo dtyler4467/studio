@@ -22,11 +22,23 @@ import {
 import { Input } from "../ui/input"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
+import { Button } from "../ui/button"
+import { ArrowLeftRight, MoreHorizontal } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 
 export function BolHistoryTable() {
     const { bolHistory } = useSchedule()
     const [globalFilter, setGlobalFilter] = React.useState("")
     const router = useRouter()
+
+    const handleProcessTransaction = (bol: BillOfLading, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent row click navigation
+        const query = new URLSearchParams({
+            loadNumber: bol.bolNumber,
+            carrier: bol.carrier,
+        }).toString();
+        router.push(`/dashboard/yard-management/check-in?${query}`);
+    }
     
     const columns: ColumnDef<BillOfLading>[] = [
         {
@@ -50,6 +62,25 @@ export function BolHistoryTable() {
             header: "Delivery Date",
             cell: ({ row }) => format(new Date(row.original.deliveryDate), "PPP"),
         },
+        {
+            id: 'actions',
+            header: 'Actions',
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem onClick={(e) => handleProcessTransaction(row.original, e)}>
+                            <ArrowLeftRight className="mr-2 h-4 w-4" />
+                            Process Gate Transaction
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        }
     ]
 
     const table = useReactTable({

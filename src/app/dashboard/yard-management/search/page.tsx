@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, ArrowRight, Truck, FileText, Info } from 'lucide-react';
+import { Search, ArrowRight, Truck, FileText, Info, History } from 'lucide-react';
 import Link from 'next/link';
 import { useSchedule, Load, YardEvent } from '@/hooks/use-schedule';
 import { Badge } from '@/components/ui/badge';
@@ -73,10 +73,20 @@ export default function YardSearchPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Search for Load</CardTitle>
-                <CardDescription>
-                    Find a load by its Bill of Lading (BOL) or Trailer ID to begin the check-in or check-out process.
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="font-headline">Search for Load</CardTitle>
+                        <CardDescription>
+                            Find a load by its Bill of Lading (BOL) or Trailer ID to begin the check-in or check-out process.
+                        </CardDescription>
+                    </div>
+                     <Button variant="outline" asChild>
+                        <Link href="/dashboard/warehouse-hub-manager/bol/history">
+                            <History className="mr-2" />
+                            View BOL History
+                        </Link>
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSearch}>

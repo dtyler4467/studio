@@ -13,7 +13,7 @@ import { useSchedule } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight, Search } from 'lucide-react';
+import { ArrowLeftRight, Search, History } from 'lucide-react';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
@@ -139,12 +139,20 @@ export function YardCheckInPageContent({ defaultTransactionType = 'inbound' }: Y
                             Log truck arrivals and departures. You can start by searching for a load or entering details manually.
                         </CardDescription>
                     </div>
-                    <Button variant="outline" asChild>
-                        <Link href="/dashboard/yard-management/search">
-                            <Search className="mr-2" />
-                            Search for a Load
-                        </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href="/dashboard/warehouse-hub-manager/bol/history">
+                                <History className="mr-2" />
+                                View BOL History
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href="/dashboard/yard-management/search">
+                                <Search className="mr-2" />
+                                Search for a Load
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
