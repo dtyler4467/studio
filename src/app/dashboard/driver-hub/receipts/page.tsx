@@ -180,13 +180,18 @@ function AddReceiptDialog({ onReceiptScan, isProcessing }: { onReceiptScan: (uri
 }
 
 export default function ReceiptsPage() {
-    const [receipts, setReceipts] = useState<Receipt[]>(initialReceipts);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
     const [receiptToView, setReceiptToView] = useState<Receipt | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedData, setExtractedData] = useState< (ReceiptData & { receiptUri: string | null }) | null>(null);
     const [isConfirmOpen, setConfirmOpen] = useState(false);
     const { toast } = useToast();
+
+    useEffect(() => {
+        // Initialize state on client to prevent hydration mismatch
+        setReceipts(initialReceipts);
+    }, []);
 
     const handleReceiptScan = async (receiptUri: string) => {
         setIsProcessing(true);
@@ -379,4 +384,3 @@ export default function ReceiptsPage() {
   );
 }
 
-    
