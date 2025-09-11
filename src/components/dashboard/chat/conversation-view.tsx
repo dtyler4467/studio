@@ -1,15 +1,16 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Paperclip } from 'lucide-react';
+import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Paperclip, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 type MessageStatus = 'sent' | 'delivered' | 'read';
 
@@ -49,6 +50,9 @@ export function ConversationView({ user, onBack }: { user: Employee, onBack: () 
     const [messages, setMessages] = useState<Message[]>(mockMessages[user.id] || []);
     const [newMessage, setNewMessage] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const recognitionRef = useRef<any>(null);
+    const { toast } = useToast();
 
     useEffect(() => {
         setMessages(mockMessages[user.id] || []);
@@ -59,6 +63,54 @@ export function ConversationView({ user, onBack }: { user: Employee, onBack: () 
             scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight });
         }
     }, [messages]);
+    
+    useEffect(() => {
+        const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event: any) => {
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+                }
+            }
+            if (finalTranscript) {
+                setNewMessage(prev => prev + finalTranscript);
+            }
+        };
+        
+        recognition.onend = () => {
+            setIsRecording(false);
+        }
+
+        recognition.onerror = (event: any) => {
+            toast({
+                variant: "destructive",
+                title: "Speech Recognition Error",
+                description: `An error occurred: ${event.error}`,
+            });
+            setIsRecording(false);
+        }
+        
+        recognitionRef.current = recognition;
+
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        }
+    }, [toast]);
+
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,6 +126,24 @@ export function ConversationView({ user, onBack }: { user: Employee, onBack: () 
 
         setMessages(prev => [...prev, message]);
         setNewMessage('');
+    };
+    
+    const handleMicClick = () => {
+        if (!recognitionRef.current) {
+            toast({
+                variant: "destructive",
+                title: "Unsupported Browser",
+                description: "Your browser does not support voice recognition.",
+            });
+            return;
+        }
+
+        if (isRecording) {
+            recognitionRef.current?.stop();
+        } else {
+            recognitionRef.current?.start();
+        }
+        setIsRecording(!isRecording);
     };
 
     return (
@@ -124,6 +194,16 @@ export function ConversationView({ user, onBack }: { user: Employee, onBack: () 
                         onChange={(e) => setNewMessage(e.target.value)}
                         autoComplete="off"
                     />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={handleMicClick}
+                        className={cn(isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                    >
+                        <Mic />
+                        <span className="sr-only">{isRecording ? 'Stop Recording' : 'Start Recording'}</span>
+                    </Button>
                     <Button type="submit">
                         <Send />
                         <span className="sr-only">Send</span>
