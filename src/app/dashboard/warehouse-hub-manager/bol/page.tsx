@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Header } from '@/components/layout/header';
@@ -9,9 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useSchedule } from '@/hooks/use-schedule';
+import { useToast } from '@/hooks/use-toast';
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <h3 className="text-lg font-semibold text-primary col-span-full">{children}</h3>
@@ -29,9 +32,33 @@ type Commodity = {
 
 export default function BolPage() {
     const searchParams = useSearchParams();
-    const [bolNumber, setBolNumber] = useState('');
+    const router = useRouter();
+    const { saveBol } = useSchedule();
+    const { toast } = useToast();
+
+    // State for all form fields
+    const [shipperName, setShipperName] = useState('');
+    const [shipperAddress, setShipperAddress] = useState('');
+    const [shipperCity, setShipperCity] = useState('');
+    const [shipperState, setShipperState] = useState('');
+    const [shipperZip, setShipperZip] = useState('');
+    const [shipperPhone, setShipperPhone] = useState('');
+
     const [consigneeName, setConsigneeName] = useState('');
+    const [consigneeAddress, setConsigneeAddress] = useState('');
     const [consigneeCity, setConsigneeCity] = useState('');
+    const [consigneeState, setConsigneeState] = useState('');
+    const [consigneeZip, setConsigneeZip] = useState('');
+    const [consigneePhone, setConsigneePhone] = useState('');
+
+    const [bolNumber, setBolNumber] = useState('');
+    const [carrierName, setCarrierName] = useState('');
+    const [trailerNumber, setTrailerNumber] = useState('');
+    const [sealNumber, setSealNumber] = useState('');
+    const [poNumber, setPoNumber] = useState('');
+    const [refNumber, setRefNumber] = useState('');
+    const [notes, setNotes] = useState('');
+
     const [commodities, setCommodities] = useState<Commodity[]>([]);
 
     useEffect(() => {
@@ -73,6 +100,36 @@ export default function BolPage() {
         setCommodities(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
     };
 
+    const handleSaveBol = () => {
+        if (!bolNumber || !consigneeName || !carrierName) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing Information',
+                description: 'Please fill out at least BOL Number, Consignee Name, and Carrier Name.'
+            });
+            return;
+        }
+
+        const newBol = {
+            bolNumber,
+            customer: consigneeName,
+            origin: `${shipperCity}, ${shipperState}`,
+            destination: `${consigneeCity}, ${consigneeState}`,
+            deliveryDate: new Date().toISOString(), // Or a date picker
+            carrier: carrierName,
+            // In a real app, documentUri would come from an upload
+        };
+
+        const savedBol = saveBol(newBol);
+        
+        toast({
+            title: 'BOL Saved',
+            description: `Bill of Lading ${savedBol.bolNumber} has been saved to history.`
+        });
+        
+        router.push(`/dashboard/warehouse-hub-manager/bol/${savedBol.id}`);
+    };
+
 
     return (
         <div className="flex flex-col w-full">
@@ -91,30 +148,30 @@ export default function BolPage() {
                                 <SectionTitle>Shipper / Consignor</SectionTitle>
                                 <div className="space-y-2">
                                     <Label htmlFor="shipper-name">Name</Label>
-                                    <Input id="shipper-name" placeholder="Enter shipper's name" />
+                                    <Input id="shipper-name" placeholder="Enter shipper's name" value={shipperName} onChange={e => setShipperName(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="shipper-address">Address</Label>
-                                    <Input id="shipper-address" placeholder="Enter shipper's address" />
+                                    <Input id="shipper-address" placeholder="Enter shipper's address" value={shipperAddress} onChange={e => setShipperAddress(e.target.value)} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="shipper-city">City</Label>
-                                        <Input id="shipper-city" />
+                                        <Input id="shipper-city" value={shipperCity} onChange={e => setShipperCity(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="shipper-state">State</Label>
-                                        <Input id="shipper-state" />
+                                        <Input id="shipper-state" value={shipperState} onChange={e => setShipperState(e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="shipper-zip">Zip Code</Label>
-                                        <Input id="shipper-zip" />
+                                        <Input id="shipper-zip" value={shipperZip} onChange={e => setShipperZip(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="shipper-phone">Phone</Label>
-                                        <Input id="shipper-phone" type="tel" />
+                                        <Input id="shipper-phone" type="tel" value={shipperPhone} onChange={e => setShipperPhone(e.target.value)} />
                                     </div>
                                 </div>
                             </div>
@@ -127,7 +184,7 @@ export default function BolPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="consignee-address">Address</Label>
-                                    <Input id="consignee-address" placeholder="Enter consignee's address" />
+                                    <Input id="consignee-address" placeholder="Enter consignee's address" value={consigneeAddress} onChange={e => setConsigneeAddress(e.target.value)} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -136,17 +193,17 @@ export default function BolPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="consignee-state">State</Label>
-                                        <Input id="consignee-state" />
+                                        <Input id="consignee-state" value={consigneeState} onChange={e => setConsigneeState(e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="consignee-zip">Zip Code</Label>
-                                        <Input id="consignee-zip" />
+                                        <Input id="consignee-zip" value={consigneeZip} onChange={e => setConsigneeZip(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="consignee-phone">Phone</Label>
-                                        <Input id="consignee-phone" type="tel" />
+                                        <Input id="consignee-phone" type="tel" value={consigneePhone} onChange={e => setConsigneePhone(e.target.value)} />
                                     </div>
                                 </div>
                             </div>
@@ -163,23 +220,23 @@ export default function BolPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="carrier-name">Carrier Name</Label>
-                                    <Input id="carrier-name" />
+                                    <Input id="carrier-name" value={carrierName} onChange={e => setCarrierName(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="trailer-number">Trailer Number</Label>
-                                    <Input id="trailer-number" />
+                                    <Input id="trailer-number" value={trailerNumber} onChange={e => setTrailerNumber(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="seal-number">Seal Number</Label>
-                                    <Input id="seal-number" />
+                                    <Input id="seal-number" value={sealNumber} onChange={e => setSealNumber(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="po-number">P.O. Number</Label>
-                                    <Input id="po-number" />
+                                    <Input id="po-number" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="ref-number">Reference Number</Label>
-                                    <Input id="ref-number" />
+                                    <Input id="ref-number" value={refNumber} onChange={e => setRefNumber(e.target.value)} />
                                 </div>
                             </div>
                         </div>
@@ -237,13 +294,13 @@ export default function BolPage() {
                         <div className="space-y-4">
                             <SectionTitle>Notes & Special Instructions</SectionTitle>
                             <div className="space-y-2">
-                                <Textarea placeholder="Enter any special instructions for the carrier or consignee..." />
+                                <Textarea placeholder="Enter any special instructions for the carrier or consignee..." value={notes} onChange={e => setNotes(e.target.value)} />
                             </div>
                         </div>
 
                     </CardContent>
                     <CardFooter className="gap-2">
-                        <Button>Save as Template</Button>
+                        <Button onClick={handleSaveBol}><Save className="mr-2"/>Save BOL</Button>
                         <Button variant="secondary">Print BOL</Button>
                         <Button variant="ghost">Clear Form</Button>
                     </CardFooter>
@@ -252,7 +309,3 @@ export default function BolPage() {
         </div>
     );
 }
-
-    
-
-    
