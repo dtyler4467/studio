@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Save, Trash2, MoreVertical } from 'lucide-react';
+import { PlusCircle, Save, Trash2, MoreVertical, Pencil } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSchedule, BolTemplate } from '@/hooks/use-schedule';
@@ -39,6 +39,7 @@ export default function BolPage() {
     const { toast } = useToast();
     const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
     const [templateName, setTemplateName] = useState("");
+    const [isBolNumberEditable, setIsBolNumberEditable] = useState(true);
 
     // State for all form fields
     const [shipperName, setShipperName] = useState('');
@@ -68,7 +69,6 @@ export default function BolPage() {
     const [commodities, setCommodities] = useState<Commodity[]>([]);
     
     useEffect(() => {
-        // This effect runs once on mount to handle initial query params
         const bol = searchParams.get('bolNumber');
         const cName = searchParams.get('consigneeName');
         const cAddress = searchParams.get('consigneeAddress');
@@ -76,6 +76,7 @@ export default function BolPage() {
         const cState = searchParams.get('consigneeState');
         const cZip = searchParams.get('consigneeZip');
         const cPhone = searchParams.get('consigneePhone');
+        const cContact = searchParams.get('consigneeContact');
         const formNotes = searchParams.get('notes');
 
         const items = searchParams.getAll('items');
@@ -83,13 +84,17 @@ export default function BolPage() {
         
         const existingCommodities = JSON.parse(sessionStorage.getItem('bolCommodities') || '[]');
 
-        if (bol) setBolNumber(bol);
+        if (bol) {
+            setBolNumber(bol);
+            setIsBolNumberEditable(false);
+        }
         if (cName) setConsigneeName(cName);
         if (cAddress) setConsigneeAddress(cAddress);
         if (cCity) setConsigneeCity(cCity);
         if (cState) setConsigneeState(cState);
         if (cZip) setConsigneeZip(cZip);
         if (cPhone) setConsigneePhone(cPhone);
+        if (cContact) setConsigneeContact(cContact);
         if (formNotes) setNotes(formNotes);
         
 
@@ -223,6 +228,7 @@ export default function BolPage() {
         setNotes('');
         setCommodities([{ id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
         sessionStorage.removeItem('bolCommodities');
+        setIsBolNumberEditable(true);
         router.replace('/dashboard/warehouse-hub-manager/bol');
     }
 
@@ -312,7 +318,14 @@ export default function BolPage() {
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="bol-number">BOL Number</Label>
-                                    <Input id="bol-number" placeholder="Auto-generated or manual" value={bolNumber} onChange={(e) => setBolNumber(e.target.value)} />
+                                    <div className="flex items-center gap-2">
+                                        <Input id="bol-number" placeholder="Auto-generated or manual" value={bolNumber} onChange={(e) => setBolNumber(e.target.value)} readOnly={!isBolNumberEditable} />
+                                        {!isBolNumberEditable && (
+                                            <Button variant="ghost" size="icon" onClick={() => setIsBolNumberEditable(true)}>
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="carrier-name">Carrier Name</Label>
