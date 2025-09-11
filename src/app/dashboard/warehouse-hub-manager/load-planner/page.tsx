@@ -191,7 +191,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
             return;
         }
         const existingTime = formData.appointmentTime || new Date();
-        const newDate = date;
+        const newDate = new Date(date);
         newDate.setHours(existingTime.getHours());
         newDate.setMinutes(existingTime.getMinutes());
         handleInputChange('appointmentTime', newDate);
@@ -199,7 +199,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
     
     const handleAppointmentTimeChange = (time: string) => {
         const [hours, minutes] = time.split(':');
-        const newDate = new Date(formData.appointmentTime || Date.now());
+        const newDate = formData.appointmentTime ? new Date(formData.appointmentTime) : new Date();
         newDate.setHours(parseInt(hours, 10));
         newDate.setMinutes(parseInt(minutes, 10));
         handleInputChange('appointmentTime', newDate);
@@ -333,37 +333,6 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                      <div className="space-y-2">
                         <Label htmlFor="notes">Notes</Label>
                         <Textarea id="notes" name="notes" placeholder="Add any notes for this order..." value={formData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>appointment time (Optional)</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                variant={"outline"}
-                                className={cn("w-full justify-start text-left font-normal")}
-                                >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {formData.appointmentTime ? format(formData.appointmentTime, "PPP p") : <span>Pick a date & time</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    captionLayout="dropdown-buttons"
-                                    fromYear={new Date().getFullYear()}
-                                    toYear={new Date().getFullYear() + 5}
-                                    mode="single"
-                                    selected={formData.appointmentTime}
-                                    onSelect={handleAppointmentDateSelect}
-                                />
-                                <div className="p-2 border-t border-border">
-                                    <Input
-                                        type="time"
-                                        value={formData.appointmentTime ? format(formData.appointmentTime, "HH:mm") : ""}
-                                        onChange={(e) => handleAppointmentTimeChange(e.target.value)}
-                                    />
-                                </div>
-                            </PopoverContent>
-                        </Popover>
                     </div>
                 </form>
                 <DialogFooter>
