@@ -83,7 +83,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         weight: 0,
         volume: 0,
         notes: '',
-        appointmentTime: new Date(),
+        appointmentTime: undefined,
     });
     
     const [customerSearch, setCustomerSearch] = useState("");
@@ -109,7 +109,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                 weight: 0,
                 volume: 0,
                 notes: '',
-                appointmentTime: new Date(),
+                appointmentTime: undefined,
             });
             setCustomerSearch('');
         }
@@ -184,6 +184,22 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
         
         setIsOpen(false);
     };
+    
+    const handleAppointmentDateSelect = (date: Date | undefined) => {
+        const existingTime = formData.appointmentTime || new Date();
+        const newDate = date || new Date();
+        newDate.setHours(existingTime.getHours());
+        newDate.setMinutes(existingTime.getMinutes());
+        handleInputChange('appointmentTime', newDate);
+    }
+    
+    const handleAppointmentTimeChange = (time: string) => {
+        const [hours, minutes] = time.split(':');
+        const newDate = new Date(formData.appointmentTime || Date.now());
+        newDate.setHours(parseInt(hours, 10));
+        newDate.setMinutes(parseInt(minutes, 10));
+        handleInputChange('appointmentTime', newDate);
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -315,7 +331,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                         <Textarea id="notes" name="notes" placeholder="Add any notes for this order..." value={formData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label>Appointment Time</Label>
+                        <Label>Appointment Time (Optional)</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -323,27 +339,20 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                                 className={cn("w-full justify-start text-left font-normal")}
                                 >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {formData.appointmentTime ? format(formData.appointmentTime, "PPP p") : <span>Pick a date</span>}
+                                {formData.appointmentTime ? format(formData.appointmentTime, "PPP p") : <span>Pick a date & time</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                                 <Calendar
                                     mode="single"
                                     selected={formData.appointmentTime}
-                                    onSelect={(date) => date && handleInputChange('appointmentTime', date)}
-                                    initialFocus
+                                    onSelect={handleAppointmentDateSelect}
                                 />
                                 <div className="p-2 border-t border-border">
                                     <Input
                                         type="time"
-                                        value={format(formData.appointmentTime || new Date(), "HH:mm")}
-                                        onChange={(e) => {
-                                            const newDate = new Date(formData.appointmentTime || new Date());
-                                            const [hours, minutes] = e.target.value.split(':');
-                                            newDate.setHours(parseInt(hours, 10));
-                                            newDate.setMinutes(parseInt(minutes, 10));
-                                            handleInputChange('appointmentTime', newDate);
-                                        }}
+                                        value={formData.appointmentTime ? format(formData.appointmentTime, "HH:mm") : ""}
+                                        onChange={(e) => handleAppointmentTimeChange(e.target.value)}
                                     />
                                 </div>
                             </PopoverContent>
@@ -504,3 +513,4 @@ export default function LoadPlannerPage() {
     </div>
   );
 }
+

@@ -97,9 +97,6 @@ function Calendar({
           )
         },
       }}
-      captionLayout="dropdown-nav"
-      fromYear={1900}
-      toYear={2100}
       {...props}
     />
   )
