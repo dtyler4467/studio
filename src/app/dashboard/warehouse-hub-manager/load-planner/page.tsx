@@ -335,7 +335,7 @@ function AddOrderDialog({ onAddOrder }: { onAddOrder: (order: Omit<Order, 'id'>)
                         <Textarea id="notes" name="notes" placeholder="Add any notes for this order..." value={formData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label>Appointment Time (Optional)</Label>
+                        <Label>appointment time (Optional)</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
