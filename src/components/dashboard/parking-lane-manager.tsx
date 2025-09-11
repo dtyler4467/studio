@@ -2,6 +2,7 @@
 
 "use client";
 
+import * as React from "react";
 import { useMemo, useState, useEffect } from 'react';
 import { useSchedule, YardEvent, YardEventStatus } from '@/hooks/use-schedule';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
