@@ -14,6 +14,7 @@ import { z } from 'zod';
 const ReceiptDataSchema = z.object({
   vendor: z.string().describe('The name of the vendor or store.'),
   date: z.string().describe('The date of the transaction in YYYY-MM-DD format.'),
+  time: z.string().optional().describe('The time of the transaction in HH:MM format (24-hour).'),
   amount: z.string().describe('The total amount of the transaction as a string of numbers.'),
   category: z.enum(['Fuel', 'Food', 'Maintenance', 'Lodging', 'Other']).describe('The category of the expense.'),
   notes: z.string().optional().describe('Any brief, relevant notes about the transaction.'),
@@ -42,6 +43,7 @@ const prompt = ai.definePrompt({
 Analyze the provided receipt image and extract the following information:
 - Vendor/Store Name
 - Transaction Date (in YYYY-MM-DD format)
+- Transaction Time (in HH:MM 24-hour format if available)
 - Total Amount
 - Category of expense (must be one of: Fuel, Food, Maintenance, Lodging, Other)
 

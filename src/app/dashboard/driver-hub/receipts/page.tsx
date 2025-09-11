@@ -14,29 +14,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Image from 'next/image';
 import { extractReceiptData, ReceiptData } from '@/ai/flows/extract-receipt-data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { EnhancePhotoDialog } from '@/components/dashboard/enhance-photo-dialog';
 
 
 type Receipt = {
     id: string;
     date: Date;
+    time?: string;
     vendor: string;
     amount: number;
     category: 'Fuel' | 'Food' | 'Maintenance' | 'Lodging' | 'Other';
     notes?: string;
     receiptUri: string | null;
     status: 'Pending' | 'Approved' | 'Denied';
+    uploadDate: Date;
 };
 
 const initialReceipts: Receipt[] = [
-    { id: 'REC001', date: new Date(new Date().setDate(new Date().getDate() - 1)), vendor: 'Pilot', amount: 150.75, category: 'Fuel', receiptUri: 'https://picsum.photos/seed/receipt1/400/600', status: 'Approved' },
-    { id: 'REC002', date: new Date(new Date().setDate(new Date().getDate() - 2)), vendor: "Denny's", amount: 25.50, category: 'Food', receiptUri: null, status: 'Pending' },
-    { id: 'REC003', date: new Date(new Date().setDate(new Date().getDate() - 3)), vendor: 'City Auto Repair', amount: 450.00, category: 'Maintenance', receiptUri: 'https://picsum.photos/seed/receipt2/400/600', status: 'Pending' },
+    { id: 'REC001', date: new Date(new Date().setDate(new Date().getDate() - 1)), vendor: 'Pilot', amount: 150.75, category: 'Fuel', receiptUri: 'https://picsum.photos/seed/receipt1/400/600', status: 'Approved', uploadDate: new Date() },
+    { id: 'REC002', date: new Date(new Date().setDate(new Date().getDate() - 2)), vendor: "Denny's", amount: 25.50, category: 'Food', receiptUri: null, status: 'Pending', uploadDate: new Date() },
+    { id: 'REC003', date: new Date(new Date().setDate(new Date().getDate() - 3)), vendor: 'City Auto Repair', amount: 450.00, category: 'Maintenance', receiptUri: 'https://picsum.photos/seed/receipt2/400/600', status: 'Pending', uploadDate: new Date() },
 ];
 
 const categories: Receipt['category'][] = ['Fuel', 'Food', 'Maintenance', 'Lodging', 'Other'];
@@ -48,7 +49,7 @@ function ConfirmationDialog({
     onOpenChange,
 }: {
     receiptData: ReceiptData & { receiptUri: string | null };
-    onSave: (receipt: Omit<Receipt, 'id' | 'status'>) => void;
+    onSave: (receipt: Omit<Receipt, 'id' | 'status' | 'uploadDate'>) => void;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -67,6 +68,7 @@ function ConfirmationDialog({
 
         const newReceipt = {
             date: new Date(formState.date || Date.now()),
+            time: formState.time,
             vendor: formState.vendor,
             amount: parseFloat(formState.amount),
             category: formState.category as Receipt['category'],
@@ -107,18 +109,22 @@ function ConfirmationDialog({
                                 <Input id="date" type="date" value={formState.date ? format(new Date(formState.date), 'yyyy-MM-dd') : ''} onChange={(e) => setFormState(s => ({...s, date: e.target.value}))} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="category">Category</Label>
-                                <Select value={formState.category} onValueChange={(value: Receipt['category']) => setFormState(s => ({...s, category: value}))}>
-                                    <SelectTrigger id="category">
-                                        <SelectValue placeholder="Select a category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {categories.map(cat => (
-                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="time">Time (Optional)</Label>
+                                <Input id="time" type="time" value={formState.time ?? ""} onChange={(e) => setFormState(s => ({...s, time: e.target.value}))} />
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
+                            <Select value={formState.category} onValueChange={(value: Receipt['category']) => setFormState(s => ({...s, category: value}))}>
+                                <SelectTrigger id="category">
+                                    <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map(cat => (
+                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="notes">Notes (Optional)</Label>
@@ -211,11 +217,27 @@ export default function ReceiptsPage() {
     };
 
 
-    const handleSave = (receiptData: Omit<Receipt, 'id' | 'status'>) => {
+    const handleSave = (receiptData: Omit<Receipt, 'id' | 'status' | 'uploadDate'>) => {
+        const isDuplicate = receipts.some(
+            r => r.vendor === receiptData.vendor &&
+                 isSameDay(r.date, receiptData.date) &&
+                 r.amount === receiptData.amount
+        );
+
+        if (isDuplicate) {
+            toast({
+                variant: 'destructive',
+                title: 'Duplicate Receipt Detected',
+                description: 'A receipt with the same vendor, date, and amount already exists.',
+            });
+            return;
+        }
+        
         const newReceipt: Receipt = {
             ...receiptData,
             id: `REC${Date.now()}`,
             status: 'Pending',
+            uploadDate: new Date(),
         };
         setReceipts(prev => [newReceipt, ...prev]);
         toast({ title: 'Receipt Logged', description: `Receipt from ${newReceipt.vendor} has been submitted for approval.` });
@@ -242,8 +264,8 @@ export default function ReceiptsPage() {
     
     const lastSubmissionDate = useMemo(() => {
         if (receipts.length === 0) return 'N/A';
-        const sortedReceipts = [...receipts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return format(new Date(sortedReceipts[0].date), 'MMM d');
+        const sortedReceipts = [...receipts].sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+        return format(new Date(sortedReceipts[0].uploadDate), 'MMM d, p');
     }, [receipts]);
 
     const pendingCount = receipts.filter(r => r.status === 'Pending').length;
@@ -291,7 +313,7 @@ export default function ReceiptsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{lastSubmissionDate}</div>
-                     <p className="text-xs text-muted-foreground">Date of the most recent receipt</p>
+                     <p className="text-xs text-muted-foreground">Date of the most recent upload</p>
                 </CardContent>
             </Card>
         </div>
@@ -323,7 +345,10 @@ export default function ReceiptsPage() {
                         <TableBody>
                             {receipts.map((receipt) => (
                                 <TableRow key={receipt.id}>
-                                    <TableCell>{format(receipt.date, 'PPP')}</TableCell>
+                                    <TableCell>
+                                        <p className="font-medium">{format(receipt.date, 'PPP')}{receipt.time ? ` @ ${receipt.time}` : ''}</p>
+                                        <p className="text-xs text-muted-foreground">Uploaded: {format(receipt.uploadDate, 'P p')}</p>
+                                    </TableCell>
                                     <TableCell className="font-medium">{receipt.vendor}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline">{receipt.category}</Badge>
