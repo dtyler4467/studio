@@ -4,7 +4,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, PlusCircle, DollarSign, List, CalendarDays, Edit, Trash2, Camera, FileUp } from 'lucide-react';
+import { FileText, PlusCircle, DollarSign, List, CalendarDays, Edit, Trash2, Camera, FileUp, User } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import React, { useState, useEffect, useMemo } from 'react';
@@ -19,10 +19,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Image from 'next/image';
 import { extractReceiptData, ReceiptData } from '@/ai/flows/extract-receipt-data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSchedule } from '@/hooks/use-schedule';
 
 
 type Receipt = {
     id: string;
+    employeeId: string;
     date: Date;
     time?: string;
     vendor: string;
@@ -35,9 +37,9 @@ type Receipt = {
 };
 
 const initialReceipts: Receipt[] = [
-    { id: 'REC001', date: new Date(new Date().setDate(new Date().getDate() - 1)), vendor: 'Pilot', amount: 150.75, category: 'Fuel', receiptUri: 'https://picsum.photos/seed/receipt1/400/600', status: 'Approved', uploadDate: new Date() },
-    { id: 'REC002', date: new Date(new Date().setDate(new Date().getDate() - 2)), vendor: "Denny's", amount: 25.50, category: 'Food', receiptUri: null, status: 'Pending', uploadDate: new Date() },
-    { id: 'REC003', date: new Date(new Date().setDate(new Date().getDate() - 3)), vendor: 'City Auto Repair', amount: 450.00, category: 'Maintenance', receiptUri: 'https://picsum.photos/seed/receipt2/400/600', status: 'Pending', uploadDate: new Date() },
+    { id: 'REC001', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 1)), vendor: 'Pilot', amount: 150.75, category: 'Fuel', receiptUri: 'https://picsum.photos/seed/receipt1/400/600', status: 'Approved', uploadDate: new Date() },
+    { id: 'REC002', employeeId: 'USR002', date: new Date(new Date().setDate(new Date().getDate() - 2)), vendor: "Denny's", amount: 25.50, category: 'Food', receiptUri: null, status: 'Pending', uploadDate: new Date() },
+    { id: 'REC003', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 3)), vendor: 'City Auto Repair', amount: 450.00, category: 'Maintenance', receiptUri: 'https://picsum.photos/seed/receipt2/400/600', status: 'Pending', uploadDate: new Date() },
 ];
 
 const categories: Receipt['category'][] = ['Fuel', 'Food', 'Maintenance', 'Lodging', 'Other'];
@@ -49,7 +51,7 @@ function ConfirmationDialog({
     onOpenChange,
 }: {
     receiptData: ReceiptData & { receiptUri: string | null };
-    onSave: (receipt: Omit<Receipt, 'id' | 'status' | 'uploadDate'>) => void;
+    onSave: (receipt: Omit<Receipt, 'id' | 'status' | 'uploadDate' | 'employeeId'>) => void;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -186,6 +188,7 @@ export default function ReceiptsPage() {
     const [extractedData, setExtractedData] = useState< (ReceiptData & { receiptUri: string | null }) | null>(null);
     const [isConfirmOpen, setConfirmOpen] = useState(false);
     const { toast } = useToast();
+    const { employees, currentUser } = useSchedule();
 
     useEffect(() => {
         // Initialize state on client to prevent hydration mismatch
@@ -217,7 +220,12 @@ export default function ReceiptsPage() {
     };
 
 
-    const handleSave = (receiptData: Omit<Receipt, 'id' | 'status' | 'uploadDate'>) => {
+    const handleSave = (receiptData: Omit<Receipt, 'id' | 'status' | 'uploadDate' | 'employeeId'>) => {
+        if (!currentUser) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No user is logged in.' });
+            return;
+        }
+
         const isDuplicate = receipts.some(
             r => r.vendor === receiptData.vendor &&
                  isSameDay(r.date, receiptData.date) &&
@@ -236,6 +244,7 @@ export default function ReceiptsPage() {
         const newReceipt: Receipt = {
             ...receiptData,
             id: `REC${Date.now()}`,
+            employeeId: currentUser.id,
             status: 'Pending',
             uploadDate: new Date(),
         };
@@ -335,6 +344,7 @@ export default function ReceiptsPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Date</TableHead>
+                                <TableHead>Personnel</TableHead>
                                 <TableHead>Vendor</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Status</TableHead>
@@ -343,11 +353,17 @@ export default function ReceiptsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {receipts.map((receipt) => (
+                            {receipts.map((receipt) => {
+                                const employee = employees.find(e => e.id === receipt.employeeId);
+                                return (
                                 <TableRow key={receipt.id}>
                                     <TableCell>
                                         <p className="font-medium">{format(receipt.date, 'PPP')}{receipt.time ? ` @ ${receipt.time}` : ''}</p>
                                         <p className="text-xs text-muted-foreground">Uploaded: {format(receipt.uploadDate, 'P p')}</p>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="font-medium">{employee?.name || 'Unknown'}</div>
+                                        <div className="text-xs text-muted-foreground">{employee?.role}</div>
                                     </TableCell>
                                     <TableCell className="font-medium">{receipt.vendor}</TableCell>
                                     <TableCell>
@@ -363,7 +379,7 @@ export default function ReceiptsPage() {
                                         <Button variant="outline" size="sm" onClick={() => setReceiptToView(receipt)} disabled={!receipt.receiptUri}>View</Button>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )})}
                         </TableBody>
                     </Table>
                 </div>
@@ -421,5 +437,3 @@ export default function ReceiptsPage() {
     </div>
   );
 }
-
-    
