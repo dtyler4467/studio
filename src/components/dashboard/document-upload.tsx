@@ -6,15 +6,112 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Camera, FileUp, Videotape, Trash2, SwitchCamera } from 'lucide-react';
+import { Camera, FileUp, Videotape, Trash2, SwitchCamera, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Checkbox } from '../ui/checkbox';
+import Image from 'next/image';
+import { editReceiptImage } from '@/ai/flows/edit-receipt-image-flow';
+import { Skeleton } from '../ui/skeleton';
 
 type DocumentUploadProps = {
     onDocumentChange: (dataUri: string | null) => void;
     currentDocument: string | null;
 };
+
+const enhancementOptions = [
+    { id: 'crop', label: 'Auto-Crop Receipt' },
+    { id: 'shadows', label: 'Remove Shadows' },
+    { id: 'enhance', label: 'Enhance Clarity' },
+    { id: 'grayscale', label: 'Convert to Grayscale' },
+    { id: 'brighten', label: 'Increase Brightness' },
+];
+
+function EditImageDialog({
+    isOpen,
+    onOpenChange,
+    imageDataUri,
+    onSave,
+}: {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    imageDataUri: string;
+    onSave: (editedUri: string) => void;
+}) {
+    const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>(['crop', 'shadows', 'enhance']);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const { toast } = useToast();
+
+    const handleApplyEdits = async () => {
+        setIsProcessing(true);
+        try {
+            const result = await editReceiptImage({
+                photoDataUri: imageDataUri,
+                enhancements: selectedEnhancements.map(id => enhancementOptions.find(opt => opt.id === id)!.label),
+            });
+            onSave(result.editedPhotoDataUri);
+            onOpenChange(false);
+            toast({ title: 'Image Enhanced', description: 'The selected enhancements have been applied.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Editing Failed', description: 'Could not apply edits to the image. Please try again.' });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>Enhance Receipt Image</DialogTitle>
+                    <DialogDescription>
+                        Select enhancements to improve image quality for better data extraction.
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="grid md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto pr-4">
+                    <div className="p-4 border rounded-md bg-muted h-full flex items-center justify-center relative">
+                        <Image src={imageDataUri} alt="Receipt to edit" width={600} height={800} className="max-h-full max-w-full object-contain" />
+                        {isProcessing && (
+                             <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-2">
+                                <Skeleton className="h-4 w-32" />
+                                <p className="text-sm font-medium">Applying AI enhancements...</p>
+                             </div>
+                        )}
+                    </div>
+                     <div className="space-y-4 py-4">
+                        <h4 className="font-semibold">Available Enhancements</h4>
+                        <div className="space-y-3">
+                            {enhancementOptions.map((option) => (
+                                <div key={option.id} className="flex items-center space-x-3">
+                                    <Checkbox
+                                        id={option.id}
+                                        checked={selectedEnhancements.includes(option.id)}
+                                        onCheckedChange={(checked) => {
+                                            setSelectedEnhancements(prev => 
+                                                checked ? [...prev, option.id] : prev.filter(id => id !== option.id)
+                                            );
+                                        }}
+                                    />
+                                    <Label htmlFor={option.id} className="font-normal">{option.label}</Label>
+                                </div>
+                            ))}
+                        </div>
+                     </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={() => onSave(imageDataUri)}>Skip Enhancements</Button>
+                    <Button onClick={handleApplyEdits} disabled={isProcessing}>
+                        <Wand2 className="mr-2"/>
+                        {isProcessing ? 'Applying...' : `Apply ${selectedEnhancements.length} Enhancements`}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUploadProps) {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
@@ -25,6 +122,8 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const streamRef = useRef<MediaStream | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {
@@ -111,23 +210,29 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
       if (context) {
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         const dataUrl = canvas.toDataURL('image/png');
-        onDocumentChange(dataUrl);
-        toast({ title: "Image Captured", description: "The image is ready to be submitted with the form."});
+        setCapturedImage(dataUrl);
+        setIsEditOpen(true);
       }
     }
   };
+  
+  const handleEditSave = (editedUri: string) => {
+    onDocumentChange(editedUri);
+    setCapturedImage(null);
+    setIsEditOpen(false);
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (loadEvent) => {
-        onDocumentChange(loadEvent.target?.result as string);
-         toast({ title: "File Selected", description: "The file is ready to be submitted with the form."});
+        const dataUrl = loadEvent.target?.result as string;
+        setCapturedImage(dataUrl);
+        setIsEditOpen(true);
       };
       reader.readAsDataURL(file);
     }
-    // Reset file input so user can select the same file again if they need to
     event.target.value = '';
   };
 
@@ -204,6 +309,14 @@ export function DocumentUpload({ onDocumentChange, currentDocument }: DocumentUp
                 </Card>
              </TabsContent>
         </Tabs>
+        {capturedImage && (
+            <EditImageDialog
+                isOpen={isEditOpen}
+                onOpenChange={setIsEditOpen}
+                imageDataUri={capturedImage}
+                onSave={handleEditSave}
+            />
+        )}
     </div>
   );
 }
