@@ -34,12 +34,14 @@ type Receipt = {
     receiptUri: string | null;
     status: 'Pending' | 'Approved' | 'Denied';
     uploadDate: Date;
+    reviewedBy?: string; // Employee Name
+    reviewedAt?: Date;
 };
 
 const initialReceipts: Receipt[] = [
-    { id: 'REC001', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 1)), vendor: 'Pilot', amount: 150.75, category: 'Fuel', receiptUri: 'https://picsum.photos/seed/receipt1/400/600', status: 'Approved', uploadDate: new Date() },
+    { id: 'REC001', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 1)), vendor: 'Pilot', amount: 150.75, category: 'Fuel', receiptUri: 'https://picsum.photos/seed/receipt1/400/600', status: 'Approved', uploadDate: new Date(), reviewedBy: 'Emily Jones', reviewedAt: new Date() },
     { id: 'REC002', employeeId: 'USR002', date: new Date(new Date().setDate(new Date().getDate() - 2)), vendor: "Denny's", amount: 25.50, category: 'Food', receiptUri: null, status: 'Pending', uploadDate: new Date() },
-    { id: 'REC003', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 3)), vendor: 'City Auto Repair', amount: 450.00, category: 'Maintenance', receiptUri: 'https://picsum.photos/seed/receipt2/400/600', status: 'Pending', uploadDate: new Date() },
+    { id: 'REC003', employeeId: 'USR001', date: new Date(new Date().setDate(new Date().getDate() - 3)), vendor: 'City Auto Repair', amount: 450.00, category: 'Maintenance', receiptUri: 'https://picsum.photos/seed/receipt2/400/600', status: 'Denied', uploadDate: new Date(), reviewedBy: 'Emily Jones', reviewedAt: new Date(new Date().setDate(new Date().getDate() - 1))},
 ];
 
 const categories: Receipt['category'][] = ['Fuel', 'Food', 'Maintenance', 'Lodging', 'Other'];
@@ -51,7 +53,7 @@ function ConfirmationDialog({
     onOpenChange,
 }: {
     receiptData: ReceiptData & { receiptUri: string | null };
-    onSave: (receipt: Omit<Receipt, 'id' | 'status' | 'uploadDate' | 'employeeId'>) => void;
+    onSave: (receipt: Omit<Receipt, 'id' | 'status' | 'uploadDate' | 'employeeId' | 'reviewedBy' | 'reviewedAt'>) => void;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -250,6 +252,7 @@ export default function ReceiptsPage() {
         };
         setReceipts(prev => [newReceipt, ...prev]);
         toast({ title: 'Receipt Logged', description: `Receipt from ${newReceipt.vendor} has been submitted for approval.` });
+        setConfirmOpen(false);
     };
     
     const handleDelete = () => {
@@ -370,7 +373,12 @@ export default function ReceiptsPage() {
                                         <Badge variant="outline">{receipt.category}</Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={receipt.status === 'Approved' ? 'default' : receipt.status === 'Denied' ? 'destructive' : 'secondary'} className={receipt.status === 'Approved' ? 'bg-green-600' : ''}>{receipt.status}</Badge>
+                                        <div>
+                                            <Badge variant={receipt.status === 'Approved' ? 'default' : receipt.status === 'Denied' ? 'destructive' : 'secondary'} className={receipt.status === 'Approved' ? 'bg-green-600' : ''}>{receipt.status}</Badge>
+                                            {receipt.reviewedBy && receipt.reviewedAt && (
+                                                <p className="text-xs text-muted-foreground mt-1">by {receipt.reviewedBy} on {format(receipt.reviewedAt, 'P')}</p>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right font-semibold">
                                         ${receipt.amount.toFixed(2)}
