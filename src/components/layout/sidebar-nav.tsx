@@ -208,8 +208,9 @@ const navItems: NavItem[] = [
     label: 'Time Tracker HUB', 
     roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
     subItems: [
-        { href: '/dashboard/time-tracker-hub/settings', icon: Settings, label: 'Settings', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/time-tracker-hub/overview', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
+        { href: '/dashboard/time-tracker-hub/settings', icon: Settings, label: 'Settings', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
   },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
@@ -372,7 +373,7 @@ export function SidebarNav() {
     setIsFleetManagementOpen(pathname.startsWith('/dashboard/fleet-management') || pathname.startsWith('/dashboard/repair-shop'));
     setIsDriverHubOpen(pathname.startsWith('/dashboard/driver-hub'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
-    setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-tracker-hub/settings') || pathname.startsWith('/dashboard/time-clock'));
+    setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-tracker-hub') || pathname.startsWith('/dashboard/time-clock'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
     setIsWorkspaceOpen(
