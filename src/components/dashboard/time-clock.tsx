@@ -1,13 +1,37 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, LogIn, LogOut } from 'lucide-react';
+import { Clock, LogIn, LogOut, Coffee, Fingerprint } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, differenceInHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
 import { useSchedule } from '@/hooks/use-schedule';
+
+const pad = (num: number) => num.toString().padStart(2, '0');
+
+function Stopwatch({ startTime }: { startTime: Date }) {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setElapsed(new Date().getTime() - startTime.getTime());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [startTime]);
+
+    const hours = Math.floor(elapsed / (1000 * 60 * 60));
+    const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
+    const seconds = Math.floor((elapsed / 1000) % 60);
+
+    return (
+        <div className="text-xl font-mono text-muted-foreground">
+            {pad(hours)}:{pad(minutes)}:{pad(seconds)}
+        </div>
+    );
+}
 
 export function TimeClock() {
     const { toast } = useToast();
@@ -74,20 +98,36 @@ export function TimeClock() {
                 <div className="text-sm text-muted-foreground">
                      {time ? format(time, 'PPPP') : '...'}
                 </div>
-                <div className="flex gap-4 mt-4">
-                    <Button size="lg" onClick={handleClockIn} disabled={isClockedIn}>
-                        <LogIn className="mr-2" /> Clock In
-                    </Button>
-                     <Button size="lg" variant="outline" onClick={handleClockOut} disabled={!isClockedIn}>
-                        <LogOut className="mr-2" /> Clock Out
-                    </Button>
-                </div>
-                 {isClockedIn && lastClockInTime && (
-                    <div className="mt-4 text-sm text-muted-foreground">
-                        Clocked in at <span className="font-semibold text-foreground">{format(lastClockInTime, 'p')}</span>
+                {isClockedIn && lastClockInTime && (
+                    <div className="mt-2 text-center space-y-1">
+                        <p className="text-sm text-muted-foreground">
+                            Clocked in at <span className="font-semibold text-foreground">{format(lastClockInTime, 'p')}</span>
+                        </p>
+                        <Stopwatch startTime={lastClockInTime} />
                     </div>
                 )}
+                <div className="flex gap-4 mt-4">
+                    {isClockedIn ? (
+                        <>
+                             <Button size="lg" variant="outline" onClick={handleClockOut}>
+                                <LogOut className="mr-2" /> Clock Out
+                            </Button>
+                        </>
+                    ) : (
+                         <Button size="lg" onClick={handleClockIn}>
+                            <LogIn className="mr-2" /> Clock In
+                        </Button>
+                    )}
+                </div>
+                 <div className="flex gap-4 mt-2">
+                    <Button variant="secondary" disabled={!isClockedIn}><Coffee className="mr-2"/> Start Break</Button>
+                    <Button variant="secondary" disabled><LogOut className="mr-2"/> End Break</Button>
+                </div>
             </CardContent>
+            <CardFooter className="flex-col gap-2 text-center">
+                 <p className="text-xs text-muted-foreground">Biometric authentication can be used.</p>
+                 <Fingerprint className="w-6 h-6 text-muted-foreground/50" />
+            </CardFooter>
         </>
     );
 }
