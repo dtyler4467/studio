@@ -187,6 +187,7 @@ const navItems: NavItem[] = [
     label: 'Driver Hub', 
     roles: ['Admin', 'Dispatcher', 'Driver'],
     subItems: [
+        { href: '/dashboard/driver-hub', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Driver'] },
         { href: '/dashboard/driver-hub/dvir', icon: ClipboardCheck, label: 'D.V.I.R', roles: ['Admin', 'Dispatcher', 'Driver'] },
         { href: '/dashboard/driver-hub/insurance', icon: ShieldCheck, label: 'Insurance', roles: ['Admin', 'Dispatcher', 'Driver'] },
         { href: '/dashboard/driver-hub/registration', icon: FileText, label: 'Registration', roles: ['Admin', 'Dispatcher', 'Driver'] },
