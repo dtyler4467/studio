@@ -372,7 +372,7 @@ export function SidebarNav() {
     setIsFleetManagementOpen(pathname.startsWith('/dashboard/fleet-management') || pathname.startsWith('/dashboard/repair-shop'));
     setIsDriverHubOpen(pathname.startsWith('/dashboard/driver-hub'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
-    setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-clock') || pathname.startsWith('/dashboard/time-tracker-hub'));
+    setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-tracker-hub/settings') || pathname.startsWith('/dashboard/time-clock'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
     setIsWorkspaceOpen(
