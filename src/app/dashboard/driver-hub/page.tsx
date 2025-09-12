@@ -4,7 +4,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, CalendarWarning, Receipt, MessageSquare, ClipboardCheck, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { ShieldCheck, CalendarClock, Receipt, MessageSquare, ClipboardCheck, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSchedule } from '@/hooks/use-schedule';
 import { format } from 'date-fns';
@@ -47,7 +47,7 @@ export default function DriverHubPage() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Next DVIR Due</CardTitle>
-                    <CalendarWarning className="h-4 w-4 text-muted-foreground" />
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{format(nextDvirDueDate, 'PPP')}</div>
