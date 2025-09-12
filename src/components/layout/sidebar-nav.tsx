@@ -202,6 +202,13 @@ const navItems: NavItem[] = [
   { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
+  { 
+    href: '#', 
+    icon: Clock, 
+    label: 'Time Tracker HUB', 
+    roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+    subItems: []
+  },
   { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
   { href: '/dashboard/alerts', icon: AlertTriangle, label: 'Alerts', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/sos-alerts', icon: Siren, label: 'SOS Alerts', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager'] },
@@ -343,6 +350,7 @@ export function SidebarNav() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAccountantOpen, setIsAccountantOpen] = useState(false);
   const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
+  const [isTimeTrackerHubOpen, setIsTimeTrackerHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -515,6 +523,7 @@ export function SidebarNav() {
                      'My Workspace': isWorkspaceOpen,
                      'AI': isAiOpen,
                      'Accountant': isAccountantOpen,
+                     'Time Tracker HUB': isTimeTrackerHubOpen,
                  };
                  const setIsOpenMap = {
                     'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -524,6 +533,7 @@ export function SidebarNav() {
                     'My Workspace': setIsWorkspaceOpen,
                     'AI': setIsAiOpen,
                     'Accountant': setIsAccountantOpen,
+                    'Time Tracker HUB': setIsTimeTrackerHubOpen,
                  }
                  const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                  const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
