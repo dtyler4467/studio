@@ -208,6 +208,7 @@ const navItems: NavItem[] = [
     label: 'Time Tracker HUB', 
     roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
     subItems: [
+        { href: '/dashboard/time-tracker-hub/settings', icon: Settings, label: 'Settings', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
         { href: '/dashboard/time-clock', icon: Clock, label: 'Time Clock', roles: ['Driver', 'Manager', 'Employee', 'Forklift', 'Laborer', 'Admin', 'Dispatcher'] },
     ]
   },
@@ -371,7 +372,7 @@ export function SidebarNav() {
     setIsFleetManagementOpen(pathname.startsWith('/dashboard/fleet-management') || pathname.startsWith('/dashboard/repair-shop'));
     setIsDriverHubOpen(pathname.startsWith('/dashboard/driver-hub'));
     setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
-    setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-clock'));
+    setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-clock') || pathname.startsWith('/dashboard/time-tracker-hub'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
     setIsWorkspaceOpen(
@@ -417,7 +418,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub') {
         return pathname === href;
     }
     return pathname.startsWith(href);
