@@ -12,9 +12,10 @@ import { useSchedule } from '@/hooks/use-schedule';
 export function TimeClock() {
     const { toast } = useToast();
     const { addTimeClockEvent, timeClockEvents, currentUser } = useSchedule();
-    const [time, setTime] = useState(new Date());
+    const [time, setTime] = useState<Date | null>(null);
 
     useEffect(() => {
+        setTime(new Date());
         const timer = setInterval(() => {
             setTime(new Date());
         }, 1000);
@@ -68,10 +69,10 @@ export function TimeClock() {
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
                 <div className="text-4xl font-bold font-mono">
-                    {format(time, 'p')}
+                    {time ? format(time, 'p') : 'Loading...'}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                     {format(time, 'PPPP')}
+                     {time ? format(time, 'PPPP') : '...'}
                 </div>
                 <div className="flex gap-4 mt-4">
                     <Button size="lg" onClick={handleClockIn} disabled={isClockedIn}>
