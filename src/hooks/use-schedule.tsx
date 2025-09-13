@@ -315,6 +315,27 @@ export type QualityHold = {
     status: 'On Hold' | 'Released' | 'Scrapped';
 };
 
+export type OrderItem = {
+    sku: string;
+    description: string;
+    quantity: number;
+    location: string;
+    picked: boolean;
+};
+
+export type SalesOrder = {
+    id: string; // e.g. SO-12345
+    customer: string;
+    destination: string;
+    shipDate: Date;
+    status: 'Pending' | 'Picking' | 'Staged' | 'Shipped';
+    assignedPicker?: string; // Employee ID
+    items: OrderItem[];
+    bolNumber?: string;
+    pickStartTime?: Date;
+    pickEndTime?: Date;
+}
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -348,6 +369,10 @@ type ScheduleContextType = {
   customers: Customer[];
   availableStatuses: YardEventStatus[];
   qualityHolds: QualityHold[];
+  salesOrders: SalesOrder[];
+  assignPickerToOrder: (orderId: string, pickerId: string) => void;
+  updateOrderItemStatus: (orderId: string, sku: string, picked: boolean) => void;
+  completeOrderPicking: (orderId: string) => void;
   placeOnHold: (itemId: string, reason: string, notes?: string) => void;
   releaseFromHold: (holdId: string) => void;
   scrapItem: (holdId: string) => void;
@@ -680,6 +705,12 @@ export const initialQualityHolds: QualityHold[] = [
     { id: 'QH003', itemId: 'SKU98765', reason: 'Supplier Recall', holdDate: new Date('2024-07-29'), scrappedDate: new Date('2024-07-30'), placedBy: 'Emily Jones', status: 'Scrapped', notes: 'Scrapped per recall notice.' },
 ];
 
+export const initialSalesOrders: SalesOrder[] = [
+    { id: 'SO-12345', customer: 'Acme Inc.', destination: 'Phoenix, AZ', shipDate: new Date('2024-08-10'), status: 'Pending', items: [ { sku: 'SKU12345', description: '1/2" Steel Bolts', quantity: 100, location: 'Aisle 3, Bin 4', picked: false } ]},
+    { id: 'SO-12346', customer: 'Globex Corporation', destination: 'New York, NY', shipDate: new Date('2024-08-11'), status: 'Pending', items: [ { sku: 'SKU67890', description: '3/4" Nylon Washers', quantity: 200, location: 'Aisle 5, Bin 2', picked: false }, { sku: 'SKU54321', description: '2" Wood Screws', quantity: 50, location: 'Aisle 1, Bin 1', picked: false } ]},
+    { id: 'SO-12347', customer: 'Stark Industries', destination: 'Atlanta, GA', shipDate: new Date('2024-08-12'), status: 'Picking', assignedPicker: 'USR001', items: [ { sku: 'SKU98765', description: 'M8 Hex Nuts', quantity: 500, location: 'Aisle 3, Bin 5', picked: true } ], pickStartTime: new Date() },
+];
+
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
@@ -719,7 +750,37 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
   const [qualityHolds, setQualityHolds] = useState<QualityHold[]>(initialQualityHolds);
+  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(initialSalesOrders);
   
+  const assignPickerToOrder = (orderId: string, pickerId: string) => {
+    setSalesOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Picking', assignedPicker: pickerId, pickStartTime: new Date() } : o));
+  };
+
+  const updateOrderItemStatus = (orderId: string, sku: string, picked: boolean) => {
+      setSalesOrders(prev => prev.map(o => {
+          if (o.id === orderId) {
+              return {
+                  ...o,
+                  items: o.items.map(item => item.sku === sku ? { ...item, picked } : item),
+              };
+          }
+          return o;
+      }));
+  };
+
+  const completeOrderPicking = (orderId: string) => {
+    setSalesOrders(prev => prev.map(o => {
+        if (o.id === orderId) {
+            return {
+                ...o,
+                status: 'Staged',
+                pickEndTime: new Date(),
+            }
+        }
+        return o;
+    }))
+  };
+
   const placeOnHold = (itemId: string, reason: string, notes?: string) => {
     const newHold: QualityHold = {
         id: `QH${Date.now()}`,
@@ -1395,7 +1456,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );
