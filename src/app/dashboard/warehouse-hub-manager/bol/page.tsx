@@ -17,22 +17,256 @@ import { useSchedule, BolTemplate } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
-const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-    <h3 className="text-lg font-semibold text-primary col-span-full">{children}</h3>
-);
 
 type Commodity = {
     id: number;
-    units: string;
-    pkgType: string;
+    handlingQty: string;
+    handlingType: string;
+    packageQty: string;
+    packageType: string;
     hm: boolean;
     description: string;
     weight: string;
+    nmfc: string;
     class: string;
 }
+
+type CustomerOrder = {
+    id: number;
+    orderNumber: string;
+    packages: string;
+    weight: string;
+    palletSlip: 'Y' | 'N' | '';
+    additionalInfo: string;
+}
+
+const generateBolHtml = (formData: any) => {
+    // This function now generates a full HTML page with embedded styles for a professional look
+    const {
+        shipperName, shipperAddress, shipperCity, shipperState, shipperZip, shipperSid,
+        consigneeName, consigneeAddress, consigneeCity, consigneeState, consigneeZip, consigneeCid, location,
+        thirdPartyName, thirdPartyAddress, thirdPartyCity, thirdPartyState, thirdPartyZip,
+        bolDate, bolPage, bolNumber, carrierName, trailerNumber, sealNumber, scac, proNumber,
+        specialInstructions, freightCharge, masterBol,
+        customerOrders, commodities,
+        codAmount, feeTerms, customerCheck,
+        shipperSignature, shipperDate, trailerLoaded, freightCounted, carrierSignature, carrierDate
+    } = formData;
+
+    const commoditiesHtml = commodities.map((c: Commodity) => `
+        <tr>
+            <td>${c.handlingQty || ''}</td>
+            <td>${c.handlingType || ''}</td>
+            <td>${c.packageQty || ''}</td>
+            <td>${c.packageType || ''}</td>
+            <td>${c.weight || ''}</td>
+            <td class="text-center">${c.hm ? 'X' : ''}</td>
+            <td class="commodity-desc">${c.description || ''}</td>
+            <td>${c.nmfc || ''}</td>
+            <td>${c.class || ''}</td>
+        </tr>
+    `).join('');
+
+    const customerOrdersHtml = customerOrders.map((o: CustomerOrder) => `
+         <tr>
+            <td>${o.orderNumber || ''}</td>
+            <td>${o.packages || ''}</td>
+            <td>${o.weight || ''}</td>
+            <td class="text-center">${o.palletSlip === 'Y' ? '(Y)' : o.palletSlip === 'N' ? '(N)' : ''}</td>
+            <td>${o.additionalInfo || ''}</td>
+        </tr>
+    `).join('');
+
+    const grandTotalCommodities = `<tr><td colspan="4" class="text-right font-bold pr-2">GRAND TOTAL</td><td>${commodities.reduce((acc: number, c: Commodity) => acc + (parseFloat(c.weight) || 0), 0)}</td><td></td><td></td><td></td><td></td></tr>`
+    const grandTotalCustomer = `<tr><td class="text-right font-bold pr-2">GRAND TOTAL</td><td>${customerOrders.reduce((acc: number, o: CustomerOrder) => acc + (parseInt(o.packages) || 0), 0)}</td><td>${customerOrders.reduce((acc: number, o: CustomerOrder) => acc + (parseFloat(o.weight) || 0), 0)}</td><td></td><td></td></tr>`
+
+    return `
+       <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Bill of Lading ${bolNumber}</title>
+            <style>
+                body { font-family: Arial, sans-serif; font-size: 8pt; line-height: 1.2; color: #333; background-color: #fff; }
+                .page { width: 8.5in; min-height: 11in; padding: 0.5in; margin: 0 auto; box-sizing: border-box; display: flex; flex-direction: column; }
+                .header { text-align: center; border-bottom: 2px solid black; padding-bottom: 4px; }
+                .header p { margin: 0; font-size: 7pt; }
+                .header h1 { margin: 2px 0; font-size: 16pt; }
+                .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; }
+                .col-span-8 { grid-column: span 8 / span 8; }
+                .col-span-4 { grid-column: span 4 / span 4; }
+                .section { border: 1px solid black; padding: 4px; }
+                .section-title { font-weight: bold; font-size: 7pt; text-align: center; background-color: #f2f2f2; padding: 2px; border-bottom: 1px solid black; text-transform: uppercase; }
+                .field { margin-bottom: 4px; }
+                .field label { font-weight: bold; font-size: 6.5pt; display: block; }
+                .field span, .field div { border-bottom: 1px dotted #ccc; padding: 1px 2px; min-height: 12px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+                th, td { border: 1px solid black; padding: 3px; vertical-align: top; }
+                th { font-size: 7pt; background-color: #f2f2f2; text-align: center; }
+                td { height: 18px; }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .font-bold { font-weight: bold; }
+                .pr-2 { padding-right: 8px; }
+                .commodity-desc { height: 50px; }
+                .flex { display: flex; }
+                .justify-between { justify-content: space-between; }
+                .items-end { align-items: flex-end; }
+                .w-1/3 { width: 33.33%; }
+                .w-full { width: 100%; }
+                .mt-2 { margin-top: 8px; }
+                .checkbox-container { display: flex; align-items: center; gap: 4px; }
+                .checkbox { width: 10px; height: 10px; border: 1px solid black; }
+                .checkbox.checked { background-color: black; }
+            </style>
+        </head>
+        <body>
+            <div class="page">
+                <div class="header">
+                    <p>II. The Standard Bill of Lading Form</p>
+                    <p>VICS Standard BOL: WWW.VICS.ORG For Complete VICS BOL Guideline Information</p>
+                    <div class="flex justify-between items-end" style="margin-top: 8px;">
+                         <div style="width: 20%;">Date: <span style="border-bottom: 1px solid black; padding: 0 10px;">${bolDate}</span></div>
+                         <h1 style="width: 60%;">BILL OF LADING</h1>
+                         <div style="width: 20%;">Page: <span style="border-bottom: 1px solid black; padding: 0 10px;">${bolPage}</span></div>
+                    </div>
+                </div>
+
+                <div class="grid" style="margin-top: 8px;">
+                    <div class="col-span-8">
+                        <div class="grid grid-cols-1 gap-2">
+                             <div class="section">
+                                <div class="section-title">Ship From</div>
+                                <div class="field"><label>Name:</label><span>${shipperName || ''}</span></div>
+                                <div class="field"><label>Address:</label><span>${shipperAddress || ''}</span></div>
+                                <div class="field"><label>City/State/Zip:</label><span>${shipperCity ? `${shipperCity}, ${shipperState} ${shipperZip}` : ''}</span></div>
+                                <div class="flex justify-between mt-2"><div class="field"><label>SID#:</label><span>${shipperSid || ''}</span></div><div class="field"><label>FOB:</label><span></span></div></div>
+                            </div>
+                             <div class="section">
+                                <div class="section-title">Ship To</div>
+                                <div class="field"><label>Name:</label><span>${consigneeName || ''}</span></div>
+                                <div class="field"><label>Address:</label><span>${consigneeAddress || ''}</span></div>
+                                <div class="field"><label>City/State/Zip:</label><span>${consigneeCity ? `${consigneeCity}, ${consigneeState} ${consigneeZip}` : ''}</span></div>
+                                <div class="flex justify-between mt-2"><div class="field"><label>CID#:</label><span>${consigneeCid || ''}</span></div><div class="field"><label>Location #:</label><span>${location || ''}</span></div><div class="field"><label>FOB:</label><span></span></div></div>
+                            </div>
+                             <div class="section">
+                                <div class="section-title">Third Party Freight Charges Bill To</div>
+                                <div class="field"><label>Name:</label><span>${thirdPartyName || ''}</span></div>
+                                <div class="field"><label>Address:</label><span>${thirdPartyAddress || ''}</span></div>
+                                <div class="field"><label>City/State/Zip:</label><span>${thirdPartyCity ? `${thirdPartyCity}, ${thirdPartyState} ${thirdPartyZip}` : ''}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-span-4">
+                         <div class="grid grid-cols-1 gap-2">
+                             <div class="section h-full">
+                                <div class="field"><label>Bill of Lading Number:</label><span>${bolNumber}</span></div>
+                                <div class="text-center" style="height: 60px; border: 1px dashed #ccc; margin-top: 10px;">BAR CODE SPACE</div>
+                            </div>
+                             <div class="section">
+                                <div class="field"><label>Carrier Name:</label><span>${carrierName}</span></div>
+                                <div class="field"><label>Trailer Number:</label><span>${trailerNumber}</span></div>
+                                <div class="field"><label>Seal Number(s):</label><span>${sealNumber}</span></div>
+                                <div class="field"><label>SCAC:</label><span>${scac}</span></div>
+                                <div class="field"><label>Pro Number:</label><span>${proNumber}</span></div>
+                                <div class="text-center" style="height: 60px; border: 1px dashed #ccc; margin-top: 10px;">BAR CODE SPACE</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-12 gap-2 mt-2">
+                    <div class="col-span-8 section">
+                         <div class="section-title">Special Instructions</div>
+                         <div style="height: 90px;">${specialInstructions || ''}</div>
+                    </div>
+                     <div class="col-span-4 section">
+                        <div class="section-title">Freight Charge Terms</div>
+                        <div style="padding-top: 4px;">
+                            <div class="checkbox-container"><div class="checkbox ${freightCharge === 'Prepaid' ? 'checked' : ''}"></div> Prepaid</div>
+                            <div class="checkbox-container"><div class="checkbox ${freightCharge === 'Collect' ? 'checked' : ''}"></div> Collect</div>
+                            <div class="checkbox-container"><div class="checkbox ${freightCharge === '3rd Party' ? 'checked' : ''}"></div> 3rd Party</div>
+                        </div>
+                        <div class="checkbox-container mt-2"><div class="checkbox ${masterBol ? 'checked' : ''}"></div> Master Bill of Lading</div>
+                    </div>
+                </div>
+
+                <div class="section mt-2">
+                    <div class="section-title">Customer Order Information</div>
+                    <table><thead><tr><th>Customer Order Number</th><th># Pkgs</th><th>Weight</th><th>Pallet/Slip (Y/N)</th><th>Additional Shipper Info</th></tr></thead><tbody>
+                        ${customerOrdersHtml}
+                        ${grandTotalCustomer}
+                    </tbody></table>
+                </div>
+
+                <div class="section mt-2">
+                    <div class="section-title">Carrier Information</div>
+                     <table><thead><tr><th colspan="2">Handling Unit</th><th colspan="2">Package</th><th rowspan="2">Weight</th><th rowspan="2">H.M.</th><th rowspan="2">Commodity Description</th><th colspan="2">LTL Only</th></tr><tr><th>Qty</th><th>Type</th><th>Qty</th><th>Type</th><th>NMFC #</th><th>Class</th></tr></thead><tbody>
+                        ${commoditiesHtml}
+                        ${grandTotalCommodities}
+                    </tbody></table>
+                </div>
+                
+                <div style="flex-grow: 1;"></div>
+                
+                 <div class="grid grid-cols-12 gap-2 mt-auto">
+                    <div class="col-span-7 section">
+                        <p style="font-size: 7pt; margin: 0;">Where the rate is dependent on value, shippers are required to state specifically in writing the agreed or declared value of the property as follows:</p>
+                        <p style="font-size: 7pt; margin: 4px 0;">"The agreed or declared value of the property is specifically stated by the shipper to be not exceeding <span style="border-bottom: 1px solid black; padding: 0 40px;"></span> per <span style="border-bottom: 1px solid black; padding: 0 40px;"></span>"</p>
+                        <p style="font-size: 7pt; margin: 0; font-weight: bold;">NOTE: Liability Limitation for loss or damage in this shipment may be applicable. See 49 U.S.C. § 14706(c)(1)(A) and (B).</p>
+                    </div>
+                    <div class="col-span-5 section">
+                        <div class="field"><label>COD Amount: $</label><span>${codAmount || ''}</span></div>
+                        <div class="flex justify-between">
+                            <span>Fee Terms:</span>
+                             <div class="checkbox-container"><div class="checkbox ${feeTerms === 'Collect' ? 'checked' : ''}"></div> Collect</div>
+                            <div class="checkbox-container"><div class="checkbox ${feeTerms === 'Prepaid' ? 'checked' : ''}"></div> Prepaid</div>
+                        </div>
+                        <div class="checkbox-container"><div class="checkbox ${customerCheck ? 'checked' : ''}"></div> Customer check acceptable</div>
+                    </div>
+                </div>
+
+                 <div class="section mt-2">
+                     <p style="font-size: 6.5pt; margin: 0;">RECEIVED, subject to individually determined rates or contracts that have been agreed upon in writing between the carrier and shipper, if applicable, otherwise to the rates, classifications and rules that have been established by the carrier and are available to the shipper, on request; and to all applicable state and federal regulations.</p>
+                </div>
+                 <div class="grid grid-cols-2 gap-2 mt-2">
+                     <div class="section">
+                        <div class="section-title">Shipper Signature / Date</div>
+                        <div style="font-size: 6.5pt; padding: 2px;">This is to certify that the above named materials are properly classified, described, packaged, marked and labeled, and are in proper condition for transportation according to the applicable regulations of the U.S. DOT.</div>
+                        <div class="flex justify-between items-end mt-2">
+                            <div class="w-1/3">
+                                <p style="margin-top: 10px; border-bottom: 1px solid black;">&nbsp;</p>
+                                <label style="font-size: 7pt;">Shipper</label>
+                            </div>
+                            <div class="w-1/3">
+                                <p style="margin-top: 10px; border-bottom: 1px solid black;">&nbsp;</p>
+                                <label style="font-size: 7pt;">Date</label>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="section">
+                        <div class="section-title">Carrier Signature / Pickup Date</div>
+                        <div style="font-size: 6.5pt; padding: 2px;">Carrier acknowledges receipt of packages and required placards. Carrier certifies emergency response information was made available and/or carrier has the U.S. DOT emergency response guidebook or equivalent documentation in the vehicle.</div>
+                        <div class="flex justify-between items-end mt-2">
+                            <div class="w-1/3">
+                                <p style="margin-top: 10px; border-bottom: 1px solid black;">&nbsp;</p>
+                                <label style="font-size: 7pt;">Carrier</label>
+                            </div>
+                            <div class="w-1/3">
+                                <p style="margin-top: 10px; border-bottom: 1px solid black;">&nbsp;</p>
+                                <label style="font-size: 7pt;">Date</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+};
+
 
 export default function BolPage() {
     const searchParams = useSearchParams();
@@ -41,108 +275,83 @@ export default function BolPage() {
     const { toast } = useToast();
     const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
     const [templateName, setTemplateName] = useState("");
-    const [isBolNumberEditable, setIsBolNumberEditable] = useState(true);
-
-    // State for all form fields
+    
+    // Form State
+    const [bolDate, setBolDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [bolPage, setBolPage] = useState('1');
     const [shipperName, setShipperName] = useState('');
     const [shipperAddress, setShipperAddress] = useState('');
     const [shipperCity, setShipperCity] = useState('');
     const [shipperState, setShipperState] = useState('');
     const [shipperZip, setShipperZip] = useState('');
-    const [shipperPhone, setShipperPhone] = useState('');
+    const [shipperSid, setShipperSid] = useState('');
 
     const [consigneeName, setConsigneeName] = useState('');
     const [consigneeAddress, setConsigneeAddress] = useState('');
     const [consigneeCity, setConsigneeCity] = useState('');
     const [consigneeState, setConsigneeState] = useState('');
     const [consigneeZip, setConsigneeZip] = useState('');
-    const [consigneePhone, setConsigneePhone] = useState('');
-    const [consigneeContact, setConsigneeContact] = useState('');
+    const [consigneeCid, setConsigneeCid] = useState('');
+    const [location, setLocation] = useState('');
 
-
+    const [thirdPartyName, setThirdPartyName] = useState('');
+    const [thirdPartyAddress, setThirdPartyAddress] = useState('');
+    const [thirdPartyCity, setThirdPartyCity] = useState('');
+    const [thirdPartyState, setThirdPartyState] = useState('');
+    const [thirdPartyZip, setThirdPartyZip] = useState('');
+    
     const [bolNumber, setBolNumber] = useState('');
     const [carrierName, setCarrierName] = useState('');
     const [trailerNumber, setTrailerNumber] = useState('');
     const [sealNumber, setSealNumber] = useState('');
-    const [poNumber, setPoNumber] = useState('');
-    const [refNumber, setRefNumber] = useState('');
-    const [notes, setNotes] = useState('');
+    const [scac, setScac] = useState('');
+    const [proNumber, setProNumber] = useState('');
 
+    const [specialInstructions, setSpecialInstructions] = useState('');
+    const [freightCharge, setFreightCharge] = useState<'Prepaid' | 'Collect' | '3rd Party' | null>('Prepaid');
+    const [masterBol, setMasterBol] = useState(false);
+    
+    const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([{ id: Date.now(), orderNumber: '', packages: '', weight: '', palletSlip: '', additionalInfo: ''}]);
     const [commodities, setCommodities] = useState<Commodity[]>([]);
+
+    const [codAmount, setCodAmount] = useState('');
+    const [feeTerms, setFeeTerms] = useState<'Collect' | 'Prepaid' | null>(null);
+    const [customerCheck, setCustomerCheck] = useState(false);
+
+    const [shipperSignature, setShipperSignature] = useState('');
+    const [shipperDate, setShipperDate] = useState('');
+    const [trailerLoaded, setTrailerLoaded] = useState<'shipper' | 'driver' | null>(null);
+    const [freightCounted, setFreightCounted] = useState<'shipper' | 'driver_pallets' | 'driver_pieces' | null>(null);
+    const [carrierSignature, setCarrierSignature] = useState('');
+    const [carrierDate, setCarrierDate] = useState('');
     
     useEffect(() => {
-        const bol = searchParams.get('bolNumber');
         const cName = searchParams.get('consigneeName');
-        const cAddress = searchParams.get('consigneeAddress');
-        const cCity = searchParams.get('consigneeCity');
-        const cState = searchParams.get('consigneeState');
-        const cZip = searchParams.get('consigneeZip');
-        const cPhone = searchParams.get('consigneePhone');
-        const cContact = searchParams.get('consigneeContact');
-        const formNotes = searchParams.get('notes');
-
+        if (cName) setConsigneeName(cName);
+        
         const items = searchParams.getAll('items');
         const quantities = searchParams.getAll('quantities');
-        
-        const existingCommodities = JSON.parse(sessionStorage.getItem('bolCommodities') || '[]');
-
-        if (bol) {
-            setBolNumber(bol);
-            setIsBolNumberEditable(false);
-        }
-        if (cName) setConsigneeName(cName);
-        if (cAddress) setConsigneeAddress(cAddress);
-        if (cCity) setConsigneeCity(cCity);
-        if (cState) setConsigneeState(cState);
-        if (cZip) setConsigneeZip(cZip);
-        if (cPhone) setConsigneePhone(cPhone);
-        if (cContact) setConsigneeContact(cContact);
-        if (formNotes) setNotes(formNotes);
-        
-
         if (items.length > 0) {
             const initialCommodities = items.map((item, index) => ({
                 id: Date.now() + index,
-                units: quantities[index] || '1',
-                pkgType: 'Pallet',
-                hm: false,
                 description: item,
+                handlingQty: quantities[index] || '1',
+                handlingType: 'Pallet',
+                packageQty: '',
+                packageType: '',
+                hm: false,
                 weight: '',
+                nmfc: '',
                 class: ''
             }));
             setCommodities(initialCommodities);
-            sessionStorage.setItem('bolCommodities', JSON.stringify(initialCommodities));
-        } else if (existingCommodities.length > 0) {
-            setCommodities(existingCommodities);
         } else {
-            setCommodities([{ id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
+             setCommodities([{ id: Date.now(), handlingQty: '', handlingType: '', packageQty: '', packageType: '', hm: false, description: '', weight: '', nmfc: '', class: '' }]);
         }
-        
-        const templateId = searchParams.get('templateId');
-        if (templateId) {
-            const templateData = sessionStorage.getItem(`bolTemplate_${templateId}`);
-            if (templateData) {
-                const template: BolTemplate = JSON.parse(templateData);
-                setShipperName(template.shipper.name);
-                setShipperAddress(template.shipper.address);
-                setShipperCity(template.shipper.city);
-                setShipperState(template.shipper.state);
-                setShipperZip(template.shipper.zip);
-                setShipperPhone(template.shipper.phone);
-                setConsigneeName(template.consignee.name);
-                setConsigneeAddress(template.consignee.address);
-                setConsigneeCity(template.consignee.city);
-                setConsigneeState(template.consignee.state);
-                setConsigneeZip(template.consignee.zip);
-                setConsigneePhone(template.consignee.phone);
-            }
-        }
-        
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [searchParams]);
 
     const handleAddCommodity = () => {
-        setCommodities(prev => [...prev, { id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
+        setCommodities(prev => [...prev, { id: Date.now(), handlingQty: '', handlingType: '', packageQty: '', packageType: '', hm: false, description: '', weight: '', nmfc: '', class: '' }]);
     };
     
     const handleRemoveCommodity = (id: number) => {
@@ -151,6 +360,18 @@ export default function BolPage() {
 
     const handleCommodityChange = (id: number, field: keyof Commodity, value: string | boolean) => {
         setCommodities(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+    };
+
+    const handleAddCustomerOrder = () => {
+        setCustomerOrders(prev => [...prev, { id: Date.now(), orderNumber: '', packages: '', weight: '', palletSlip: '', additionalInfo: ''}]);
+    };
+    
+    const handleRemoveCustomerOrder = (id: number) => {
+        setCustomerOrders(prev => prev.filter(c => c.id !== id));
+    };
+
+    const handleCustomerOrderChange = (id: number, field: keyof Omit<CustomerOrder, 'id'>, value: string) => {
+        setCustomerOrders(prev => prev.map(o => o.id === id ? { ...o, [field]: value } : o));
     };
 
     const handleSaveBol = () => {
@@ -163,54 +384,18 @@ export default function BolPage() {
             return;
         }
 
-        const wb = XLSX.utils.book_new();
-        
-        const bolData = [
-            ["Master Bill of Lading", `BOL #: ${bolNumber}`],
-            [],
-            ["Shipper / Consignor", "Consignee"],
-            [`Name: ${shipperName}`, `Name: ${consigneeName}`],
-            [`Address: ${shipperAddress}`, `Address: ${consigneeAddress}`],
-            [`${shipperCity}, ${shipperState} ${shipperZip}`, `${consigneeCity}, ${consigneeState} ${consigneeZip}`],
-            [`Phone: ${shipperPhone}`, `Phone: ${consigneePhone}`],
-            [],
-            ["Shipment & Carrier Details"],
-        ];
-        
-        const carrierData = [
-            { "Carrier Name": carrierName, "Trailer Number": trailerNumber, "Seal Number": sealNumber, "PO Number": poNumber, "Reference Number": refNumber },
-        ];
-
-        const commodityHeaders = ["Units", "Pkg. Type", "HM", "Description", "Weight (lbs)", "Class"];
-        const commodityData = commodities.map(c => ({
-            Units: c.units,
-            "Pkg. Type": c.pkgType,
-            HM: c.hm ? 'X' : '',
-            Description: c.description,
-            "Weight (lbs)": c.weight,
-            Class: c.class,
-        }));
-        
-        const notesData = [
-            [],
-            ["Notes & Special Instructions"],
-            [notes]
-        ];
-
-        const ws = XLSX.utils.aoa_to_sheet(bolData);
-        XLSX.utils.sheet_add_json(ws, carrierData, { origin: "A10", skipHeader: false });
-        XLSX.utils.sheet_add_json(ws, commodityData, { origin: "A12", skipHeader: false, header: commodityHeaders });
-        XLSX.utils.sheet_add_aoa(ws, notesData, { origin: -1 });
-
-        // Add formatting
-        ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, // Merge for title
-            { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } }, // Merge for Shipper title
-            { s: { r: 2, c: 2 }, e: { r: 2, c: 3 } }, // Merge for Consignee title
-        ];
-
-        XLSX.utils.book_append_sheet(wb, ws, "Bill of Lading");
-        XLSX.writeFile(wb, `BOL_${bolNumber}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        const formData = {
+            shipperName, shipperAddress, shipperCity, shipperState, shipperZip, shipperSid,
+            consigneeName, consigneeAddress, consigneeCity, consigneeState, consigneeZip, consigneeCid, location,
+            thirdPartyName, thirdPartyAddress, thirdPartyCity, thirdPartyState, thirdPartyZip,
+            bolDate, bolPage, bolNumber, carrierName, trailerNumber, sealNumber, scac, proNumber,
+            specialInstructions, freightCharge, masterBol,
+            customerOrders, commodities,
+            codAmount, feeTerms, customerCheck,
+            shipperSignature, shipperDate, trailerLoaded, freightCounted, carrierSignature, carrierDate
+        };
+        const htmlContent = generateBolHtml(formData);
+        const dataUri = `data:text/html;base64,${btoa(htmlContent)}`;
 
         const newBolDataForHistory = {
             bolNumber,
@@ -221,293 +406,278 @@ export default function BolPage() {
             carrier: carrierName,
         };
 
-        // We save to history but don't generate a documentUri since the file is downloaded
-        saveBol(newBolDataForHistory, null);
-        
-        sessionStorage.removeItem('bolCommodities');
+        const savedBol = saveBol(newBolDataForHistory, dataUri);
         
         toast({
-            title: 'BOL Saved & Downloaded',
-            description: `BOL ${bolNumber} has been saved to history and downloaded as an Excel file.`
+            title: 'BOL Saved',
+            description: `BOL ${bolNumber} has been saved to history.`
         });
         
-        router.push(`/dashboard/warehouse-hub-manager/bol/history`);
+        router.push(`/dashboard/warehouse-hub-manager/bol/${savedBol.id}`);
     };
 
-    const handleSaveTemplate = () => {
-        if (!templateName.trim()) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a name for the template.' });
-            return;
-        }
-
-        const templateData: Omit<BolTemplate, 'id'> = {
-            name: templateName,
-            shipper: { name: shipperName, address: shipperAddress, city: shipperCity, state: shipperState, zip: shipperZip, phone: shipperPhone },
-            consignee: { name: consigneeName, address: consigneeAddress, city: consigneeCity, state: consigneeState, zip: consigneeZip, phone: consigneePhone },
-        };
-        
-        saveBolTemplate(templateData);
-        toast({ title: 'Template Saved', description: `Template "${templateName}" has been saved.` });
-        setIsSaveTemplateOpen(false);
-        setTemplateName("");
-    }
-
     const handleUseTemplate = () => {
-        // Save current commodities to session storage before navigating
-        sessionStorage.setItem('bolCommodities', JSON.stringify(commodities));
         router.push('/dashboard/warehouse-hub-manager/bol/templates');
     }
 
     const clearForm = () => {
-        setShipperName('');
-        setShipperAddress('');
-        setShipperCity('');
-        setShipperState('');
-        setShipperZip('');
-        setShipperPhone('');
-        setConsigneeName('');
-        setConsigneeAddress('');
-        setConsigneeCity('');
-        setConsigneeState('');
-        setConsigneeZip('');
-        setConsigneePhone('');
-        setBolNumber('');
-        setCarrierName('');
-        setTrailerNumber('');
-        setSealNumber('');
-        setPoNumber('');
-        setRefNumber('');
-        setNotes('');
-        setCommodities([{ id: Date.now(), units: '', pkgType: '', hm: false, description: '', weight: '', class: '' }]);
-        sessionStorage.removeItem('bolCommodities');
-        setIsBolNumberEditable(true);
         router.replace('/dashboard/warehouse-hub-manager/bol');
+        window.location.reload();
     }
 
 
     return (
-        <div className="flex flex-col w-full">
-            <Header pageTitle="Bill of Lading" />
-            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Master Bill of Lading</CardTitle>
-                        <CardDescription>
-                        Create a new Bill of Lading. Fill in the details below and save or print.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-8">
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <div className="space-y-4 rounded-md border p-4">
-                                <SectionTitle>Shipper / Consignor</SectionTitle>
-                                <div className="space-y-2">
-                                    <Label htmlFor="shipper-name">Name</Label>
-                                    <Input id="shipper-name" placeholder="Enter shipper's name" value={shipperName} onChange={e => setShipperName(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="shipper-address">Address</Label>
-                                    <Input id="shipper-address" placeholder="Enter shipper's address" value={shipperAddress} onChange={e => setShipperAddress(e.target.value)} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="shipper-city">City</Label>
-                                        <Input id="shipper-city" value={shipperCity} onChange={e => setShipperCity(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="shipper-state">State</Label>
-                                        <Input id="shipper-state" value={shipperState} onChange={e => setShipperState(e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="shipper-zip">Zip Code</Label>
-                                        <Input id="shipper-zip" value={shipperZip} onChange={e => setShipperZip(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="shipper-phone">Phone</Label>
-                                        <Input id="shipper-phone" type="tel" value={shipperPhone} onChange={e => setShipperPhone(e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 rounded-md border p-4">
-                                <SectionTitle>Consignee</SectionTitle>
-                                <div className="space-y-2">
-                                    <Label htmlFor="consignee-name">Name</Label>
-                                    <Input id="consignee-name" placeholder="Enter consignee's name" value={consigneeName} onChange={(e) => setConsigneeName(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="consignee-address">Address</Label>
-                                    <Input id="consignee-address" placeholder="Enter consignee's address" value={consigneeAddress} onChange={e => setConsigneeAddress(e.target.value)} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="consignee-city">City</Label>
-                                        <Input id="consignee-city" value={consigneeCity} onChange={(e) => setConsigneeCity(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="consignee-state">State</Label>
-                                        <Input id="consignee-state" value={consigneeState} onChange={e => setConsigneeState(e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="consignee-zip">Zip Code</Label>
-                                        <Input id="consignee-zip" value={consigneeZip} onChange={e => setConsigneeZip(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="consignee-phone">Phone</Label>
-                                        <Input id="consignee-phone" type="tel" value={consigneePhone} onChange={e => setConsigneePhone(e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <div className="space-y-4">
-                            <SectionTitle>Shipment & Carrier Details</SectionTitle>
-                            <div className="grid md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="bol-number">BOL Number</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Input id="bol-number" placeholder="Auto-generated or manual" value={bolNumber} onChange={(e) => setBolNumber(e.target.value)} readOnly={!isBolNumberEditable} />
-                                        {!isBolNumberEditable && (
-                                            <Button variant="ghost" size="icon" onClick={() => setIsBolNumberEditable(true)}>
-                                                <Pencil className="w-4 h-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="carrier-name">Carrier Name</Label>
-                                    <Input id="carrier-name" value={carrierName} onChange={e => setCarrierName(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="trailer-number">Trailer Number</Label>
-                                    <Input id="trailer-number" value={trailerNumber} onChange={e => setTrailerNumber(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="seal-number">Seal Number</Label>
-                                    <Input id="seal-number" value={sealNumber} onChange={e => setSealNumber(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="po-number">P.O. Number</Label>
-                                    <Input id="po-number" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="ref-number">Reference Number</Label>
-                                    <Input id="ref-number" value={refNumber} onChange={e => setRefNumber(e.target.value)} />
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <Separator />
-
-                        <div className="space-y-4">
-                            <SectionTitle>Commodities</SectionTitle>
-                             {commodities.map((commodity, index) => (
-                                <div key={commodity.id} className="grid grid-cols-12 gap-x-4 gap-y-2 items-end">
-                                    <div className="col-span-2 sm:col-span-1 space-y-1">
-                                        <Label>Units</Label>
-                                        <Input type="number" placeholder="1" value={commodity.units} onChange={(e) => handleCommodityChange(commodity.id, 'units', e.target.value)} />
-                                    </div>
-                                    <div className="col-span-2 sm:col-span-2 space-y-1">
-                                        <Label>Pkg. Type</Label>
-                                        <Input placeholder="Pallet" value={commodity.pkgType} onChange={(e) => handleCommodityChange(commodity.id, 'pkgType', e.target.value)} />
-                                    </div>
-                                    <div className="col-span-1 flex items-center space-x-2 pb-2">
-                                        <Checkbox id={`hm-${commodity.id}`} checked={commodity.hm} onCheckedChange={(checked) => handleCommodityChange(commodity.id, 'hm', !!checked)} />
-                                        <Label htmlFor={`hm-${commodity.id}`} className="text-xs">HM</Label>
-                                    </div>
-                                    <div className="col-span-4 space-y-1">
-                                        <Label>Description of Articles</Label>
-                                        <Input placeholder="e.g. Canned Goods" value={commodity.description} onChange={(e) => handleCommodityChange(commodity.id, 'description', e.target.value)} />
-                                    </div>
-                                    <div className="col-span-2 sm:col-span-1 space-y-1">
-                                        <Label>Weight</Label>
-                                        <Input type="number" value={commodity.weight} onChange={(e) => handleCommodityChange(commodity.id, 'weight', e.target.value)} />
-                                    </div>
-                                    <div className="col-span-2 sm:col-span-1 space-y-1">
-                                        <Label>Class</Label>
-                                        <Input value={commodity.class} onChange={(e) => handleCommodityChange(commodity.id, 'class', e.target.value)} />
-                                    </div>
-                                     <div className="col-span-1 flex items-center pb-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveCommodity(commodity.id)}
-                                            disabled={commodities.length <= 1}
-                                        >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
-                            <Button variant="outline" size="sm" onClick={handleAddCommodity}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add Line
-                            </Button>
-                        </div>
-
-                        <Separator />
-
-                        <div className="space-y-4">
-                            <SectionTitle>Notes & Special Instructions</SectionTitle>
-                            <div className="space-y-2">
-                                <Textarea placeholder="Enter any special instructions for the carrier or consignee..." value={notes} onChange={e => setNotes(e.target.value)} />
-                            </div>
-                        </div>
-
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                        <div>
-                            <Button onClick={handleSaveBol}><Save className="mr-2"/>Save BOL</Button>
-                            <Button variant="ghost" onClick={clearForm}>Clear Form</Button>
-                        </div>
-                        <div>
-                             <DropdownMenu>
+        <div className="flex flex-col w-full bg-gray-100">
+            <Header pageTitle="Create Bill of Lading" />
+            <main className="flex-1 p-4 md:p-8">
+                <div className="bg-white p-6 shadow-lg rounded-lg max-w-4xl mx-auto" id="bol-form">
+                     {/* Form Actions */}
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Bill of Lading</h2>
+                        <div className="flex gap-2">
+                             <Button onClick={handleSaveBol}><Save className="mr-2"/>Save BOL</Button>
+                             <Button variant="outline" onClick={clearForm}>Clear Form</Button>
+                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline">
-                                        Template Task
+                                        Template
                                         <MoreVertical className="ml-2" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setIsSaveTemplateOpen(true)}>Save Template</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => {}}>Save as Template</DropdownMenuItem>
                                     <DropdownMenuItem onClick={handleUseTemplate}>Use Template</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
-                    </CardFooter>
-                </Card>
-
-                <Dialog open={isSaveTemplateOpen} onOpenChange={setIsSaveTemplateOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Save BOL Template</DialogTitle>
-                            <DialogDescription>
-                                Give your new template a name. This will save the current Shipper and Consignee information.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="template-name" className="text-right">Template Name</Label>
-                                <Input
-                                    id="template-name"
-                                    value={templateName}
-                                    onChange={(e) => setTemplateName(e.target.value)}
-                                    className="col-span-3"
-                                    placeholder="e.g., Acme Inc. to Phoenix"
-                                />
+                    </div>
+                    {/* Header */}
+                    <div className="text-center border-b-2 border-black pb-1 mb-2">
+                        <p className="text-xs">II. The Standard Bill of Lading Form</p>
+                        <div className="flex justify-between items-end mt-2">
+                             <div className="flex items-center gap-2">
+                                <label className="text-sm">Date:</label>
+                                <Input type="date" value={bolDate} onChange={e => setBolDate(e.target.value)} className="h-7 text-xs"/>
+                             </div>
+                             <h1 className="text-2xl font-bold font-headline">BILL OF LADING</h1>
+                             <div className="flex items-center gap-2">
+                                 <label className="text-sm">Page:</label>
+                                 <Input value={bolPage} onChange={e => setBolPage(e.target.value)} className="w-16 h-7 text-xs" />
                             </div>
                         </div>
-                        <DialogFooter>
-                            <Button variant="ghost" onClick={() => setIsSaveTemplateOpen(false)}>Cancel</Button>
-                            <Button onClick={handleSaveTemplate}>Save</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                    </div>
+                    
+                    {/* Main Grid */}
+                    <div className="grid grid-cols-12 gap-2">
+                        {/* Left Column */}
+                        <div className="col-span-8 flex flex-col gap-2">
+                            <div className="border border-black p-2 space-y-1">
+                                <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">SHIP FROM</h4>
+                                <Input placeholder="Name" value={shipperName} onChange={e => setShipperName(e.target.value)} />
+                                <Input placeholder="Address" value={shipperAddress} onChange={e => setShipperAddress(e.target.value)} />
+                                <div className="flex gap-2">
+                                    <Input placeholder="City" className="flex-1" value={shipperCity} onChange={e => setShipperCity(e.target.value)} />
+                                    <Input placeholder="State" className="w-16" value={shipperState} onChange={e => setShipperState(e.target.value)} />
+                                    <Input placeholder="Zip" className="w-24" value={shipperZip} onChange={e => setShipperZip(e.target.value)} />
+                                </div>
+                                <div className="flex justify-between pt-1">
+                                    <Input placeholder="SID#" className="w-1/2" value={shipperSid} onChange={e => setShipperSid(e.target.value)} />
+                                    <Input placeholder="FOB" className="w-1/3" />
+                                </div>
+                            </div>
+                            <div className="border border-black p-2 space-y-1">
+                                <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">SHIP TO</h4>
+                                <Input placeholder="Name" value={consigneeName} onChange={e => setConsigneeName(e.target.value)} />
+                                <Input placeholder="Address" value={consigneeAddress} onChange={e => setConsigneeAddress(e.target.value)} />
+                                <div className="flex gap-2">
+                                    <Input placeholder="City" className="flex-1" value={consigneeCity} onChange={e => setConsigneeCity(e.target.value)} />
+                                    <Input placeholder="State" className="w-16" value={consigneeState} onChange={e => setConsigneeState(e.target.value)} />
+                                    <Input placeholder="Zip" className="w-24" value={consigneeZip} onChange={e => setConsigneeZip(e.target.value)} />
+                                </div>
+                                <div className="flex justify-between pt-1">
+                                    <Input placeholder="CID#" className="w-1/3" value={consigneeCid} onChange={e => setConsigneeCid(e.target.value)} />
+                                    <Input placeholder="Location #" className="w-1/3" value={location} onChange={e => setLocation(e.target.value)} />
+                                    <Input placeholder="FOB" className="w-1/4" />
+                                </div>
+                            </div>
+                             <div className="border border-black p-2 space-y-1">
+                                <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">THIRD PARTY FREIGHT CHARGES BILL TO</h4>
+                                <Input placeholder="Name" value={thirdPartyName} onChange={e => setThirdPartyName(e.target.value)} />
+                                <Input placeholder="Address" value={thirdPartyAddress} onChange={e => setThirdPartyAddress(e.target.value)} />
+                                <div className="flex gap-2">
+                                    <Input placeholder="City" className="flex-1" value={thirdPartyCity} onChange={e => setThirdPartyCity(e.target.value)} />
+                                    <Input placeholder="State" className="w-16" value={thirdPartyState} onChange={e => setThirdPartyState(e.target.value)} />
+                                    <Input placeholder="Zip" className="w-24" value={thirdPartyZip} onChange={e => setThirdPartyZip(e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="col-span-4 flex flex-col gap-2">
+                            <div className="border border-black p-2 space-y-1 flex-grow">
+                                <Label>Bill of Lading Number</Label>
+                                <Input value={bolNumber} onChange={e => setBolNumber(e.target.value)} />
+                                <div className="h-16 border-dashed border-2 mt-2 flex items-center justify-center text-muted-foreground text-sm">BAR CODE SPACE</div>
+                            </div>
+                            <div className="border border-black p-2 space-y-1">
+                                <Label>Carrier Name</Label>
+                                <Input value={carrierName} onChange={e => setCarrierName(e.target.value)} />
+                                <div className="flex gap-2 mt-1">
+                                    <div className="w-1/2">
+                                        <Label>Trailer #</Label>
+                                        <Input value={trailerNumber} onChange={e => setTrailerNumber(e.target.value)} />
+                                    </div>
+                                     <div className="w-1/2">
+                                        <Label>Seal(s)</Label>
+                                        <Input value={sealNumber} onChange={e => setSealNumber(e.target.value)} />
+                                    </div>
+                                </div>
+                                 <div className="flex gap-2 mt-1">
+                                    <div className="w-1/2">
+                                        <Label>SCAC</Label>
+                                        <Input value={scac} onChange={e => setScac(e.target.value)} />
+                                    </div>
+                                     <div className="w-1/2">
+                                        <Label>Pro #</Label>
+                                        <Input value={proNumber} onChange={e => setProNumber(e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="h-16 border-dashed border-2 mt-2 flex items-center justify-center text-muted-foreground text-sm">BAR CODE SPACE</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-2 mt-2">
+                        <div className="col-span-8 border border-black p-2">
+                            <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">SPECIAL INSTRUCTIONS</h4>
+                            <Textarea className="h-24" value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} />
+                        </div>
+                         <div className="col-span-4 border border-black p-2">
+                             <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">FREIGHT CHARGE TERMS</h4>
+                             <div className="flex flex-col space-y-1 text-sm mt-2">
+                                 <div className="flex items-center gap-2"><Checkbox id="prepaid" checked={freightCharge === 'Prepaid'} onCheckedChange={() => setFreightCharge('Prepaid')} /> <Label htmlFor="prepaid">Prepaid</Label></div>
+                                 <div className="flex items-center gap-2"><Checkbox id="collect" checked={freightCharge === 'Collect'} onCheckedChange={() => setFreightCharge('Collect')} /> <Label htmlFor="collect">Collect</Label></div>
+                                 <div className="flex items-center gap-2"><Checkbox id="thirdparty" checked={freightCharge === '3rd Party'} onCheckedChange={() => setFreightCharge('3rd Party')} /> <Label htmlFor="thirdparty">3rd Party</Label></div>
+                                 <div className="flex items-center gap-2 mt-2"><Checkbox id="masterbol" checked={masterBol} onCheckedChange={(c) => setMasterBol(c as boolean)} /> <Label htmlFor="masterbol">Master BOL</Label></div>
+                             </div>
+                        </div>
+                    </div>
+                     <div className="border border-black p-2 mt-2">
+                        <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">CUSTOMER ORDER INFORMATION</h4>
+                        <table className="w-full text-xs mt-1">
+                            <thead>
+                                <tr className="bg-gray-50">
+                                    <th className="border p-1">CUSTOMER ORDER NUMBER</th>
+                                    <th className="border p-1"># PKGS</th>
+                                    <th className="border p-1">WEIGHT</th>
+                                    <th className="border p-1">PALLET/SLIP (Y/N)</th>
+                                    <th className="border p-1">ADDITIONAL SHIPPER INFO</th>
+                                    <th className="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {customerOrders.map(order => (
+                                <tr key={order.id}>
+                                    <td className="border"><Input className="text-xs h-7" value={order.orderNumber} onChange={e => handleCustomerOrderChange(order.id, 'orderNumber', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={order.packages} onChange={e => handleCustomerOrderChange(order.id, 'packages', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={order.weight} onChange={e => handleCustomerOrderChange(order.id, 'weight', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={order.palletSlip} onChange={e => handleCustomerOrderChange(order.id, 'palletSlip', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={order.additionalInfo} onChange={e => handleCustomerOrderChange(order.id, 'additionalInfo', e.target.value)} /></td>
+                                    <td className="text-center"><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveCustomerOrder(order.id)} disabled={customerOrders.length <= 1}><Trash2 className="h-3 w-3 text-destructive" /></Button></td>
+                                </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <Button variant="outline" size="sm" className="mt-1" onClick={handleAddCustomerOrder}><PlusCircle className="h-4 w-4 mr-2" />Add Order</Button>
+                    </div>
+
+                     <div className="border border-black p-2 mt-2">
+                        <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">CARRIER INFORMATION</h4>
+                        <table className="w-full text-xs mt-1">
+                            <thead>
+                                <tr className="bg-gray-50">
+                                    <th colSpan={2} className="border p-1">HANDLING UNIT</th>
+                                    <th colSpan={2} className="border p-1">PACKAGE</th>
+                                    <th rowSpan={2} className="border p-1">WEIGHT</th>
+                                    <th rowSpan={2} className="border p-1">H.M.</th>
+                                    <th rowSpan={2} className="border p-1 w-2/5">COMMODITY DESCRIPTION</th>
+                                    <th colSpan={2} className="border p-1">LTL ONLY</th>
+                                    <th rowSpan={2} className="w-10"></th>
+                                </tr>
+                                 <tr className="bg-gray-50">
+                                    <th className="border p-1">QTY</th><th className="border p-1">TYPE</th>
+                                    <th className="border p-1">QTY</th><th className="border p-1">TYPE</th>
+                                    <th className="border p-1">NMFC#</th><th className="border p-1">CLASS</th>
+                                 </tr>
+                            </thead>
+                            <tbody>
+                                {commodities.map(item => (
+                                <tr key={item.id}>
+                                    <td className="border"><Input className="text-xs h-7" value={item.handlingQty} onChange={e => handleCommodityChange(item.id, 'handlingQty', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={item.handlingType} onChange={e => handleCommodityChange(item.id, 'handlingType', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={item.packageQty} onChange={e => handleCommodityChange(item.id, 'packageQty', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={item.packageType} onChange={e => handleCommodityChange(item.id, 'packageType', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={item.weight} onChange={e => handleCommodityChange(item.id, 'weight', e.target.value)} /></td>
+                                    <td className="border text-center"><Checkbox checked={item.hm} onCheckedChange={c => handleCommodityChange(item.id, 'hm', c as boolean)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={item.description} onChange={e => handleCommodityChange(item.id, 'description', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={item.nmfc} onChange={e => handleCommodityChange(item.id, 'nmfc', e.target.value)} /></td>
+                                    <td className="border"><Input className="text-xs h-7" value={item.class} onChange={e => handleCommodityChange(item.id, 'class', e.target.value)} /></td>
+                                    <td className="text-center"><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveCommodity(item.id)} disabled={commodities.length <= 1}><Trash2 className="h-3 w-3 text-destructive" /></Button></td>
+                                </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <Button variant="outline" size="sm" className="mt-1" onClick={handleAddCommodity}><PlusCircle className="h-4 w-4 mr-2" />Add Commodity</Button>
+                    </div>
+
+                    {/* Footer Sections */}
+                     <div className="grid grid-cols-12 gap-2 mt-2">
+                        <div className="col-span-7 border border-black p-2 space-y-1 text-xs">
+                            <p>Where the rate is dependent on value, shippers are required to state specifically in writing the agreed or declared value of the property as follows:</p>
+                            <p className="italic">"The agreed or declared value of the property is specifically stated by the shipper to be not exceeding <Input className="inline-block w-20 h-5 text-xs"/> per <Input className="inline-block w-20 h-5 text-xs"/>"</p>
+                            <p className="font-bold">NOTE: Liability Limitation for loss or damage may be applicable.</p>
+                        </div>
+                        <div className="col-span-5 border border-black p-2 space-y-1">
+                             <div className="flex items-center gap-2"><Label>COD Amount: $</Label><Input className="h-7 text-sm" value={codAmount} onChange={e => setCodAmount(e.target.value)}/></div>
+                             <div className="flex items-center gap-4 text-sm"><Label>Fee Terms:</Label>
+                                <div className="flex items-center gap-1"><Checkbox id="fee_collect" checked={feeTerms === 'Collect'} onCheckedChange={() => setFeeTerms('Collect')} /> <Label htmlFor="fee_collect">Collect</Label></div>
+                                <div className="flex items-center gap-1"><Checkbox id="fee_prepaid" checked={feeTerms === 'Prepaid'} onCheckedChange={() => setFeeTerms('Prepaid')}/> <Label htmlFor="fee_prepaid">Prepaid</Label></div>
+                             </div>
+                             <div className="flex items-center gap-2 text-sm"><Checkbox id="cust_check" checked={customerCheck} onCheckedChange={c => setCustomerCheck(c as boolean)} /> <Label htmlFor="cust_check">Customer check acceptable</Label></div>
+                        </div>
+                    </div>
+                     <div className="border border-black p-2 mt-2 text-xs">
+                        RECEIVED, subject to individually determined rates or contracts that have been agreed upon in writing between the carrier and shipper, if applicable, otherwise to the rates, classifications and rules that have been established by the carrier and are available to the shipper, on request; and to all applicable state and federal regulations.
+                    </div>
+                     <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div className="border border-black p-2">
+                            <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">SHIPPER SIGNATURE / DATE</h4>
+                            <div className="flex justify-between mt-2">
+                                <div className="w-1/2">
+                                    <Input placeholder="Signature" value={shipperSignature} onChange={e => setShipperSignature(e.target.value)} />
+                                    <Label className="text-xs">Shipper</Label>
+                                </div>
+                                <div className="w-1/3">
+                                    <Input type="date" value={shipperDate} onChange={e => setShipperDate(e.target.value)} />
+                                    <Label className="text-xs">Date</Label>
+                                </div>
+                            </div>
+                        </div>
+                         <div className="border border-black p-2">
+                             <h4 className="text-xs font-bold text-center bg-gray-200 -m-2 mb-1 p-1">CARRIER SIGNATURE / PICKUP DATE</h4>
+                             <div className="flex justify-between mt-2">
+                                <div className="w-1/2">
+                                    <Input placeholder="Signature" value={carrierSignature} onChange={e => setCarrierSignature(e.target.value)} />
+                                    <Label className="text-xs">Carrier</Label>
+                                </div>
+                                <div className="w-1/3">
+                                    <Input type="date" value={carrierDate} onChange={e => setCarrierDate(e.target.value)} />
+                                    <Label className="text-xs">Date</Label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     );
