@@ -463,6 +463,56 @@ export function SidebarNav() {
   const canManageLocalLoadBoards = role === 'Admin' || role === 'Dispatcher';
 
 
+  const renderNavSubItems = (subItems: NavItem[], parentLabel: string) => {
+    const openSubMenus = parentLabel === 'Yard Management' ? openYardSubMenus : parentLabel === 'Warehouse Hub Manager' ? openWarehouseSubMenus : {};
+    const setOpenSubMenus = parentLabel === 'Yard Management' ? setOpenYardSubMenus : parentLabel === 'Warehouse Hub Manager' ? setOpenWarehouseSubMenus : () => {};
+
+    return subItems.map(subItem => {
+      const isSubOverview = subItem.label === 'Dashboard' || subItem.label === 'Overview';
+      if (subItem.subItems) {
+        const isOpen = openSubMenus[subItem.label] || false;
+        const setIsOpen = (open: boolean) => setOpenSubMenus(prev => ({ ...prev, [subItem.label]: open }));
+
+        return (
+          <Collapsible key={subItem.label} open={isOpen} onOpenChange={setIsOpen}>
+            <CollapsibleTrigger asChild>
+              <SidebarMenuSubButton isActive={subItem.subItems.some(si => pathname.startsWith(si.href))}>
+                <subItem.icon />
+                <span>{subItem.label}</span>
+                <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+              </SidebarMenuSubButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarMenuSub>
+                {subItem.subItems.map(nestedSubItem => (
+                  <SidebarMenuSubItem key={nestedSubItem.label}>
+                    <SidebarMenuSubButton asChild isActive={isSubItemActive(nestedSubItem.href)} size="sm">
+                      <Link href={nestedSubItem.href}>
+                        {nestedSubItem.icon && <nestedSubItem.icon />}
+                        <span>{nestedSubItem.label}</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </Collapsible>
+        );
+      }
+
+      return (
+        <SidebarMenuSubItem key={subItem.label}>
+          <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
+            <Link href={subItem.href} target={isSubOverview ? "_blank" : undefined} rel={isSubOverview ? "noopener noreferrer" : undefined}>
+              {subItem.icon && <subItem.icon />}
+              <span>{subItem.label}</span>
+            </Link>
+          </SidebarMenuSubButton>
+        </SidebarMenuSubItem>
+      );
+    });
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -602,55 +652,7 @@ export function SidebarNav() {
                          {filteredSubItems && (
                             <CollapsibleContent>
                                 <SidebarMenuSub>
-                                    {filteredSubItems.map((subItem) => {
-                                        const isSubOverview = subItem.label === 'Dashboard' || subItem.label === 'Overview';
-                                        if (subItem.subItems) {
-                                            const isSubOpen = openYardSubMenus[subItem.label] || openWarehouseSubMenus[subItem.label] || false;
-                                            const setIsSubOpen = (open: boolean) => {
-                                                if (item.label === 'Yard Management') {
-                                                    setOpenYardSubMenus(prev => ({ ...prev, [subItem.label]: open }));
-                                                }
-                                                 if (item.label === 'Warehouse Hub Manager') {
-                                                    setOpenWarehouseSubMenus(prev => ({ ...prev, [subItem.label]: open }));
-                                                }
-                                            };
-                                            return (
-                                                <Collapsible key={subItem.label} open={isSubOpen} onOpenChange={setIsSubOpen}>
-                                                    <CollapsibleTrigger asChild>
-                                                        <SidebarMenuSubButton isActive={subItem.subItems.some(si => pathname.startsWith(si.href))}>
-                                                            <subItem.icon />
-                                                            <span>{subItem.label}</span>
-                                                            <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isSubOpen && "rotate-180")} />
-                                                        </SidebarMenuSubButton>
-                                                    </CollapsibleTrigger>
-                                                    <CollapsibleContent>
-                                                        <SidebarMenuSub>
-                                                            {subItem.subItems.map((nestedSubItem) => (
-                                                                <SidebarMenuSubItem key={nestedSubItem.label}>
-                                                                    <SidebarMenuSubButton asChild isActive={isSubItemActive(nestedSubItem.href)} size="sm">
-                                                                        <Link href={nestedSubItem.href}>
-                                                                            <nestedSubItem.icon />
-                                                                            <span>{nestedSubItem.label}</span>
-                                                                        </Link>
-                                                                    </SidebarMenuSubButton>
-                                                                </SidebarMenuSubItem>
-                                                            ))}
-                                                        </SidebarMenuSub>
-                                                    </CollapsibleContent>
-                                                </Collapsible>
-                                            )
-                                        }
-                                        return (
-                                            <SidebarMenuSubItem key={subItem.label}>
-                                                <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
-                                                    <Link href={subItem.href} target={isSubOverview ? "_blank" : undefined} rel={isSubOverview ? "noopener noreferrer" : undefined}>
-                                                        {subItem.icon && <subItem.icon />}
-                                                        <span>{subItem.label}</span>
-                                                    </Link>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                        );
-                                    })}
+                                    {renderNavSubItems(filteredSubItems, item.label)}
                                 </SidebarMenuSub>
                             </CollapsibleContent>
                          )}
