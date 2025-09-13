@@ -1,14 +1,24 @@
 
-import { Header } from '@/components/layout/header';
-import { LoadPickerDashboard } from '@/components/dashboard/load-picker-dashboard';
+"use client";
 
-export default function WarehouseAssociatesPage() {
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function WarehouseAssociatesRedirectPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to the "My Active Pick" page by default
+    router.replace('/dashboard/warehouse-hub-manager/associates/my-pick');
+  }, [router]);
+
   return (
-    <div className="flex flex-col w-full">
-      <Header pageTitle="Load Picker Dashboard" />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <LoadPickerDashboard />
-      </main>
+     <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-4 w-48" />
+        </div>
     </div>
   );
 }
