@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 import { Truck, Package, Printer, CheckCircle, Clock, QrCode, Barcode } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { PickerProductivity } from './picker-productivity';
 import Link from 'next/link';
 import { Skeleton } from '../ui/skeleton';

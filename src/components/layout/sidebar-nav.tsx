@@ -138,6 +138,7 @@ const navItems: NavItem[] = [
                         { href: '/dashboard/warehouse-hub-manager/associates/my-pick', icon: UserCheckIcon, label: 'My Active Pick', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                         { href: '/dashboard/warehouse-hub-manager/associates/order-queue', icon: Package, label: 'Order Queue', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                         { href: '/dashboard/warehouse-hub-manager/associates/productivity', icon: BarChart, label: 'Productivity', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+                        { href: '/dashboard/warehouse-hub-manager/associates/picker-assigner', icon: UserPlus, label: 'Picker Assigner', roles: ['Admin', 'Manager'] },
                     ]
                 },
             ]
