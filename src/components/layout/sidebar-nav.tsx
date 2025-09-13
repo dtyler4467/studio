@@ -116,7 +116,7 @@ const navItems: NavItem[] = [
   },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   { 
-    href: '/dashboard/warehouse-hub-manager', 
+    href: '#', 
     icon: Warehouse, 
     label: 'Warehouse Hub Manager', 
     roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
@@ -127,10 +127,10 @@ const navItems: NavItem[] = [
             label: 'Dock Hub', 
             roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
             subItems: [
-                 { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+                { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { href: '/dashboard/yard-management/dock-doors', icon: Warehouse, label: 'Dock Doors', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { 
-                    href: '#', 
+                    href: '/dashboard/warehouse-hub-manager/associates', 
                     icon: Users, 
                     label: 'Warehouse Associates', 
                     roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
@@ -138,7 +138,6 @@ const navItems: NavItem[] = [
                         { href: '/dashboard/warehouse-hub-manager/associates/my-pick', icon: UserCheckIcon, label: 'My Active Pick', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                         { href: '/dashboard/warehouse-hub-manager/associates/order-queue', icon: Package, label: 'Order Queue', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                         { href: '/dashboard/warehouse-hub-manager/associates/productivity', icon: BarChart, label: 'Productivity', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                        { href: '/dashboard/warehouse-hub-manager/associates/picker-assigner', icon: UserPlus, label: 'Picker Assigner', roles: ['Admin', 'Manager'] },
                     ]
                 },
             ]
@@ -437,7 +436,7 @@ export function SidebarNav() {
     setOpenYardSubMenus(newOpenYardSubMenus);
 
     const newOpenWarehouseSubMenus: Record<string, boolean> = {};
-        navItems.find(i => i.href === '/dashboard/warehouse-hub-manager')?.subItems?.forEach(item => {
+        navItems.find(i => i.href === '#')?.subItems?.find(i => i.href === '#')?.subItems?.forEach(item => {
             if (item.subItems) {
                 const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
                 newOpenWarehouseSubMenus[item.label] = isActive;
@@ -479,10 +478,12 @@ export function SidebarNav() {
         return (
           <Collapsible key={subItem.label} open={isOpen} onOpenChange={setIsOpen}>
             <CollapsibleTrigger asChild>
-              <SidebarMenuSubButton isActive={subItem.subItems.some(si => pathname.startsWith(si.href))}>
-                <subItem.icon />
-                <span>{subItem.label}</span>
-                <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+              <SidebarMenuSubButton asChild isActive={subItem.subItems.some(si => pathname.startsWith(si.href))}>
+                <Link href={subItem.href}>
+                  {subItem.icon && <subItem.icon />}
+                  <span>{subItem.label}</span>
+                  <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                </Link>
               </SidebarMenuSubButton>
             </CollapsibleTrigger>
             <CollapsibleContent>
