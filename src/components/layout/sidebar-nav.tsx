@@ -135,7 +135,7 @@ const navItems: NavItem[] = [
                     roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
                     subItems: [
                          { href: '/dashboard/warehouse-hub-manager/associates', icon: Users, label: 'Load Picker Dashboard', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                         { href: '/dashboard/warehouse-hub-manager/associates/picker-assigner', icon: UserCheckIcon, label: 'Picker Assigner', roles: ['Admin', 'Manager'] },
+                         { href: '/dashboard/warehouse-hub-manager/associates/assigner', icon: UserCheckIcon, label: 'Warehouse Associate Assigner', roles: ['Admin', 'Manager'] },
                     ]
                 },
             ]
