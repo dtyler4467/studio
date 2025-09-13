@@ -80,6 +80,7 @@ import {
   Store,
   BarChart,
   CheckSquare,
+  UserCheck as UserCheckIcon,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -127,7 +128,16 @@ const navItems: NavItem[] = [
             roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
             subItems: [
                 { href: '/dashboard/yard-management/dock-doors', icon: Warehouse, label: 'Dock Doors', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                { href: '/dashboard/warehouse-hub-manager/associates', icon: Users, label: 'Warehouse Associates', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+                { 
+                    href: '#', 
+                    icon: Users, 
+                    label: 'Warehouse Associates', 
+                    roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
+                    subItems: [
+                         { href: '/dashboard/warehouse-hub-manager/associates', icon: Users, label: 'Load Picker Dashboard', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+                         { href: '/dashboard/warehouse-hub-manager/associates/assigner', icon: UserCheckIcon, label: 'Warehouse Associate Assigner', roles: ['Admin', 'Manager'] },
+                    ]
+                },
             ]
         },
         { href: '/dashboard/warehouse-hub-manager/inventory', icon: Boxes, label: 'Inventory', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
@@ -442,7 +452,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates') {
         return pathname === href;
     }
     return pathname.startsWith(href);
