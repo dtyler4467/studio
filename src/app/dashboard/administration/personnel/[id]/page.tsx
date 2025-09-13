@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useSchedule, Employee } from "@/hooks/use-schedule";
@@ -9,14 +10,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, User, Shield, FileText, Image as ImageIcon } from "lucide-react";
+import { Mail, Phone, User, Shield, FileText, Image as ImageIcon, MapPin } from "lucide-react";
 import { DocumentUpload } from "@/components/dashboard/document-upload";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => (
-    <div className="flex items-center gap-4">
-        <Icon className="h-5 w-5 text-muted-foreground" />
+    <div className="flex items-start gap-4">
+        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
         <div>
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className="font-medium">{value || 'N/A'}</p>
@@ -109,6 +111,18 @@ export default function PersonnelDetailPage() {
                                 <DetailItem icon={Shield} label="Role" value={employee.role} />
                                 <DetailItem icon={Mail} label="Email Address" value={employee.email} />
                                 <DetailItem icon={Phone} label="Phone Number" value={employee.phoneNumber} />
+                                 <div className="flex items-start gap-4">
+                                    <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Work Location</p>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {employee.workLocation && employee.workLocation.length > 0 ? 
+                                                employee.workLocation.map(loc => <Badge key={loc}>{loc}</Badge>) : 
+                                                <p className="font-medium">N/A</p>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
