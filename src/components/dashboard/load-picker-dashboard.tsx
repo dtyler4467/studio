@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSchedule, SalesOrder } from '@/hooks/use-schedule';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
@@ -11,9 +12,24 @@ import { Truck, Package, Printer, CheckCircle, Clock } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { PickerProductivity } from './picker-productivity';
 import Link from 'next/link';
+import { Skeleton } from '../ui/skeleton';
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        setFormattedDate(format(date, 'P'));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-20" />;
+    }
+
+    return <>{formattedDate}</>;
+};
 
 export function LoadPickerDashboard() {
-    const { salesOrders, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, currentUser, inventoryItems } = useSchedule();
+    const { salesOrders, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, currentUser, inventoryItems, employees } = useSchedule();
     const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
 
     const activeOrder = useMemo(() => {
@@ -76,7 +92,7 @@ export function LoadPickerDashboard() {
                                     <div>
                                         <p className="font-bold text-lg">{activeOrder.id}</p>
                                         <p className="text-sm text-muted-foreground">{activeOrder.customer} - {activeOrder.destination}</p>
-                                        <p className="text-xs text-muted-foreground">Ship Date: {format(activeOrder.shipDate, 'PPP')}</p>
+                                        <p className="text-xs text-muted-foreground">Ship Date: <ClientFormattedDate date={activeOrder.shipDate} /></p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-semibold">{activeOrder.items.filter(i => i.picked).length} / {activeOrder.items.length}</p>
@@ -135,7 +151,7 @@ export function LoadPickerDashboard() {
                                             <p className="font-semibold">{order.id}</p>
                                             <p className="text-sm text-muted-foreground">{order.customer}</p>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">{format(order.shipDate, 'P')}</p>
+                                        <p className="text-xs text-muted-foreground"><ClientFormattedDate date={order.shipDate} /></p>
                                     </div>
                                     <div className="flex justify-between items-center mt-3 text-xs">
                                         <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {order.items.length} items</span>
