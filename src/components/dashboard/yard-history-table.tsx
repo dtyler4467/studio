@@ -16,7 +16,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { format, isSameDay, isWithinInterval } from "date-fns"
+import { format, isSameDay, isWithinInterval, differenceInDays } from "date-fns"
 import { ArrowUpDown, ChevronDown, Filter, X, Printer, Mail, MoreHorizontal, History, Download, CalendarIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -54,6 +54,7 @@ import * as XLSX from "xlsx"
 
 
 const filterableColumns = [
+    { id: "timestamp", name: "Date Range"},
     { id: "trailerId", name: "Trailer ID" },
     { id: "sealNumber", name: "Seal Number"},
     { id: "scac", name: "SCAC" },
@@ -180,7 +181,7 @@ export function YardHistoryTable() {
     const { yardEvents } = useSchedule();
     const router = useRouter();
     const { toast } = useToast();
-    const [activeFilters, setActiveFilters] = React.useState<string[]>(['timestamp']);
+    const [activeFilters, setActiveFilters] = React.useState<string[]>([]);
     const [isHistoryDialogOpen, setIsHistoryDialogOpen] = React.useState(false);
     const [selectedEventForHistory, setSelectedEventForHistory] = React.useState<YardEvent | null>(null);
     
@@ -265,7 +266,6 @@ export function YardHistoryTable() {
         setSelectedEventForHistory(event);
         setIsHistoryDialogOpen(true);
     }
-    
 
     const table = useReactTable({
         data: yardEvents,
@@ -655,8 +655,13 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void, onOp
         header: "Dwell (Days)",
         cell: ({ row }) => {
             const dwellDays = row.original.dwellDays;
-            if (dwellDays === undefined) return <Badge variant="outline">In Yard</Badge>;
-            return <span>{dwellDays}</span>;
+            if (dwellDays === undefined) {
+                // Find the inbound event to calculate current dwell time
+                const inboundEvent = row.original;
+                const currentDwell = differenceInDays(new Date(), new Date(inboundEvent.timestamp));
+                return <Badge variant="outline">In Yard ({currentDwell} days)</Badge>;
+            }
+            return <span>{dwellDays} days</span>;
         },
         filterFn: (row, id, value) => {
             if (value === 'on_yard') return row.original.dwellDays === undefined;
@@ -677,3 +682,4 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void, onOp
 ];
 
     
+
