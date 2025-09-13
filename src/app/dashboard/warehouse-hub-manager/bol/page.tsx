@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 
 
 type Commodity = {
@@ -89,8 +90,8 @@ const generateBolHtml = (formData: any, pages: BOLPage[]) => {
             </tr>
         `).join('');
 
-        const grandTotalCommodities = `<tr><td colspan="4" class="text-right font-bold pr-2">GRAND TOTAL</td><td>${page.commodities.reduce((acc: number, c: Commodity) => acc + (parseFloat(c.weight) || 0), 0)}</td><td></td><td></td><td></td><td></td></tr>`
-        const grandTotalCustomer = `<tr><td class="text-right font-bold pr-2">GRAND TOTAL</td><td>${page.customerOrders.reduce((acc: number, o: CustomerOrder) => acc + (parseInt(o.packages) || 0), 0)}</td><td>${page.customerOrders.reduce((acc: number, o: CustomerOrder) => acc + (parseFloat(o.weight) || 0), 0)}</td><td></td><td></td></tr>`
+        const grandTotalCommodities = `<tr><td colspan="4" class="text-right font-bold pr-2">GRAND TOTAL</td><td>${pages.flat().reduce((acc: number, p) => acc + p.commodities.reduce((subAcc: number, c: Commodity) => subAcc + (parseFloat(c.weight) || 0), 0), 0)}</td><td></td><td></td><td></td><td></td></tr>`
+        const grandTotalCustomer = `<tr><td class="text-right font-bold pr-2">GRAND TOTAL</td><td>${pages.flat().reduce((acc: number, p) => acc + p.customerOrders.reduce((subAcc: number, o: CustomerOrder) => subAcc + (parseInt(o.packages) || 0), 0), 0)}</td><td>${pages.flat().reduce((acc: number, p) => acc + p.customerOrders.reduce((subAcc: number, o: CustomerOrder) => subAcc + (parseFloat(o.weight) || 0), 0), 0)}</td><td></td><td></td></tr>`
 
         const pageStyle = pageIndex < totalPages - 1 ? 'page-break-after: always;' : '';
 
@@ -169,7 +170,7 @@ const generateBolHtml = (formData: any, pages: BOLPage[]) => {
                     <div class="section-title">Customer Order Information</div>
                     <table><thead><tr><th>Customer Order Number</th><th># Pkgs</th><th>Weight</th><th>Pallet/Slip (Y/N)</th><th>Additional Shipper Info</th></tr></thead><tbody>
                         ${customerOrdersHtml}
-                        ${page.customerOrders.length > 0 ? grandTotalCustomer : ''}
+                        ${pageIndex === totalPages - 1 && page.customerOrders.length > 0 ? grandTotalCustomer : ''}
                     </tbody></table>
                 </div>
 
@@ -177,7 +178,7 @@ const generateBolHtml = (formData: any, pages: BOLPage[]) => {
                     <div class="section-title">Carrier Information</div>
                      <table><thead><tr><th colspan="2">Handling Unit</th><th colspan="2">Package</th><th rowspan="2">Weight</th><th rowspan="2">H.M.</th><th rowspan="2">Commodity Description</th><th colspan="2">LTL Only</th></tr><tr><th>Qty</th><th>Type</th><th>Qty</th><th>Type</th><th>NMFC #</th><th>Class</th></tr></thead><tbody>
                         ${commoditiesHtml}
-                        ${page.commodities.length > 0 ? grandTotalCommodities : ''}
+                        ${pageIndex === totalPages - 1 && page.commodities.length > 0 ? grandTotalCommodities : ''}
                     </tbody></table>
                 </div>
                 
@@ -196,7 +197,7 @@ const generateBolHtml = (formData: any, pages: BOLPage[]) => {
                              <div class="checkbox-container"><div class="checkbox ${feeTerms === 'Collect' ? 'checked' : ''}"></div> Collect</div>
                             <div class="checkbox-container"><div class="checkbox ${feeTerms === 'Prepaid' ? 'checked' : ''}"></div> Prepaid</div>
                         </div>
-                        <div class="checkbox-container"><div class="checkbox ${customerCheck ? 'checked' : ''}"></div> Customer check acceptable</div>
+                        <div class="checkbox-container mt-2"><div class="checkbox ${customerCheck ? 'checked' : ''}"></div> Customer check acceptable</div>
                     </div>
                 </div>
 
@@ -380,14 +381,14 @@ export default function BolPage() {
 
     const updatePageState = (pageId: number, itemType: 'commodities' | 'customerOrders', newItems: any[]) => {
         setPages(prevPages => {
-            const newPages = prevPages.map(p => 
+            let newPages = prevPages.map(p => 
                 p.id === pageId ? { ...p, [itemType]: newItems } : p
             );
 
             // Check if we need to add a new page
             const lastPage = newPages[newPages.length - 1];
-            if (lastPage.commodities.length > MAX_ITEMS_PER_PAGE || lastPage.customerOrders.length > MAX_ITEMS_PER_PAGE) {
-                return [...newPages, { id: Date.now(), customerOrders: [], commodities: [] }];
+            if (lastPage.commodities.length >= MAX_ITEMS_PER_PAGE || lastPage.customerOrders.length >= MAX_ITEMS_PER_PAGE) {
+                newPages = [...newPages, { id: Date.now(), customerOrders: [], commodities: [] }];
             }
 
             return newPages;
@@ -395,11 +396,13 @@ export default function BolPage() {
     };
 
     const handleAddCommodity = (pageId: number) => {
-        const page = pages.find(p => p.id === pageId);
-        if (!page) return;
-        
-        const newCommodities = [...page.commodities, { id: Date.now(), handlingQty: '', handlingType: '', packageQty: '', packageType: '', hm: false, description: '', weight: '', nmfc: '', class: '' }];
-        updatePageState(pageId, 'commodities', newCommodities);
+        const pageIndex = pages.findIndex(p => p.id === pageId);
+        if (pageIndex === -1) return;
+
+        const targetPageId = pages[pages.length -1].id;
+
+        const newCommodities = [...pages[pages.length - 1].commodities, { id: Date.now(), handlingQty: '', handlingType: '', packageQty: '', packageType: '', hm: false, description: '', weight: '', nmfc: '', class: '' }];
+        updatePageState(targetPageId, 'commodities', newCommodities);
     };
     
     const handleRemoveCommodity = (pageId: number, commodityId: number) => {
@@ -417,10 +420,13 @@ export default function BolPage() {
     };
 
     const handleAddCustomerOrder = (pageId: number) => {
-        const page = pages.find(p => p.id === pageId);
-        if (!page) return;
-        const newOrders = [...page.customerOrders, { id: Date.now(), orderNumber: '', packages: '', weight: '', palletSlip: '', additionalInfo: ''}];
-        updatePageState(pageId, 'customerOrders', newOrders);
+        const pageIndex = pages.findIndex(p => p.id === pageId);
+        if (pageIndex === -1) return;
+        
+        const targetPageId = pages[pages.length - 1].id;
+
+        const newOrders = [...pages[pages.length - 1].customerOrders, { id: Date.now(), orderNumber: '', packages: '', weight: '', palletSlip: '', additionalInfo: ''}];
+        updatePageState(targetPageId, 'customerOrders', newOrders);
     };
     
     const handleRemoveCustomerOrder = (pageId: number, orderId: number) => {
@@ -436,7 +442,7 @@ export default function BolPage() {
         const newOrders = page.customerOrders.map(o => o.id === orderId ? { ...o, [field]: value } : o);
         updatePageState(pageId, 'customerOrders', newOrders);
     };
-
+    
     const handleSaveBol = () => {
         if (!bolNumber || !consigneeName || !carrierName) {
             toast({
@@ -456,9 +462,40 @@ export default function BolPage() {
             codAmount, feeTerms, customerCheck,
             shipperSignature, shipperDate, trailerLoaded, freightCounted, carrierSignature, carrierDate
         };
-        const htmlContent = generateBolHtml(formData, pages);
-        const finalHtml = generateHtmlShell(htmlContent);
-        const dataUri = `data:text/html;base64,${btoa(finalHtml)}`;
+        
+        const wb = XLSX.utils.book_new();
+
+        // Create a worksheet
+        const ws_data = [
+            ["BILL OF LADING"],
+            [],
+            ["Date:", bolDate, "", "BOL Number:", bolNumber],
+            [],
+            ["SHIP FROM", "", "", "SHIP TO"],
+            ["Name:", shipperName, "", "Name:", consigneeName],
+            ["Address:", shipperAddress, "", "Address:", consigneeAddress],
+            ["City/State/Zip:", `${shipperCity}, ${shipperState} ${shipperZip}`, "", "City/State/Zip:", `${consigneeCity}, ${consigneeState} ${consigneeZip}`],
+            [],
+            ["CARRIER & SHIPMENT DETAILS"],
+            ["Carrier Name:", carrierName, "", "Trailer #:", trailerNumber],
+            ["SCAC:", scac, "", "Seal #:", sealNumber],
+            [],
+            ["CUSTOMER ORDER INFORMATION"],
+            ["Order Number", "# Pkgs", "Weight", "Pallet/Slip", "Additional Info"],
+            ...pages.flatMap(p => p.customerOrders).map(o => [o.orderNumber, o.packages, o.weight, o.palletSlip, o.additionalInfo]),
+            [],
+            ["COMMODITIES"],
+            ["Handling Qty", "Handling Type", "Package Qty", "Package Type", "Weight", "HM", "Description", "NMFC", "Class"],
+            ...pages.flatMap(p => p.commodities).map(c => [c.handlingQty, c.handlingType, c.packageQty, c.packageType, c.weight, c.hm ? "X" : "", c.description, c.nmfc, c.class]),
+            [],
+            ["Special Instructions:", specialInstructions]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, "Bill of Lading");
+
+        // Generate the file and trigger download
+        XLSX.writeFile(wb, `BOL_${bolNumber}.xlsx`);
+
 
         const newBolDataForHistory = {
             bolNumber,
@@ -469,14 +506,14 @@ export default function BolPage() {
             carrier: carrierName,
         };
 
-        const savedBol = saveBol(newBolDataForHistory, dataUri);
+        const savedBol = saveBol(newBolDataForHistory, null); // No HTML document URI needed now
         
         toast({
-            title: 'BOL Saved',
-            description: `BOL ${bolNumber} has been saved to history.`
+            title: 'BOL Saved & Downloaded',
+            description: `BOL ${bolNumber} has been downloaded as an Excel file and saved to history.`
         });
         
-        router.push(`/dashboard/warehouse-hub-manager/bol/${savedBol.id}`);
+        router.push(`/dashboard/warehouse-hub-manager/bol/history`);
     };
 
     const handleUseTemplate = () => {
