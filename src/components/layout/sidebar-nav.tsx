@@ -484,16 +484,22 @@ export function SidebarNav() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>
-                {subItem.subItems.map(nestedSubItem => (
-                  <SidebarMenuSubItem key={nestedSubItem.label}>
-                    <SidebarMenuSubButton asChild isActive={isSubItemActive(nestedSubItem.href)} size="sm">
-                      <Link href={nestedSubItem.href}>
-                        {nestedSubItem.icon && <nestedSubItem.icon />}
-                        <span>{nestedSubItem.label}</span>
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
+                {subItem.subItems.map(nestedSubItem => {
+                   if (nestedSubItem.subItems) {
+                       // Recursively render nested sub-items
+                       return renderNavSubItems([nestedSubItem], subItem.label);
+                   }
+                   return (
+                      <SidebarMenuSubItem key={nestedSubItem.label}>
+                        <SidebarMenuSubButton asChild isActive={isSubItemActive(nestedSubItem.href)} size="sm">
+                          <Link href={nestedSubItem.href}>
+                            {nestedSubItem.icon && <nestedSubItem.icon />}
+                            <span>{nestedSubItem.label}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                   );
+                })}
               </SidebarMenuSub>
             </CollapsibleContent>
           </Collapsible>
