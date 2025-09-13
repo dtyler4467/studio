@@ -6,8 +6,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui
 import { DatePickerWithRange } from '../ui/date-range-picker';
 import { useSchedule } from '@/hooks/use-schedule';
 import { DateRange } from 'react-day-picker';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '../ui/chart';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { differenceInMinutes } from 'date-fns';
 import { Clock, PackageCheck, Truck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -120,4 +120,3 @@ export function PickerProductivity() {
         </Card>
     );
 }
-
