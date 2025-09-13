@@ -30,6 +30,22 @@ import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 import { Input } from "../ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Skeleton } from "../ui/skeleton"
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "PPP"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-24" />;
+    }
+
+    return <span>{formattedDate}</span>;
+};
+
 
 export function QualityHoldTable() {
   const { qualityHolds, inventoryItems, releaseFromHold, scrapItem } = useSchedule();
@@ -105,7 +121,7 @@ export function QualityHoldTable() {
     {
       accessorKey: 'holdDate',
       header: 'Date Placed',
-      cell: ({ row }) => format(new Date(row.original.holdDate), "PPP"),
+      cell: ({ row }) => <ClientFormattedDate date={new Date(row.original.holdDate)} />,
     },
     {
       accessorKey: 'placedBy',
