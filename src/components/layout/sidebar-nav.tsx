@@ -78,6 +78,7 @@ import {
   Map,
   Wrench,
   Store,
+  BarChart,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -164,6 +165,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/yard-management/parking-lanes', label: 'Parking Lanes', icon: ParkingCircle, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/lost-and-found', label: 'Lost & Found', icon: ArchiveRestore, roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/reports', icon: BarChart, label: 'Reports', roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/trash', label: 'Trash', icon: Trash2, roles: ['Admin', 'Dispatcher'] },
     ]
   },
