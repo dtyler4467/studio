@@ -126,7 +126,16 @@ const navItems: NavItem[] = [
         { href: '/dashboard/warehouse-hub-manager/shipping', icon: ArrowUpFromLine, label: 'Shipping', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/load-planner', icon: ClipboardList, label: 'Load Planner', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/procurement', icon: ShoppingCart, label: 'Procurement', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/warehouse-hub-manager/quality-control', icon: CheckSquare, label: 'Quality Control', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+        { 
+            href: '#', 
+            icon: CheckSquare, 
+            label: 'Quality Control', 
+            roles: ['Admin', 'Dispatcher', 'Manager'],
+            subItems: [
+                 { href: '/dashboard/warehouse-hub-manager/quality-control/overview', icon: BarChart, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
+                 { href: '/dashboard/warehouse-hub-manager/quality-control', icon: ShieldCheck, label: 'Management', roles: ['Admin', 'Dispatcher', 'Manager'] },
+            ]
+        },
         { 
             href: '#', 
             icon: FileText, 
@@ -424,7 +433,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control') {
         return pathname === href;
     }
     return pathname.startsWith(href);
