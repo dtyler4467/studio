@@ -59,6 +59,7 @@ const filterableColumns = [
     { id: "transactionType", name: "Type" },
     { id: "assignmentType", name: "Assignment" },
     { id: "timestamp", name: "Date" },
+    { id: "dwellDays", name: "Dwell Time" },
 ];
 
 const ClientFormattedDate = ({ date }: { date: Date }) => {
@@ -148,6 +149,7 @@ const createPrintableHTML = (events: YardEvent[]) => {
                 <th>Driver</th>
                 <th>Clerk</th>
                 <th>Assignment</th>
+                <th>Dwell (Days)</th>
               </tr>
             </thead>
             <tbody>
@@ -161,6 +163,7 @@ const createPrintableHTML = (events: YardEvent[]) => {
                   <td>${event.driverName}</td>
                   <td>${event.clerkName}</td>
                   <td style="text-transform: capitalize;">${event.assignmentType.replace(/_/g, ' ')}${event.assignmentValue ? `: ${event.assignmentValue}` : ''}</td>
+                  <td>${event.dwellDays !== undefined ? event.dwellDays : 'N/A'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -481,6 +484,23 @@ function FilterInput({ columnId, onFilterChange, table }: { columnId: string, on
                     </SelectContent>
                 </Select>
             );
+        case 'dwellDays':
+            return (
+                <Select onValueChange={(value) => onFilterChange(columnId, value === 'all' ? undefined : parseInt(value))} defaultValue={filterValue ? String(filterValue) : 'all'}>
+                    <SelectTrigger>
+                        <SelectValue placeholder={`Select ${name}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Any Dwell Time</SelectItem>
+                        <SelectItem value="0">0 Days</SelectItem>
+                        <SelectItem value="1">1 Day</SelectItem>
+                        <SelectItem value="2">2 Days</SelectItem>
+                        <SelectItem value="3">3 Days</SelectItem>
+                        <SelectItem value="4">4 Days</SelectItem>
+                        <SelectItem value="5">5+ Days</SelectItem>
+                    </SelectContent>
+                </Select>
+            );
         default:
             return (
                  <Input
@@ -577,6 +597,21 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void, onOp
             return <div className="capitalize">{assignmentType}{assignmentValue ? `: ${assignmentValue}` : ''}</div>
         },
         accessorFn: (row) => `${row.assignmentType}${row.assignmentValue || ''}`,
+    },
+    {
+        accessorKey: "dwellDays",
+        header: "Dwell (Days)",
+        cell: ({ row }) => {
+            const dwellDays = row.original.dwellDays;
+            if (dwellDays === undefined) return <Badge variant="outline">In Yard</Badge>;
+            return <span>{dwellDays}</span>;
+        },
+        filterFn: (row, id, value) => {
+            const dwellDays = row.original.dwellDays;
+            if (dwellDays === undefined) return false;
+            if (value === 5) return dwellDays >= 5;
+            return dwellDays === value;
+        }
     },
      {
         id: "actions",

@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { addDays, formatISO } from 'date-fns';
+import { addDays, formatISO, differenceInDays } from 'date-fns';
 
 export type Shift = {
     id: string;
@@ -78,6 +78,7 @@ export type YardEvent = {
     status?: YardEventStatus;
     statusNotes?: string;
     history?: YardEventHistory[];
+    dwellDays?: number;
 }
 
 export type ExpenseReport = {
@@ -376,7 +377,7 @@ type ScheduleContextType = {
   updateEmployeeDocument: (employeeId: string, documentDataUri: string | null) => void;
   getEmployeeDocument: (employeeId: string) => string | null;
   getYardEventById: (id: string) => YardEvent | null;
-  addYardEvent: (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => void;
+  addYardEvent: (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName' | 'dwellDays'>, documentDataUri: string | null) => void;
   updateYardEventStatus: (eventId: string, status: YardEventStatus, notes?: string) => void;
   getExpenseReportById: (id: string) => ExpenseReport | null;
   setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
@@ -931,7 +932,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         return yardEvents.find(event => event.id === id) || null;
     }
 
-    const addYardEvent = (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName'>, documentDataUri: string | null) => {
+    const addYardEvent = (eventData: Omit<YardEvent, 'id' | 'timestamp' | 'clerkName' | 'dwellDays'>, documentDataUri: string | null) => {
         const newEventBase: Omit<YardEvent, 'id' | 'timestamp'> = {
             ...eventData,
             clerkName: currentUser?.name || 'Admin User',
@@ -970,6 +971,13 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
                     history: []
                 };
                 setLostAndFound(prev => [...prev, lostEvent]);
+            }
+        }
+        
+        if (finalEvent.transactionType === 'outbound') {
+            const inboundEvent = yardEvents.find(e => e.trailerId === finalEvent.trailerId && e.transactionType === 'inbound');
+            if (inboundEvent) {
+                finalEvent.dwellDays = differenceInDays(new Date(), inboundEvent.timestamp);
             }
         }
 

@@ -1,4 +1,5 @@
 
+
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { BarChart, Truck, Warehouse, History, Map } from 'lucide-react';
@@ -28,7 +29,7 @@ export default function YardManagementOverviewPage() {
               <History className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4.2 hours</div>
+              <div className="text-2xl font-bold">4.2 days</div>
               <p className="text-xs text-muted-foreground">+0.2 from last week</p>
             </CardContent>
           </Card>
