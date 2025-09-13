@@ -16,8 +16,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { format, isSameDay } from "date-fns"
-import { ArrowUpDown, ChevronDown, Filter, X, Printer, Mail, MoreHorizontal, History } from "lucide-react"
+import { format, isSameDay, isWithinInterval } from "date-fns"
+import { ArrowUpDown, ChevronDown, Filter, X, Printer, Mail, MoreHorizontal, History, Download, CalendarIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -48,6 +48,9 @@ import { useSchedule, YardEvent, YardEventHistory } from "@/hooks/use-schedule"
 import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog"
 import { ScrollArea } from "../ui/scroll-area"
+import { DateRange } from "react-day-picker"
+import { cn } from "@/lib/utils"
+import * as XLSX from "xlsx"
 
 
 const filterableColumns = [
@@ -58,7 +61,6 @@ const filterableColumns = [
     { id: "clerkName", name: "Clerk" },
     { id: "transactionType", name: "Type" },
     { id: "assignmentType", name: "Assignment" },
-    { id: "timestamp", name: "Date" },
     { id: "dwellDays", name: "Dwell Time" },
 ];
 
@@ -178,7 +180,7 @@ export function YardHistoryTable() {
     const { yardEvents } = useSchedule();
     const router = useRouter();
     const { toast } = useToast();
-    const [activeFilters, setActiveFilters] = React.useState<string[]>([]);
+    const [activeFilters, setActiveFilters] = React.useState<string[]>(['timestamp']);
     const [isHistoryDialogOpen, setIsHistoryDialogOpen] = React.useState(false);
     const [selectedEventForHistory, setSelectedEventForHistory] = React.useState<YardEvent | null>(null);
     
@@ -229,6 +231,36 @@ export function YardHistoryTable() {
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     };
 
+    const exportToXlsx = () => {
+        const dataToExport = table.getFilteredRowModel().rows.map(row => {
+            const event = row.original;
+            return {
+                'Date & Time': format(event.timestamp, 'Pp'),
+                'Type': event.transactionType,
+                'Trailer ID': event.trailerId,
+                'Seal #': event.sealNumber || 'N/A',
+                'Carrier': event.carrier,
+                'SCAC': event.scac,
+                'Driver': event.driverName,
+                'Clerk': event.clerkName,
+                'Load/BOL': event.loadNumber,
+                'Assignment': `${event.assignmentType.replace(/_/g, ' ')}${event.assignmentValue ? `: ${event.assignmentValue}` : ''}`,
+                'Dwell (Days)': event.dwellDays !== undefined ? event.dwellDays : 'In Yard'
+            };
+        });
+
+        if (dataToExport.length === 0) {
+            toast({ variant: 'destructive', title: 'No Data to Export', description: 'There are no records matching the current filters.'});
+            return;
+        }
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Yard History");
+        XLSX.writeFile(workbook, `Yard_History_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        toast({ title: 'Export Successful', description: `${dataToExport.length} records exported.`});
+    };
+
     const openHistoryDialog = (event: YardEvent) => {
         setSelectedEventForHistory(event);
         setIsHistoryDialogOpen(true);
@@ -262,13 +294,9 @@ export function YardHistoryTable() {
     <div className="w-full">
       <div className="flex items-center justify-between py-4 gap-2">
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handlePrint(selectedRows)} disabled={selectedRows.length === 0}>
-                <Printer className="mr-2 h-4 w-4" />
-                Print Selected
-            </Button>
-            <Button variant="outline" onClick={() => handleEmail(selectedRows)} disabled={selectedRows.length === 0}>
-                <Mail className="mr-2 h-4 w-4" />
-                Email Selected
+            <Button variant="outline" onClick={() => exportToXlsx()}>
+                <Download className="mr-2 h-4 w-4" />
+                Export to Excel
             </Button>
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -292,7 +320,10 @@ export function YardHistoryTable() {
                 </DropdownMenuContent>
             </DropdownMenu>
             {activeFilters.length > 0 && (
-                <Button variant="ghost" onClick={() => setActiveFilters([])} size="sm">
+                <Button variant="ghost" onClick={() => {
+                    setActiveFilters([])
+                    table.resetColumnFilters();
+                }} size="sm">
                     Clear Filters
                     <X className="ml-2 h-4 w-4" />
                 </Button>
@@ -441,17 +472,38 @@ function FilterInput({ columnId, onFilterChange, table }: { columnId: string, on
             return (
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant={"outline"} className="w-full justify-start text-left font-normal">
-                             <span>{filterValue ? format(filterValue as Date, "PPP") : `Select ${name}`}</span>
-                        </Button>
+                    <Button
+                        id="date"
+                        variant={"outline"}
+                        className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !filterValue && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filterValue?.from ? (
+                        filterValue.to ? (
+                            <>
+                            {format(filterValue.from, "LLL dd, y")} -{" "}
+                            {format(filterValue.to, "LLL dd, y")}
+                            </>
+                        ) : (
+                            format(filterValue.from, "LLL dd, y")
+                        )
+                        ) : (
+                        <span>Filter by date range...</span>
+                        )}
+                    </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={filterValue as Date}
-                            onSelect={(date) => onFilterChange(columnId, date)}
-                            initialFocus
-                        />
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={filterValue?.from}
+                        selected={filterValue as DateRange}
+                        onSelect={(range) => onFilterChange(columnId, range)}
+                        numberOfMonths={2}
+                    />
                     </PopoverContent>
                 </Popover>
             );
@@ -465,6 +517,7 @@ function FilterInput({ columnId, onFilterChange, table }: { columnId: string, on
                         <SelectItem value="all">All Types</SelectItem>
                         <SelectItem value="inbound">Inbound</SelectItem>
                         <SelectItem value="outbound">Outbound</SelectItem>
+                        <SelectItem value="move">Move</SelectItem>
                     </SelectContent>
                 </Select>
             );
@@ -481,23 +534,20 @@ function FilterInput({ columnId, onFilterChange, table }: { columnId: string, on
                         <SelectItem value="material">Material</SelectItem>
                         <SelectItem value="door_assignment">Door Assignment</SelectItem>
                         <SelectItem value="lane_assignment">Lane Assignment</SelectItem>
+                        <SelectItem value="lost_and_found">Lost & Found</SelectItem>
                     </SelectContent>
                 </Select>
             );
         case 'dwellDays':
             return (
-                <Select onValueChange={(value) => onFilterChange(columnId, value === 'all' ? undefined : parseInt(value))} defaultValue={filterValue ? String(filterValue) : 'all'}>
+                <Select onValueChange={(value) => onFilterChange(columnId, value === 'all' ? undefined : value)} defaultValue={filterValue as string || 'all'}>
                     <SelectTrigger>
                         <SelectValue placeholder={`Select ${name}`} />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Any Dwell Time</SelectItem>
-                        <SelectItem value="0">0 Days</SelectItem>
-                        <SelectItem value="1">1 Day</SelectItem>
-                        <SelectItem value="2">2 Days</SelectItem>
-                        <SelectItem value="3">3 Days</SelectItem>
-                        <SelectItem value="4">4 Days</SelectItem>
-                        <SelectItem value="5">5+ Days</SelectItem>
+                        <SelectItem value="on_yard">On Yard</SelectItem>
+                        <SelectItem value="left_yard">Left Yard</SelectItem>
                     </SelectContent>
                 </Select>
             );
@@ -548,8 +598,10 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void, onOp
             </Button>
         ),
         cell: ({ row }) => <ClientFormattedDate date={row.getValue("timestamp")} />,
-        filterFn: (row, id, value) => {
-            return isSameDay(row.getValue(id), value);
+        filterFn: (row, id, value: DateRange) => {
+             if (!value?.from) return true;
+             const toDate = value.to || value.from;
+             return isWithinInterval(row.getValue(id), { start: value.from, end: toDate });
         }
     },
     {
@@ -607,10 +659,9 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void, onOp
             return <span>{dwellDays}</span>;
         },
         filterFn: (row, id, value) => {
-            const dwellDays = row.original.dwellDays;
-            if (dwellDays === undefined) return false;
-            if (value === 5) return dwellDays >= 5;
-            return dwellDays === value;
+            if (value === 'on_yard') return row.original.dwellDays === undefined;
+            if (value === 'left_yard') return row.original.dwellDays !== undefined;
+            return true;
         }
     },
      {
@@ -618,7 +669,7 @@ const getColumns = (onFilterChange: (columnId: string, value: any) => void, onOp
         cell: ({ row }) => {
             return (
                 <Button variant="ghost" size="icon" onClick={() => onOpenHistory(row.original)}>
-                    <MoreHorizontal className="h-4 w-4" />
+                    <History className="h-4 w-4" />
                 </Button>
             )
         }

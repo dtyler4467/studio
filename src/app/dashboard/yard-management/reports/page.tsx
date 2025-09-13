@@ -11,9 +11,9 @@ export default function YardReportsPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Yard Reports</CardTitle>
+                <CardTitle className="font-headline">Yard Activity & Dwell Time Reports</CardTitle>
                 <CardDescription>
-                    Generate and view reports related to yard activity. For now, this shows the yard history.
+                    Generate and view reports related to yard activity. Use the filters to narrow down the data and export it to Excel.
                 </CardDescription>
             </CardHeader>
             <CardContent>
