@@ -27,10 +27,10 @@ export default function WarehouseHubManagerPage() {
 
   return (
     <div className="flex flex-col w-full">
-      <Header pageTitle="Warehouse Hub Dashboard" />
+      <Header pageTitle="Dock Hub Overview" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight font-headline">Warehouse Overview</h2>
+          <h2 className="text-3xl font-bold tracking-tight font-headline">Dock Activity Overview</h2>
           <div className="flex items-center space-x-2">
             <DatePickerWithRange date={date} setDate={setDate} />
           </div>

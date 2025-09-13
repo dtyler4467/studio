@@ -120,13 +120,13 @@ const navItems: NavItem[] = [
     label: 'Warehouse Hub Manager', 
     roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
     subItems: [
-        { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { 
             href: '#', 
             icon: Warehouse, 
             label: 'Dock Hub', 
             roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
             subItems: [
+                 { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { href: '/dashboard/yard-management/dock-doors', icon: Warehouse, label: 'Dock Doors', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { 
                     href: '#', 
