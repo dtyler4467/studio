@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -13,6 +12,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { PickerProductivity } from './picker-productivity';
 import Link from 'next/link';
 import { Skeleton } from '../ui/skeleton';
+import { Badge } from '../ui/badge';
+import { Employee } from '@/hooks/use-schedule';
 
 const ClientFormattedDate = ({ date }: { date: Date }) => {
     const [formattedDate, setFormattedDate] = useState<string | null>(null);
@@ -66,7 +67,11 @@ export function LoadPickerDashboard() {
     const getBOLQueryString = (order: SalesOrder) => {
         const params = new URLSearchParams();
         params.set('consigneeName', order.customer);
-        params.set('consigneeDestination', order.destination);
+        // Assuming destination is in "City, ST" format
+        const [city, state] = order.destination.split(', ');
+        params.set('consigneeCity', city || '');
+        params.set('consigneeState', state || '');
+        
         if (order.bolNumber) {
             params.set('bolNumber', order.bolNumber);
         }
@@ -76,6 +81,11 @@ export function LoadPickerDashboard() {
         });
         return params.toString();
     };
+    
+    const getPickerName = (pickerId?: string) => {
+        if (!pickerId) return 'N/A';
+        return employees.find((e: Employee) => e.id === pickerId)?.name || 'Unknown';
+    }
 
     return (
         <div className="grid gap-6 lg:grid-cols-3">
@@ -92,7 +102,7 @@ export function LoadPickerDashboard() {
                                     <div>
                                         <p className="font-bold text-lg">{activeOrder.id}</p>
                                         <p className="text-sm text-muted-foreground">{activeOrder.customer} - {activeOrder.destination}</p>
-                                        <p className="text-xs text-muted-foreground">Ship Date: <ClientFormattedDate date={activeOrder.shipDate} /></p>
+                                        <div className="text-xs text-muted-foreground">Ship Date: <ClientFormattedDate date={activeOrder.shipDate} /></div>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-semibold">{activeOrder.items.filter(i => i.picked).length} / {activeOrder.items.length}</p>
@@ -151,7 +161,7 @@ export function LoadPickerDashboard() {
                                             <p className="font-semibold">{order.id}</p>
                                             <p className="text-sm text-muted-foreground">{order.customer}</p>
                                         </div>
-                                        <p className="text-xs text-muted-foreground"><ClientFormattedDate date={order.shipDate} /></p>
+                                        <div className="text-xs text-muted-foreground"><ClientFormattedDate date={order.shipDate} /></div>
                                     </div>
                                     <div className="flex justify-between items-center mt-3 text-xs">
                                         <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {order.items.length} items</span>
@@ -171,9 +181,9 @@ export function LoadPickerDashboard() {
                                         </div>
                                         <Badge variant="default" className="bg-green-600">Staged</Badge>
                                     </div>
-                                     <p className="text-xs text-green-600 mt-1">
-                                        Picked by {employees.find(e => e.id === order.assignedPicker)?.name || 'N/A'} {order.pickEndTime ? `in ${formatDistanceToNow(order.pickEndTime, { addSuffix: false, includeSeconds: true })}` : ''}
-                                    </p>
+                                     <div className="text-xs text-green-600 mt-1">
+                                        Picked by {getPickerName(order.assignedPicker)} {order.pickEndTime ? `in ${formatDistanceToNow(order.pickEndTime, { addSuffix: false, includeSeconds: true })}` : ''}
+                                    </div>
                                     <Button size="sm" variant="outline" className="w-full mt-4" asChild>
                                         <Link href={`/dashboard/warehouse-hub-manager/bol?${getBOLQueryString(order)}`}>
                                             <Printer className="mr-2 h-4 w-4" /> Print BOL
