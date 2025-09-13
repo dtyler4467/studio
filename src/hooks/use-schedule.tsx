@@ -303,6 +303,19 @@ export type Customer = {
     destination?: string;
 }
 
+export type QualityHold = {
+    id: string;
+    itemId: string; // SKU
+    reason: string;
+    notes?: string;
+    holdDate: Date;
+    releaseDate?: Date;
+    scrappedDate?: Date;
+    placedBy: string; // Employee Name
+    status: 'On Hold' | 'Released' | 'Scrapped';
+};
+
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
@@ -334,6 +347,10 @@ type ScheduleContextType = {
   inventoryItems: InventoryItem[];
   customers: Customer[];
   availableStatuses: YardEventStatus[];
+  qualityHolds: QualityHold[];
+  placeOnHold: (itemId: string, reason: string, notes?: string) => void;
+  releaseFromHold: (holdId: string) => void;
+  scrapItem: (holdId: string) => void;
   addCustomer: (customerData: Omit<Customer, 'id' | 'dateAdded'>) => void;
   updateCustomerStatus: (customerId: string, status: Customer['status']) => void;
   addCustomStatus: (newStatus: string) => void;
@@ -657,6 +674,12 @@ export const initialCustomers: Customer[] = [
     { id: "CUST003", name: "Mike Johnson", company: "Stark Industries", email: "mike.j@stark.com", phone: "555-555-5555", status: "Inactive", dateAdded: new Date("2022-11-01"), destination: "Atlanta, GA" },
 ];
 
+export const initialQualityHolds: QualityHold[] = [
+    { id: 'QH001', itemId: 'SKU67890', reason: 'Failed Inspection', holdDate: new Date('2024-07-28'), placedBy: 'Emily Jones', status: 'On Hold', notes: 'Visible cracks on surface.' },
+    { id: 'QH002', itemId: 'SKU12345', reason: 'Damaged Goods', holdDate: new Date('2024-07-27'), releaseDate: new Date('2024-07-28'), placedBy: 'Mike Smith', status: 'Released', notes: 'Packaging was torn, but items are okay.' },
+    { id: 'QH003', itemId: 'SKU98765', reason: 'Supplier Recall', holdDate: new Date('2024-07-29'), scrappedDate: new Date('2024-07-30'), placedBy: 'Emily Jones', status: 'Scrapped', notes: 'Scrapped per recall notice.' },
+];
+
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
@@ -695,7 +718,30 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [availableStatuses, setAvailableStatuses] = useState<YardEventStatus[]>(initialAvailableStatuses);
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
+  const [qualityHolds, setQualityHolds] = useState<QualityHold[]>(initialQualityHolds);
   
+  const placeOnHold = (itemId: string, reason: string, notes?: string) => {
+    const newHold: QualityHold = {
+        id: `QH${Date.now()}`,
+        itemId,
+        reason,
+        notes,
+        holdDate: new Date(),
+        placedBy: currentUser?.name || 'System',
+        status: 'On Hold',
+    };
+    setQualityHolds(prev => [newHold, ...prev]);
+  };
+
+  const releaseFromHold = (holdId: string) => {
+    setQualityHolds(prev => prev.map(h => h.id === holdId ? { ...h, status: 'Released', releaseDate: new Date() } : h));
+  };
+
+  const scrapItem = (holdId: string) => {
+    setQualityHolds(prev => prev.map(h => h.id === holdId ? { ...h, status: 'Scrapped', scrappedDate: new Date() } : h));
+  };
+
+
   const addCustomer = (customerData: Omit<Customer, 'id' | 'dateAdded'>) => {
     const newCustomer: Customer = {
         ...customerData,
@@ -1349,7 +1395,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );
