@@ -7,8 +7,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, ChevronDown } from 'lucide-react';
 import { ClientFormattedDate } from '@/components/dashboard/load-picker-dashboard';
+import Link from 'next/link';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 export default function MyActivePickPage() {
     const { salesOrders, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, currentUser } = useSchedule();
@@ -48,6 +50,20 @@ export default function MyActivePickPage() {
          <div className="flex flex-col w-full">
             <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
                  <h1 className="text-lg font-semibold font-headline md:text-2xl">My Active Pick</h1>
+                 <div className="ml-auto">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Navigate To <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem asChild><Link href="/dashboard/warehouse-hub-manager/associates/order-queue">Order Queue</Link></DropdownMenuItem>
+                            <DropdownMenuItem asChild><Link href="/dashboard/warehouse-hub-manager/associates/picker-assigner">Picker Assigner</Link></DropdownMenuItem>
+                             <DropdownMenuItem asChild><Link href="/dashboard/warehouse-hub-manager/associates/productivity">Productivity</Link></DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                 <Card>

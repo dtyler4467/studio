@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -130,15 +129,10 @@ const navItems: NavItem[] = [
                 { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { href: '/dashboard/yard-management/dock-doors', icon: Warehouse, label: 'Dock Doors', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { 
-                    href: '/dashboard/warehouse-hub-manager/associates', 
+                    href: '#', 
                     icon: Users, 
                     label: 'Warehouse Associates', 
-                    roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
-                    subItems: [
-                        { href: '/dashboard/warehouse-hub-manager/associates/my-pick', icon: UserCheckIcon, label: 'My Active Pick', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                        { href: '/dashboard/warehouse-hub-manager/associates/order-queue', icon: Package, label: 'Order Queue', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                        { href: '/dashboard/warehouse-hub-manager/associates/productivity', icon: BarChart, label: 'Productivity', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                    ]
+                    roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer']
                 },
             ]
         },
@@ -375,6 +369,27 @@ const EditLoadBoardDialog = ({ board, onOpenChange, isOpen }: { board: LocalLoad
     )
 }
 
+const WarehouseAssociatesDialog = ({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-xs">
+                <DialogHeader>
+                    <DialogTitle>Warehouse Associates</DialogTitle>
+                    <DialogDescription>
+                        Select a page to navigate to.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-2 py-4">
+                    <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/my-pick">My Active Pick</Link></Button>
+                    <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/order-queue">Picker Queue</Link></Button>
+                    <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/picker-assigner">Picker Assigner</Link></Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+
 export function SidebarNav() {
   const pathname = usePathname();
   const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, loadBoardHub, updateLocalLoadBoard } = useSchedule();
@@ -394,6 +409,7 @@ export function SidebarNav() {
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
   const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<LocalLoadBoard | null>(null);
+  const [isAssociatesDialogOpen, setAssociatesDialogOpen] = useState(false);
   
   const handleOpenEditDialog = (board: LocalLoadBoard) => {
       setSelectedBoard(board);
@@ -471,6 +487,20 @@ export function SidebarNav() {
 
     return subItems.map(subItem => {
       const isSubOverview = subItem.label === 'Dashboard' || subItem.label === 'Overview';
+      
+      if (subItem.label === 'Warehouse Associates') {
+           return (
+                <SidebarMenuSubItem key={subItem.label}>
+                    <DialogTrigger asChild>
+                        <SidebarMenuSubButton>
+                            <subItem.icon />
+                            <span>{subItem.label}</span>
+                        </SidebarMenuSubButton>
+                    </DialogTrigger>
+                </SidebarMenuSubItem>
+           )
+      }
+
       if (subItem.subItems) {
         const isOpen = openSubMenus[subItem.label] || false;
         const setIsOpen = (open: boolean) => setOpenSubMenus(prev => ({ ...prev, [subItem.label]: open }));
@@ -532,163 +562,166 @@ export function SidebarNav() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
-          {filteredNavItems.map((item) => {
-            const filteredSubItems = item.subItems?.filter(sub => sub.roles.includes(role));
-            const isOverview = item.label === 'Dashboard' || item.label === 'Overview';
+        <Dialog open={isAssociatesDialogOpen} onOpenChange={setAssociatesDialogOpen}>
+            <SidebarMenu>
+            {filteredNavItems.map((item) => {
+                const filteredSubItems = item.subItems?.filter(sub => sub.roles.includes(role));
+                const isOverview = item.label === 'Dashboard' || item.label === 'Overview';
 
-            if (item.href === '/dashboard/load-board-hub') {
-                const hubSubItems = loadBoardHubSubItems.filter(sub => sub.roles.includes(role));
-                return (
-                     <Collapsible key={item.label} asChild open={isLoadBoardHubOpen} onOpenChange={setIsLoadBoardHubOpen}>
-                         <SidebarMenuItem>
-                            <div className="flex items-center w-full">
-                               <CollapsibleTrigger asChild>
-                                    <SidebarMenuButton
-                                       isActive={isSubItemActive(item.href)}
-                                       tooltip={loadBoardHub.name}
-                                       className="justify-start w-full group flex-grow"
-                                   >
-                                       <div className="flex items-center gap-2">
-                                         <item.icon />
-                                         <span>{loadBoardHub.name}</span>
-                                       </div>
-                                       <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isLoadBoardHubOpen && "rotate-180")} />
-                                   </SidebarMenuButton>
-                               </CollapsibleTrigger>
-                               <Button variant="ghost" size="icon" className="h-7 w-7 mr-1 group-data-[collapsible=icon]:hidden shrink-0" onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleOpenEditDialog(loadBoardHub)}}>
-                                    <Pencil className="h-4 w-4" />
-                               </Button>
-                            </div>
-                             <CollapsibleContent>
-                                 <SidebarMenuSub>
-                                     {hubSubItems.map((subItem) => (
-                                         <SidebarMenuSubItem key={subItem.label}>
-                                             <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
-                                                 <Link href={subItem.href}>
-                                                     {subItem.icon && <subItem.icon />}
-                                                     <span>{subItem.label}</span>
-                                                 </Link>
-                                             </SidebarMenuSubButton>
-                                         </SidebarMenuSubItem>
-                                     ))}
-                                     {canManageLocalLoadBoards && localLoadBoards.map(board => (
-                                        <SidebarMenuSubItem key={board.id}>
-                                            <div className="flex items-center gap-1 w-full">
-                                                <SidebarMenuSubButton
-                                                    asChild
-                                                    isActive={pathname === `/dashboard/local-loads/${board.id}`}
-                                                    className="justify-start group flex-grow"
-                                                >
-                                                    <Link href={`/dashboard/local-loads/${board.id}`}>
-                                                        <ClipboardList />
-                                                        <span>{`${board.name} ${board.number}`}</span>
+                if (item.href === '/dashboard/load-board-hub') {
+                    const hubSubItems = loadBoardHubSubItems.filter(sub => sub.roles.includes(role));
+                    return (
+                        <Collapsible key={item.label} asChild open={isLoadBoardHubOpen} onOpenChange={setIsLoadBoardHubOpen}>
+                            <SidebarMenuItem>
+                                <div className="flex items-center w-full">
+                                <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton
+                                        isActive={isSubItemActive(item.href)}
+                                        tooltip={loadBoardHub.name}
+                                        className="justify-start w-full group flex-grow"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <item.icon />
+                                            <span>{loadBoardHub.name}</span>
+                                        </div>
+                                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isLoadBoardHubOpen && "rotate-180")} />
+                                    </SidebarMenuButton>
+                                </CollapsibleTrigger>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 mr-1 group-data-[collapsible=icon]:hidden shrink-0" onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleOpenEditDialog(loadBoardHub)}}>
+                                        <Pencil className="h-4 w-4" />
+                                </Button>
+                                </div>
+                                <CollapsibleContent>
+                                    <SidebarMenuSub>
+                                        {hubSubItems.map((subItem) => (
+                                            <SidebarMenuSubItem key={subItem.label}>
+                                                <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
+                                                    <Link href={subItem.href}>
+                                                        {subItem.icon && <subItem.icon />}
+                                                        <span>{subItem.label}</span>
                                                     </Link>
                                                 </SidebarMenuSubButton>
-                                                <div className="flex group-data-[collapsible=icon]:hidden">
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(board)}}>
-                                                        <Pencil className="h-3 h-3" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => {e.stopPropagation(); deleteLocalLoadBoard(board.id)}} disabled={localLoadBoards.length <= 1}>
-                                                        <MinusCircle className="h-3 h-3" />
-                                                    </Button>
+                                            </SidebarMenuSubItem>
+                                        ))}
+                                        {canManageLocalLoadBoards && localLoadBoards.map(board => (
+                                            <SidebarMenuSubItem key={board.id}>
+                                                <div className="flex items-center gap-1 w-full">
+                                                    <SidebarMenuSubButton
+                                                        asChild
+                                                        isActive={pathname === `/dashboard/local-loads/${board.id}`}
+                                                        className="justify-start group flex-grow"
+                                                    >
+                                                        <Link href={`/dashboard/local-loads/${board.id}`}>
+                                                            <ClipboardList />
+                                                            <span>{`${board.name} ${board.number}`}</span>
+                                                        </Link>
+                                                    </SidebarMenuSubButton>
+                                                    <div className="flex group-data-[collapsible=icon]:hidden">
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(board)}}>
+                                                            <Pencil className="h-3 h-3" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => {e.stopPropagation(); deleteLocalLoadBoard(board.id)}} disabled={localLoadBoards.length <= 1}>
+                                                            <MinusCircle className="h-3 h-3" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </SidebarMenuSubItem>
-                                     ))}
-                                     {canManageLocalLoadBoards && (
-                                        <SidebarMenuSubItem>
-                                            <Button variant="outline" size="sm" className="w-full justify-center group-data-[collapsible=icon]:justify-start mt-1" onClick={() => addLocalLoadBoard()}>
-                                                <PlusCircle className="group-data-[collapsible=icon]:mx-auto h-4 w-4" />
-                                                <span className="group-data-[collapsible=icon]:hidden ml-2">Add Board</span>
-                                            </Button>
-                                        </SidebarMenuSubItem>
-                                    )}
-                                 </SidebarMenuSub>
-                             </CollapsibleContent>
-                         </SidebarMenuItem>
-                     </Collapsible>
+                                            </SidebarMenuSubItem>
+                                        ))}
+                                        {canManageLocalLoadBoards && (
+                                            <SidebarMenuSubItem>
+                                                <Button variant="outline" size="sm" className="w-full justify-center group-data-[collapsible=icon]:justify-start mt-1" onClick={() => addLocalLoadBoard()}>
+                                                    <PlusCircle className="group-data-[collapsible=icon]:mx-auto h-4 w-4" />
+                                                    <span className="group-data-[collapsible=icon]:hidden ml-2">Add Board</span>
+                                                </Button>
+                                            </SidebarMenuSubItem>
+                                        )}
+                                    </SidebarMenuSub>
+                                </CollapsibleContent>
+                            </SidebarMenuItem>
+                        </Collapsible>
+                    );
+                }
+
+                if (item.subItems && filteredSubItems && filteredSubItems.length > 0) {
+                    const isOpenMap = {
+                        'Warehouse Hub Manager': isWarehouseHubOpen,
+                        'Yard Management': isYardManagementOpen,
+                        'Fleet Management': isFleetManagementOpen,
+                        'Driver Hub': isDriverHubOpen,
+                        'My Workspace': isWorkspaceOpen,
+                        'AI': isAiOpen,
+                        'Accountant': isAccountantOpen,
+                        'Time Tracker HUB': isTimeTrackerHubOpen,
+                    };
+                    const setIsOpenMap = {
+                        'Warehouse Hub Manager': setIsWarehouseHubOpen,
+                        'Yard Management': setIsYardManagementOpen,
+                        'Fleet Management': setIsFleetManagementOpen,
+                        'Driver Hub': setIsDriverHubOpen,
+                        'My Workspace': setIsWorkspaceOpen,
+                        'AI': setIsAiOpen,
+                        'Accountant': setIsAccountantOpen,
+                        'Time Tracker HUB': setIsTimeTrackerHubOpen,
+                    }
+                    const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
+                    const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
+
+                    if(isOpen === undefined || setIsOpen === undefined) {
+                        // Fallback for items not in the map
+                        return null;
+                    }
+
+
+                    return (
+                    <Collapsible key={item.label} asChild open={isOpen} onOpenChange={setIsOpen}>
+                        <SidebarMenuItem>
+                            <CollapsibleTrigger asChild>
+                                <SidebarMenuButton
+                                    isActive={isSubItemActive(item.href)}
+                                    tooltip={item.label}
+                                    className="justify-start w-full group"
+                                >
+                                    <div className="w-full flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <item.icon />
+                                            <span>{item.label}</span>
+                                        </div>
+                                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                                    </div>
+                                </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                            {filteredSubItems && (
+                                <CollapsibleContent>
+                                    <SidebarMenuSub>
+                                        {renderNavSubItems(filteredSubItems, item.label)}
+                                    </SidebarMenuSub>
+                                </CollapsibleContent>
+                            )}
+                        </SidebarMenuItem>
+                    </Collapsible>
+                    );
+                }
+                
+
+                return (
+                    <SidebarMenuItem key={item.label}>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={isSubItemActive(item.href)}
+                        tooltip={item.label}
+                        className="justify-start w-full group"
+                    >
+                        <Link href={item.href} target={isOverview ? "_blank" : undefined} rel={isOverview ? "noopener noreferrer" : undefined}>
+                            <item.icon />
+                            <span>{item.label}</span>
+                        </Link>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
                 );
-            }
-
-            if (item.subItems && filteredSubItems && filteredSubItems.length > 0) {
-                 const isOpenMap = {
-                     'Warehouse Hub Manager': isWarehouseHubOpen,
-                     'Yard Management': isYardManagementOpen,
-                     'Fleet Management': isFleetManagementOpen,
-                     'Driver Hub': isDriverHubOpen,
-                     'My Workspace': isWorkspaceOpen,
-                     'AI': isAiOpen,
-                     'Accountant': isAccountantOpen,
-                     'Time Tracker HUB': isTimeTrackerHubOpen,
-                 };
-                 const setIsOpenMap = {
-                    'Warehouse Hub Manager': setIsWarehouseHubOpen,
-                    'Yard Management': setIsYardManagementOpen,
-                    'Fleet Management': setIsFleetManagementOpen,
-                    'Driver Hub': setIsDriverHubOpen,
-                    'My Workspace': setIsWorkspaceOpen,
-                    'AI': setIsAiOpen,
-                    'Accountant': setIsAccountantOpen,
-                    'Time Tracker HUB': setIsTimeTrackerHubOpen,
-                 }
-                 const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
-                 const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
-
-                 if(isOpen === undefined || setIsOpen === undefined) {
-                     // Fallback for items not in the map
-                     return null;
-                 }
-
-
-                 return (
-                 <Collapsible key={item.label} asChild open={isOpen} onOpenChange={setIsOpen}>
-                     <SidebarMenuItem>
-                         <CollapsibleTrigger asChild>
-                             <SidebarMenuButton
-                                 isActive={isSubItemActive(item.href)}
-                                 tooltip={item.label}
-                                 className="justify-start w-full group"
-                             >
-                                 <div className="w-full flex items-center justify-between">
-                                     <div className="flex items-center gap-2">
-                                         <item.icon />
-                                         <span>{item.label}</span>
-                                     </div>
-                                     <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isOpen && "rotate-180")} />
-                                 </div>
-                             </SidebarMenuButton>
-                         </CollapsibleTrigger>
-                         {filteredSubItems && (
-                            <CollapsibleContent>
-                                <SidebarMenuSub>
-                                    {renderNavSubItems(filteredSubItems, item.label)}
-                                </SidebarMenuSub>
-                            </CollapsibleContent>
-                         )}
-                     </SidebarMenuItem>
-                 </Collapsible>
-                );
-            }
-             
-
-            return (
-                <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton
-                    asChild
-                    isActive={isSubItemActive(item.href)}
-                    tooltip={item.label}
-                    className="justify-start w-full group"
-                >
-                    <Link href={item.href} target={isOverview ? "_blank" : undefined} rel={isOverview ? "noopener noreferrer" : undefined}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                    </Link>
-                </SidebarMenuButton>
-                </SidebarMenuItem>
-             );
-          })}
-        </SidebarMenu>
+            })}
+            </SidebarMenu>
+            <WarehouseAssociatesDialog isOpen={isAssociatesDialogOpen} onOpenChange={setAssociatesDialogOpen} />
+        </Dialog>
         
         {filteredAdminNavItems.length > 0 && (
             <SidebarMenu className="mt-auto">
