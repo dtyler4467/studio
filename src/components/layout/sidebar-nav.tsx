@@ -79,6 +79,7 @@ import {
   Wrench,
   Store,
   BarChart,
+  CheckSquare,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -125,6 +126,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/warehouse-hub-manager/shipping', icon: ArrowUpFromLine, label: 'Shipping', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/load-planner', icon: ClipboardList, label: 'Load Planner', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/procurement', icon: ShoppingCart, label: 'Procurement', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/warehouse-hub-manager/quality-control', icon: CheckSquare, label: 'Quality Control', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { 
             href: '#', 
             icon: FileText, 
