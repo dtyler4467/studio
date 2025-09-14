@@ -284,6 +284,7 @@ const navItems: NavItem[] = [
       { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Applications', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/payroll', icon: HandCoins, label: 'Payroll', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/paycheck-stub', icon: HandCoins, label: 'Paycheck Stub', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/deductions', icon: HandCoins, label: 'Deductions', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/investigation', icon: FileScan, label: 'Investigation', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/audit', icon: FileScan, label: 'Audit', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/deposit', icon: Landmark, label: 'Deposit', roles: ['Admin', 'Manager'] },
