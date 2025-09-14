@@ -2,11 +2,13 @@
 "use client";
 
 import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { FileDataTable } from '@/components/dashboard/file-data-table';
+import { Folder } from 'lucide-react';
 
 export default function CalculatorPage() {
   const [display, setDisplay] = useState('0');
@@ -137,59 +139,77 @@ export default function CalculatorPage() {
 
   return (
     <div className="flex flex-col w-full">
-      <Header pageTitle="Calculator" />
-      <main className="flex flex-1 items-center justify-center p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>Accounting Calculator</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div className="relative">
-                <Input 
-                    className="text-right text-4xl font-mono h-20 pr-4" 
-                    value={display} 
-                    readOnly 
-                />
-                {memory !== 0 && <Badge variant="secondary" className="absolute top-2 left-2">M</Badge>}
-             </div>
-            <div className="grid grid-cols-4 gap-2">
-                 <Button variant="outline" onClick={() => handleMemory('MC')}>MC</Button>
-                 <Button variant="outline" onClick={() => handleMemory('MR')}>MR</Button>
-                 <Button variant="outline" onClick={() => handleMemory('M-')}>M-</Button>
-                 <Button variant="outline" onClick={() => handleMemory('M+')}>M+</Button>
-                 
-                 <Button variant="outline" onClick={handlePercentage}>%</Button>
-                 <Button variant="outline" onClick={handleClearEntry}>CE</Button>
-                 <Button variant="outline" onClick={handleClear}>C</Button>
-                 <Button variant="outline" onClick={handleBackspace}>del</Button>
+      <Header pageTitle="Calculator & Files" />
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 md:gap-8 md:p-8">
+        <div className="lg:col-span-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2">
+                        <Folder />
+                        File Management
+                    </CardTitle>
+                    <CardDescription>
+                        Manage your documents and files.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FileDataTable />
+                </CardContent>
+            </Card>
+        </div>
+        <div className="lg:col-span-1">
+            <Card className="w-full max-w-sm mx-auto">
+            <CardHeader>
+                <CardTitle>Accounting Calculator</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="relative">
+                    <Input 
+                        className="text-right text-4xl font-mono h-20 pr-4" 
+                        value={display} 
+                        readOnly 
+                    />
+                    {memory !== 0 && <Badge variant="secondary" className="absolute top-2 left-2">M</Badge>}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                    <Button variant="outline" onClick={() => handleMemory('MC')}>MC</Button>
+                    <Button variant="outline" onClick={() => handleMemory('MR')}>MR</Button>
+                    <Button variant="outline" onClick={() => handleMemory('M-')}>M-</Button>
+                    <Button variant="outline" onClick={() => handleMemory('M+')}>M+</Button>
+                    
+                    <Button variant="outline" onClick={handlePercentage}>%</Button>
+                    <Button variant="outline" onClick={handleClearEntry}>CE</Button>
+                    <Button variant="outline" onClick={handleClear}>C</Button>
+                    <Button variant="outline" onClick={handleBackspace}>del</Button>
 
-                 <Button variant="outline" onClick={() => handleUnaryOperation('inv')}>1/x</Button>
-                 <Button variant="outline" onClick={() => handleUnaryOperation('sq')}>x²</Button>
-                 <Button variant="outline" onClick={() => handleUnaryOperation('sqrt')}>√</Button>
-                 <Button variant="outline" onClick={() => handleOperatorClick('/')}>÷</Button>
+                    <Button variant="outline" onClick={() => handleUnaryOperation('inv')}>1/x</Button>
+                    <Button variant="outline" onClick={() => handleUnaryOperation('sq')}>x²</Button>
+                    <Button variant="outline" onClick={() => handleUnaryOperation('sqrt')}>√</Button>
+                    <Button variant="outline" onClick={() => handleOperatorClick('/')}>÷</Button>
 
-                 <Button variant="secondary" onClick={() => handleDigitClick('7')}>7</Button>
-                 <Button variant="secondary" onClick={() => handleDigitClick('8')}>8</Button>
-                 <Button variant="secondary" onClick={() => handleDigitClick('9')}>9</Button>
-                 <Button variant="outline" onClick={() => handleOperatorClick('*')}>×</Button>
-                 
-                 <Button variant="secondary" onClick={() => handleDigitClick('4')}>4</Button>
-                 <Button variant="secondary" onClick={() => handleDigitClick('5')}>5</Button>
-                 <Button variant="secondary" onClick={() => handleDigitClick('6')}>6</Button>
-                 <Button variant="outline" onClick={() => handleOperatorClick('-')}>-</Button>
-                 
-                 <Button variant="secondary" onClick={() => handleDigitClick('1')}>1</Button>
-                 <Button variant="secondary" onClick={() => handleDigitClick('2')}>2</Button>
-                 <Button variant="secondary" onClick={() => handleDigitClick('3')}>3</Button>
-                 <Button variant="outline" onClick={() => handleOperatorClick('+')}>+</Button>
-                 
-                 <Button variant="outline" onClick={handleToggleSign}>+/-</Button>
-                 <Button variant="secondary" onClick={() => handleDigitClick('0')}>0</Button>
-                 <Button variant="outline" onClick={handleDecimalClick}>.</Button>
-                 <Button onClick={handleEqualsClick}>=</Button>
-            </div>
-          </CardContent>
-        </Card>
+                    <Button variant="secondary" onClick={() => handleDigitClick('7')}>7</Button>
+                    <Button variant="secondary" onClick={() => handleDigitClick('8')}>8</Button>
+                    <Button variant="secondary" onClick={() => handleDigitClick('9')}>9</Button>
+                    <Button variant="outline" onClick={() => handleOperatorClick('*')}>×</Button>
+                    
+                    <Button variant="secondary" onClick={() => handleDigitClick('4')}>4</Button>
+                    <Button variant="secondary" onClick={() => handleDigitClick('5')}>5</Button>
+                    <Button variant="secondary" onClick={() => handleDigitClick('6')}>6</Button>
+                    <Button variant="outline" onClick={() => handleOperatorClick('-')}>-</Button>
+                    
+                    <Button variant="secondary" onClick={() => handleDigitClick('1')}>1</Button>
+                    <Button variant="secondary" onClick={() => handleDigitClick('2')}>2</Button>
+                    <Button variant="secondary" onClick={() => handleDigitClick('3')}>3</Button>
+                    <Button variant="outline" onClick={() => handleOperatorClick('+')}>+</Button>
+                    
+                    <Button variant="outline" onClick={handleToggleSign}>+/-</Button>
+                    <Button variant="secondary" onClick={() => handleDigitClick('0')}>0</Button>
+                    <Button variant="outline" onClick={handleDecimalClick}>.</Button>
+                    <Button onClick={handleEqualsClick}>=</Button>
+                </div>
+            </CardContent>
+            </Card>
+        </div>
       </main>
     </div>
   );
