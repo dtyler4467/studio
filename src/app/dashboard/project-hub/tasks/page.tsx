@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const statusColumns: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Done'];
 
@@ -90,6 +91,7 @@ const AddTaskDialog = () => {
                     <DialogTitle>Create New Task</DialogTitle>
                     <DialogDescription>Fill out the details for the new task.</DialogDescription>
                 </DialogHeader>
+                <ScrollArea className="max-h-[60vh] pr-4">
                  <div className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Title</Label>
@@ -113,6 +115,7 @@ const AddTaskDialog = () => {
                         <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
                     </div>
                 </div>
+                </ScrollArea>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                     <Button onClick={handleSave}>Create Task</Button>
