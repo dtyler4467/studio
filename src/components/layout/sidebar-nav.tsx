@@ -82,6 +82,10 @@ import {
   UserCheck as UserCheckIcon,
   Package,
   FolderLock,
+  Landmark,
+  Gavel,
+  FileScan,
+  HandCoins,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -278,6 +282,11 @@ const navItems: NavItem[] = [
       { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/w4', icon: FileText, label: 'W4', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Applications', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/payroll', icon: HandCoins, label: 'Payroll', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/investigation', icon: FileScan, label: 'Investigation', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/audit', icon: FileScan, label: 'Audit', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/deposit', icon: Landmark, label: 'Deposit', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/lawsuits', icon: Gavel, label: 'Lawsuits', roles: ['Admin', 'Manager'] },
     ]
   },
   { href: '/dashboard/store', icon: Store, label: 'Store', roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'] },
