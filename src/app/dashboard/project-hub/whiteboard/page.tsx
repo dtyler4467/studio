@@ -8,7 +8,7 @@ import { PenSquare, PlusCircle } from 'lucide-react';
 import { useSchedule, Task, TaskEvent } from '@/hooks/use-schedule';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { FileText, GitCommit, Milestone, ExternalLink } from 'lucide-react';
+import { FileText, GitCommit, Milestone, ExternalLink, CalendarIcon } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,9 @@ import { Separator } from '@/components/ui/separator';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+
 
 const NotesSection = ({ task }: { task: Task }) => {
     const { addTaskEvent, currentUser } = useSchedule();
@@ -31,6 +34,7 @@ const NotesSection = ({ task }: { task: Task }) => {
             addTaskEvent(task.id, {
                 type: 'note',
                 content: newNote.trim(),
+                timestamp: new Date(),
             });
             setNewNote('');
         }
@@ -69,18 +73,25 @@ const NotesSection = ({ task }: { task: Task }) => {
     )
 }
 
-const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean; onOpenChange: (open: boolean) => void; onSave: (data: Omit<TaskEvent, 'id' | 'author' | 'timestamp'>) => void }) => {
+const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean; onOpenChange: (open: boolean) => void; onSave: (data: Omit<TaskEvent, 'id' | 'author'>) => void }) => {
     const [name, setName] = useState('');
     const [content, setContent] = useState('');
     const [documentUri, setDocumentUri] = useState<string | null>(null);
+    const [eventDate, setEventDate] = useState<Date>(new Date());
     const { toast } = useToast();
+    
+    useEffect(() => {
+        if(isOpen) {
+            setEventDate(new Date());
+        }
+    }, [isOpen]);
 
     const handleSave = () => {
         if (!name.trim()) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please provide a name for the milestone.' });
             return;
         }
-        onSave({ type: 'milestone', name, content, documentUri });
+        onSave({ type: 'milestone', name, content, documentUri, timestamp: eventDate });
         onOpenChange(false);
         setName('');
         setContent('');
@@ -97,6 +108,37 @@ const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean;
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="event-date">Event Date & Time</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn("w-full justify-start text-left font-normal")}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {format(eventDate, "PPP p")}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={eventDate}
+                                    onSelect={(d) => d && setEventDate(d)}
+                                    initialFocus
+                                />
+                                <div className="p-2 border-t">
+                                     <Input type="time" value={format(eventDate, 'HH:mm')} onChange={(e) => {
+                                         const [hours, minutes] = e.target.value.split(':');
+                                         const newDate = new Date(eventDate);
+                                         newDate.setHours(parseInt(hours));
+                                         newDate.setMinutes(parseInt(minutes));
+                                         setEventDate(newDate);
+                                     }} />
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="milestone-name">Event Name</Label>
                         <Input id="milestone-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Client Approval" />
@@ -182,7 +224,7 @@ const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; i
 
     const assignees = employees.filter(e => task.assigneeIds.includes(e.id));
     
-    const handleSaveMilestone = (data: Omit<TaskEvent, 'id' | 'author' | 'timestamp'>) => {
+    const handleSaveMilestone = (data: Omit<TaskEvent, 'id' | 'author'>) => {
         addTaskEvent(task.id, data);
     };
 
@@ -380,4 +422,5 @@ export default function ProjectWhiteboardPage() {
     </div>
   );
 }
+
 
