@@ -89,6 +89,10 @@ import {
   HandCoins,
   Percent,
   Tag,
+  HeartHandshake,
+  FileSignature,
+  FilePlus2,
+  UserCog
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -276,40 +280,82 @@ const navItems: NavItem[] = [
   },
    { 
     href: '#', 
-    icon: Users, 
+    icon: HeartHandshake, 
     label: 'HR HUB', 
     roles: ['Admin', 'Manager'],
     subItems: [
-      { href: '/dashboard/hr', icon: Users, label: 'HR', roles: ['Admin', 'Manager'] },
-      { href: '/dashboard/hr/policies', icon: FolderLock, label: 'Company Policies', roles: ['Admin', 'Manager'] },
-      { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment', roles: ['Admin', 'Manager'] },
       { 
-        href: '#', 
-        icon: FileText, 
-        label: 'W4', 
-        roles: ['Admin', 'Manager'],
-        subItems: [
-            { href: '/dashboard/hr/w4/overview', icon: BarChart, label: 'Overview', roles: ['Admin', 'Manager'] },
-            { href: '/dashboard/hr/w4', icon: FileText, label: 'Templates', roles: ['Admin', 'Manager'] },
-        ]
+          href: '#', 
+          icon: FilePlus2, 
+          label: 'Employment Forms',
+          roles: ['Admin', 'Manager'],
+          subItems: [
+              { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Job Applications', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/job-offer-letter', icon: FileSignature, label: 'Offer Letters', roles: ['Admin', 'Manager'] },
+          ]
       },
        { 
-        href: '#', 
-        icon: FileText, 
-        label: 'I-9', 
-        roles: ['Admin', 'Manager'],
-        subItems: [
-            { href: '/dashboard/hr/i-9/overview', icon: BarChart, label: 'Overview', roles: ['Admin', 'Manager'] },
-            { href: '/dashboard/hr/i-9', icon: FileText, label: 'Templates', roles: ['Admin', 'Manager'] },
-        ]
+          href: '#', 
+          icon: UserPlus, 
+          label: 'Onboarding Forms',
+          roles: ['Admin', 'Manager'],
+          subItems: [
+              { href: '/dashboard/hr/w4', icon: FileText, label: 'W-4 Forms', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/i-9', icon: FileText, label: 'I-9 Forms', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/deposit', icon: Landmark, label: 'Direct Deposit', roles: ['Admin', 'Manager'] },
+          ]
       },
-      { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Applications', roles: ['Admin', 'Manager'] },
-      { href: '/dashboard/hr/payroll', icon: HandCoins, label: 'Payroll', roles: ['Admin', 'Manager'] },
-      { href: '/dashboard/hr/paycheck-stub', icon: HandCoins, label: 'Paycheck Stub', roles: ['Admin', 'Manager'] },
-      { href: '/dashboard/hr/deductions', icon: HandCoins, label: 'Deductions', roles: ['Admin', 'Manager'] },
+       { 
+          href: '#', 
+          icon: UserCog, 
+          label: 'Employee Management',
+          roles: ['Admin', 'Manager'],
+          subItems: [
+              { href: '/dashboard/administration/personnel', icon: Users, label: 'Employee Records', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/employee-status-change', icon: Pencil, label: 'Status Change', roles: ['Admin', 'Manager'] },
+          ]
+      },
+       { 
+          href: '#', 
+          icon: HandCoins, 
+          label: 'Compensation', 
+          roles: ['Admin', 'Manager'],
+          subItems: [
+              { href: '/dashboard/hr/payroll', icon: HandCoins, label: 'Payroll', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/deductions', icon: Percent, label: 'Deductions', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/paycheck-stub', icon: Receipt, label: 'Paycheck Stub', roles: ['Admin', 'Manager'] },
+          ]
+      },
+       { 
+          href: '#', 
+          icon: Shield, 
+          label: 'Discipline & Reports', 
+          roles: ['Admin', 'Manager'],
+          subItems: [
+              { href: '/dashboard/hr/disciplinary-form', icon: Gavel, label: 'Disciplinary Actions', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/incident-report-form', icon: FileScan, label: 'Incident Reports', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/accident-reports-form', icon: FileScan, label: 'Accident Reports', roles: ['Admin', 'Manager'] },
+          ]
+      },
+      { 
+          href: '#', 
+          icon: Search, 
+          label: 'Verifications', 
+          roles: ['Admin', 'Manager'],
+          subItems: [
+              { href: '/dashboard/hr/background-check', icon: Search, label: 'Background Check', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/drug-test', icon: Tag, label: 'Drug Testing', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/clearing-house', icon: Search, label: 'Clearinghouse', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/previous-employment', icon: History, label: 'Prev. Employment', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/driver-license', icon: CreditCard, label: 'Driver License', roles: ['Admin', 'Manager'] },
+              { href: '/dashboard/hr/credentials', icon: CheckSquare, label: 'Credentials', roles: ['Admin', 'Manager'] },
+          ]
+      },
+      { href: '/dashboard/hr/policies', icon: FolderLock, label: 'Company Policies', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/investigation', icon: FileScan, label: 'Investigation', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/audit', icon: FileScan, label: 'Audit', roles: ['Admin', 'Manager'] },
-      { href: '/dashboard/hr/deposit', icon: Landmark, label: 'Deposit', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/lawsuits', icon: Gavel, label: 'Lawsuits', roles: ['Admin', 'Manager'] },
     ]
   },
