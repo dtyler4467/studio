@@ -101,6 +101,8 @@ import {
   Columns,
   Megaphone,
   AlertCircle as AlertCircleIcon,
+  Target,
+  ListTodo,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -156,7 +158,11 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Manager'],
     subItems: [
         { href: '/dashboard/crm/overview', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/crm/deals', icon: Target, label: 'Deals', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/crm/companies', icon: Building2, label: 'Companies', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/crm/contacts', icon: Users, label: 'Contacts', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/crm/tasks', icon: ListTodo, label: 'Tasks', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/crm/reports', icon: BarChart, label: 'Reports', roles: ['Admin', 'Manager'] },
     ]
   },
    {
