@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
 import React, { useState, useMemo, useRef } from 'react';
-import { Printer, Mail, Download, Upload, FileSpreadsheet } from 'lucide-react';
+import { Printer, Mail, Download, Upload, FileSpreadsheet, Trash2, CheckCircle, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import * as XLSX from 'xlsx';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 type PayStub = {
     payPeriod: string;
@@ -24,6 +26,13 @@ type PayStub = {
     netPay: number;
     earnings: { description: string; rate?: number; hours?: number; amount: number }[];
     deductions: { description: string; amount: number }[];
+};
+
+type CustomTemplate = {
+    id: string;
+    name: string;
+    file: File;
+    imageUrl: string; // For preview
 };
 
 const mockPayStubs: PayStub[] = [
@@ -123,7 +132,7 @@ const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
     );
 };
 
-const PayStubPreview = ({ stub }: { stub: PayStub | null }) => {
+const PayStubPreview = ({ stub, template }: { stub: PayStub | null, template: CustomTemplate | 'default' | null }) => {
     if (!stub) {
         return (
             <div className="flex items-center justify-center rounded-md border border-dashed h-96">
@@ -132,160 +141,83 @@ const PayStubPreview = ({ stub }: { stub: PayStub | null }) => {
         );
     }
     
+    if (template && template !== 'default') {
+        return (
+            <div className="relative border rounded-lg bg-gray-200">
+                <Image src={template.imageUrl} alt={template.name} width={850} height={1100} className="w-full h-auto opacity-50" />
+                <div className="absolute top-10 left-10 text-black text-sm">
+                    <p><strong>Employee:</strong> {stub.employee.name}</p>
+                    <p><strong>Pay Date:</strong> {stub.payDate}</p>
+                </div>
+                 <div className="absolute bottom-10 right-10 text-black text-lg font-bold">
+                    <p>Net Pay: ${stub.netPay.toFixed(2)}</p>
+                </div>
+            </div>
+        )
+    }
+
     return <PayStubTemplate stub={stub} />;
 };
 
+const UploadTemplateDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (name: string, file: File, imageUrl: string) => void }) => {
+    const [name, setName] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-const EditAndDownloadDialog = ({
-    isOpen,
-    onOpenChange,
-    stubData,
-    templateFile,
-}: {
-    isOpen: boolean;
-    onOpenChange: (open: boolean) => void;
-    stubData: PayStub | null;
-    templateFile: File | null;
-}) => {
-    const { toast } = useToast();
-    const [editableStub, setEditableStub] = useState<PayStub | null>(stubData);
-
-    React.useEffect(() => {
-        setEditableStub(stubData);
-    }, [stubData]);
-
-    const handleEarningChange = (index: number, field: 'description' | 'amount', value: string) => {
-        if (!editableStub) return;
-
-        const updatedEarnings = [...editableStub.earnings];
-        const target = { ...updatedEarnings[index] };
-
-        if (field === 'description') {
-            target.description = value;
-        } else if (field === 'amount') {
-            target.amount = parseFloat(value) || 0;
-        }
-
-        updatedEarnings[index] = target;
-        setEditableStub({ ...editableStub, earnings: updatedEarnings });
-    };
-
-    const handleDeductionChange = (index: number, field: 'description' | 'amount', value: string) => {
-        if (!editableStub) return;
-        
-        const updatedDeductions = [...editableStub.deductions];
-        const target = { ...updatedDeductions[index] };
-
-        if (field === 'description') {
-            target.description = value;
-        } else if (field === 'amount') {
-            target.amount = parseFloat(value) || 0;
-        }
-        
-        updatedDeductions[index] = target;
-        setEditableStub({ ...editableStub, deductions: updatedDeductions });
-    };
-
-    const handleDownload = () => {
-        if (!editableStub || !templateFile) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No data to download.'});
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const workbook = XLSX.read(e.target?.result, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                
-                // Simplified merge logic
-                for (const cellAddress in worksheet) {
-                    if (Object.prototype.hasOwnProperty.call(worksheet, cellAddress)) {
-                        const cell = worksheet[cellAddress];
-                        if (typeof cell.v === 'string') {
-                            cell.v = cell.v
-                                .replace(/\[EMPLOYEE_NAME\]/g, editableStub.employee.name)
-                                .replace(/\[PAY_PERIOD\]/g, editableStub.payPeriod)
-                                .replace(/\[PAY_DATE\]/g, editableStub.payDate)
-                                .replace(/\[GROSS_PAY\]/g, editableStub.grossPay.toFixed(2))
-                                .replace(/\[NET_PAY\]/g, editableStub.netPay.toFixed(2))
-                                .replace(/\[TOTAL_DEDUCTIONS\]/g, editableStub.deductions.reduce((a,c) => a + c.amount, 0).toFixed(2))
-                        }
-                    }
-                }
-                
-                // Add earning and deduction rows
-                let earningRowIndex = 8; // Adjust based on your template
-                editableStub.earnings.forEach((earning, index) => {
-                    XLSX.utils.sheet_add_aoa(worksheet, [[earning.description, earning.rate || '', earning.hours || '', earning.amount]], { origin: `A${earningRowIndex + index}` });
-                });
-                let deductionRowIndex = 13; // Adjust based on your template
-                editableStub.deductions.forEach((deduction, index) => {
-                    XLSX.utils.sheet_add_aoa(worksheet, [[deduction.description, deduction.amount]], { origin: `F${deductionRowIndex + index}` });
-                });
-
-                const newWorkbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(newWorkbook, worksheet, "Populated Pay Stub");
-
-                XLSX.writeFile(newWorkbook, `PayStub_${editableStub.employee.name.replace(' ','_')}_${editableStub.payDate}.xlsx`);
-                toast({ title: 'Pay Stub Generated', description: 'Your custom template has been populated and downloaded.'});
-                onOpenChange(false);
-            } catch (error) {
-                console.error("Failed to process template:", error);
-                toast({ variant: 'destructive', title: 'Processing Failed', description: 'Could not populate the selected template.'});
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setPreviewUrl(URL.createObjectURL(selectedFile));
+            if (!name) {
+                setName(selectedFile.name.replace(/\.[^/.]+$/, ""));
             }
-        };
-        reader.readAsArrayBuffer(templateFile);
+        }
     };
 
-    if (!editableStub) return null;
+    const handleSave = () => {
+        if (name && file && previewUrl) {
+            onSave(name, file, previewUrl);
+            onOpenChange(false);
+            setName('');
+            setFile(null);
+            setPreviewUrl(null);
+        }
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogTrigger asChild>
+                <Button variant="secondary">
+                    <Upload className="mr-2"/> Upload New Template
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Edit & Download Pay Stub</DialogTitle>
+                    <DialogTitle>Upload New Template</DialogTitle>
                     <DialogDescription>
-                        Review and make final adjustments before downloading the Excel file.
+                        Give your template a name and upload the file.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto p-4 border rounded-md">
-                     <h4 className="font-semibold text-lg">Pay Stub for {editableStub.employee.name}</h4>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                             <Label>Gross Pay</Label>
-                             <Input type="number" value={editableStub.grossPay} onChange={e => setEditableStub(s => s ? {...s, grossPay: parseFloat(e.target.value)}: null)} />
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="template-name">Template Name</Label>
+                        <Input id="template-name" value={name} onChange={e => setName(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="template-file">Template File</Label>
+                        <Input id="template-file" type="file" accept=".xlsx, .xls, .png, .jpg, .jpeg" onChange={handleFileChange} />
+                    </div>
+                    {previewUrl && (
+                        <div>
+                            <p className="text-sm font-medium mb-2">Preview:</p>
+                            <Image src={previewUrl} alt="Template Preview" width={400} height={500} className="w-full h-auto border rounded-md" />
                         </div>
-                         <div className="space-y-2">
-                             <Label>Net Pay</Label>
-                             <Input type="number" value={editableStub.netPay} onChange={e => setEditableStub(s => s ? {...s, netPay: parseFloat(e.target.value)}: null)} />
-                        </div>
-                     </div>
-                     <div>
-                        <h5 className="font-medium mt-4 mb-2">Earnings</h5>
-                         {editableStub.earnings.map((earning, index) => (
-                             <div key={index} className="flex items-center gap-2 mb-2">
-                                <Input value={earning.description} onChange={e => handleEarningChange(index, 'description', e.target.value)} className="flex-1" />
-                                <Input type="number" value={earning.amount} onChange={e => handleEarningChange(index, 'amount', e.target.value)} className="w-28" />
-                            </div>
-                         ))}
-                     </div>
-                     <div>
-                        <h5 className="font-medium mt-4 mb-2">Deductions</h5>
-                          {editableStub.deductions.map((deduction, index) => (
-                             <div key={index} className="flex items-center gap-2 mb-2">
-                                <Input value={deduction.description} onChange={e => handleDeductionChange(index, 'description', e.target.value)} className="flex-1" />
-                                <Input type="number" value={deduction.amount} onChange={e => handleDeductionChange(index, 'amount', e.target.value)} className="w-28" />
-                            </div>
-                         ))}
-                     </div>
+                    )}
                 </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleDownload}>
-                        <Download className="mr-2" /> Download Excel
-                    </Button>
+                    <Button onClick={handleSave} disabled={!name || !file}>Save Template</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -297,9 +229,11 @@ export default function PaycheckStubPage() {
     const { toast } = useToast();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('USR001');
     const [selectedPayPeriod, setSelectedPayPeriod] = useState<string>('2024-07-01 to 2024-07-15');
-    const fileUploadRef = useRef<HTMLInputElement>(null);
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-    const [isEditOpen, setIsEditOpen] = useState(false);
+    
+    const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState<CustomTemplate | 'default' | null>('default');
+    const [defaultTemplateId, setDefaultTemplateId] = useState<string | 'default'>('default');
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
 
     const payPeriods = useMemo(() => {
         return [...new Set(mockPayStubs.map(p => p.payPeriod))];
@@ -308,6 +242,23 @@ export default function PaycheckStubPage() {
     const selectedStub = useMemo(() => {
         return mockPayStubs.find(p => p.employee.id === selectedEmployeeId && p.payPeriod === selectedPayPeriod);
     }, [selectedEmployeeId, selectedPayPeriod]);
+    
+    const handleAddTemplate = (name: string, file: File, imageUrl: string) => {
+        const newTemplate: CustomTemplate = { id: `tpl_${Date.now()}`, name, file, imageUrl };
+        setCustomTemplates(prev => [...prev, newTemplate]);
+        toast({ title: 'Template Saved', description: `Template "${name}" has been added.`});
+    };
+
+    const handleDeleteTemplate = (id: string) => {
+        setCustomTemplates(prev => prev.filter(t => t.id !== id));
+        if (selectedTemplate !== 'default' && selectedTemplate?.id === id) {
+            setSelectedTemplate('default');
+        }
+        if (defaultTemplateId === id) {
+            setDefaultTemplateId('default');
+        }
+        toast({ variant: 'destructive', title: 'Template Deleted' });
+    };
 
     const handleEmail = () => {
         if (!selectedStub || !selectedStub.employee.email) return;
@@ -320,108 +271,121 @@ export default function PaycheckStubPage() {
         toast({ title: 'Printing...', description: 'Your pay stub is being sent to the printer.' });
     }
 
-    const downloadBlankTemplate = () => {
+    const downloadExcel = () => {
+        if (!selectedStub) return;
         const ws_data = [
             ["Your Company Name", "", "", "Pay Statement"],
             ["Company Address"],
             [],
-            ["Employee:", "[EMPLOYEE_NAME]", "", "Pay Period:", "[PAY_PERIOD]"],
-            ["Employee ID:", "[EMPLOYEE_ID]", "", "Pay Date:", "[PAY_DATE]"],
+            ["Employee:", selectedStub.employee.name, "", "Pay Period:", selectedStub.payPeriod],
+            ["Employee ID:", selectedStub.employee.personnelId, "", "Pay Date:", selectedStub.payDate],
             [],
-            ["Earnings"],
-            ["Description", "Rate", "Hours", "Amount"],
-            ["[EARNING_DESC_1]", "[EARNING_RATE_1]", "[EARNING_HOURS_1]", "[EARNING_AMOUNT_1]"],
-            ["", "", "Gross Pay:", "[GROSS_PAY]"],
+            ["Earnings", "Rate", "Hours", "Amount"],
+            ...selectedStub.earnings.map(e => [e.description, e.rate || '', e.hours || '', e.amount]),
+            ["", "", "Gross Pay:", selectedStub.grossPay],
             [],
-            ["Deductions"],
-            ["Description", "Amount"],
-            ["[DEDUCTION_DESC_1]", "[DEDUCTION_AMOUNT_1]"],
-            ["", "", "Total Deductions:", "[TOTAL_DEDUCTIONS]"],
+            ["Deductions", "Amount"],
+            ...selectedStub.deductions.map(d => [d.description, -d.amount]),
+            ["", "Total Deductions:", -selectedStub.deductions.reduce((a,c) => a + c.amount, 0)],
             [],
-            ["", "", "Net Pay:", "[NET_PAY]"],
+            ["", "", "Net Pay:", selectedStub.netPay],
         ];
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Pay Stub Template");
-        XLSX.writeFile(wb, `PayStub_Blank_Template.xlsx`);
-        toast({ title: 'Template Downloaded', description: 'Blank Excel template has been downloaded.' });
-    };
-
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No file selected.'});
-            return;
-        }
-        if (!selectedStub) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please select a pay stub first.'});
-            if (fileUploadRef.current) fileUploadRef.current.value = "";
-            return;
-        }
-        setUploadedFile(file);
-        setIsEditOpen(true);
-        if (fileUploadRef.current) fileUploadRef.current.value = "";
+        XLSX.utils.book_append_sheet(wb, ws, "Pay Stub");
+        XLSX.writeFile(wb, `PayStub_${selectedStub.employee.name.replace(' ','_')}_${selectedStub.payDate}.xlsx`);
+        toast({ title: 'Pay Stub Downloaded', description: 'The pay stub has been downloaded as an Excel file.' });
     };
 
   return (
-    <>
-        <div className="flex flex-col w-full">
-        <Header pageTitle="Paycheck Stubs" />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Employee Paycheck Stubs</CardTitle>
-                    <CardDescription>
-                        Select an employee and pay period to view their stub. You can also download a blank template, customize it, and upload it to generate a populated pay stub.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="employee">Select Employee</Label>
-                            <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                                <SelectTrigger id="employee"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {employees.filter(emp => mockPayStubs.some(p => p.employee.id === emp.id)).map(emp => (
-                                        <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+    <div className="flex flex-col w-full">
+    <Header pageTitle="Paycheck Stubs" />
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Custom Templates</CardTitle>
+                <CardDescription>
+                    Upload and manage your custom pay stub designs.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                     <Card
+                        onClick={() => setSelectedTemplate('default')}
+                        className={cn("cursor-pointer", selectedTemplate === 'default' && "ring-2 ring-primary")}
+                    >
+                         <div className="relative aspect-[4/5] bg-gray-100 flex items-center justify-center">
+                            <FileSpreadsheet className="w-12 h-12 text-muted-foreground" />
+                             {defaultTemplateId === 'default' && <Star className="absolute top-2 right-2 w-5 h-5 fill-yellow-400 text-yellow-500" />}
                         </div>
-                        <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="pay-period">Select Pay Period</Label>
-                            <Select value={selectedPayPeriod} onValueChange={setSelectedPayPeriod}>
-                                <SelectTrigger id="pay-period"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {payPeriods.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <CardFooter className="p-2">
+                             <p className="text-sm font-medium w-full text-center">Default Template</p>
+                        </CardFooter>
+                     </Card>
+                    {customTemplates.map(template => (
+                         <Card key={template.id}
+                            onClick={() => setSelectedTemplate(template)}
+                            className={cn("cursor-pointer", (selectedTemplate !== 'default' && selectedTemplate?.id === template.id) && "ring-2 ring-primary")}
+                        >
+                            <div className="relative aspect-[4/5]">
+                                <Image src={template.imageUrl} alt={template.name} layout="fill" objectFit="cover" className="rounded-t-lg" />
+                                {defaultTemplateId === template.id && <Star className="absolute top-2 right-2 w-5 h-5 fill-yellow-400 text-yellow-500" />}
+                            </div>
+                            <CardContent className="p-2">
+                                <p className="text-sm font-medium truncate">{template.name}</p>
+                            </CardContent>
+                             <CardFooter className="p-2 flex gap-1">
+                                 <Button size="sm" variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); setDefaultTemplateId(template.id); }}>Default</Button>
+                                <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}><Trash2 className="w-4 h-4" /></Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                    <div className="flex items-center justify-center border-dashed border-2 rounded-lg aspect-[4/5]">
+                         <UploadTemplateDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} onSave={handleAddTemplate} />
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Button onClick={downloadBlankTemplate} variant="secondary">
-                            <FileSpreadsheet className="mr-2" /> Download Blank Template
-                        </Button>
-                        <Button onClick={() => fileUploadRef.current?.click()} variant="secondary" disabled={!selectedStub}>
-                        <Upload className="mr-2" /> Upload & Populate Template
-                        </Button>
-                        <input type="file" ref={fileUploadRef} className="hidden" accept=".xlsx, .xls" onChange={handleFileUpload} />
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Employee Paycheck Stubs</CardTitle>
+                <CardDescription>
+                    Select an employee and pay period to view their stub.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="employee">Select Employee</Label>
+                        <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                            <SelectTrigger id="employee"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {employees.filter(emp => mockPayStubs.some(p => p.employee.id === emp.id)).map(emp => (
+                                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <PayStubPreview stub={selectedStub || null} />
-                </CardContent>
-                <CardFooter className="gap-2">
-                    <Button onClick={handlePrint} disabled={!selectedStub}><Printer className="mr-2" /> Print Stub</Button>
-                    <Button variant="outline" onClick={handleEmail} disabled={!selectedStub || !selectedStub.employee.email}><Mail className="mr-2" /> Email to Employee</Button>
-                </CardFooter>
-            </Card>
-        </main>
-        </div>
-        <EditAndDownloadDialog
-            isOpen={isEditOpen}
-            onOpenChange={setIsEditOpen}
-            stubData={selectedStub || null}
-            templateFile={uploadedFile}
-        />
-    </>
+                    <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="pay-period">Select Pay Period</Label>
+                        <Select value={selectedPayPeriod} onValueChange={setSelectedPayPeriod}>
+                            <SelectTrigger id="pay-period"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {payPeriods.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <PayStubPreview stub={selectedStub || null} template={selectedTemplate} />
+            </CardContent>
+            <CardFooter className="gap-2">
+                <Button onClick={handlePrint} disabled={!selectedStub}><Printer className="mr-2" /> Print Stub</Button>
+                <Button variant="secondary" onClick={downloadExcel} disabled={!selectedStub}><Download className="mr-2" /> Download Excel</Button>
+                <Button variant="outline" onClick={handleEmail} disabled={!selectedStub || !selectedStub.employee.email}><Mail className="mr-2" /> Email to Employee</Button>
+            </CardFooter>
+        </Card>
+    </main>
+    </div>
   );
 }
