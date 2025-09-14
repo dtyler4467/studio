@@ -280,7 +280,15 @@ const navItems: NavItem[] = [
       { href: '/dashboard/hr', icon: Users, label: 'HR', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/policies', icon: FolderLock, label: 'Company Policies', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
-      { href: '/dashboard/hr/w4', icon: FileText, label: 'W4', roles: ['Admin', 'Manager'] },
+      { 
+        href: '#', 
+        icon: FileText, 
+        label: 'W4', 
+        roles: ['Admin', 'Manager'],
+        subItems: [
+            { href: '/dashboard/hr/w4', icon: FileText, label: 'W4 Form', roles: ['Admin', 'Manager'] },
+        ]
+      },
       { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Applications', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/payroll', icon: HandCoins, label: 'Payroll', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/paycheck-stub', icon: HandCoins, label: 'Paycheck Stub', roles: ['Admin', 'Manager'] },
@@ -432,6 +440,7 @@ export function SidebarNav() {
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
+  const [openHrSubMenus, setOpenHrSubMenus] = useState<Record<string, boolean>>({});
   const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<LocalLoadBoard | null>(null);
   const [isAssociatesDialogOpen, setAssociatesDialogOpen] = useState(false);
@@ -485,6 +494,16 @@ export function SidebarNav() {
             }
         });
     setOpenWarehouseSubMenus(newOpenWarehouseSubMenus);
+
+    const newOpenHrSubMenus: Record<string, boolean> = {};
+        navItems.find(i => i.label === 'HR HUB')?.subItems?.forEach(item => {
+            if (item.subItems) {
+                const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
+                newOpenHrSubMenus[item.label] = isActive;
+            }
+        });
+    setOpenHrSubMenus(newOpenHrSubMenus);
+
   }, [pathname]);
 
   if (!currentUser) {
@@ -496,7 +515,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -508,8 +527,19 @@ export function SidebarNav() {
 
 
   const renderNavSubItems = (subItems: NavItem[], parentLabel: string) => {
-    const openSubMenus = parentLabel === 'Yard Management' ? openYardSubMenus : parentLabel === 'Warehouse Hub Manager' ? openWarehouseSubMenus : {};
-    const setOpenSubMenus = parentLabel === 'Yard Management' ? setOpenYardSubMenus : parentLabel === 'Warehouse Hub Manager' ? setOpenWarehouseSubMenus : () => {};
+    const openSubMenusMap: Record<string, Record<string, boolean>> = {
+      'Yard Management': openYardSubMenus,
+      'Warehouse Hub Manager': openWarehouseSubMenus,
+      'HR HUB': openHrSubMenus,
+    };
+    const setOpenSubMenusMap: Record<string, React.Dispatch<React.SetStateAction<Record<string, boolean>>>> = {
+        'Yard Management': setOpenYardSubMenus,
+        'Warehouse Hub Manager': setOpenWarehouseSubMenus,
+        'HR HUB': setOpenHrSubMenus,
+    }
+
+    const openSubMenus = openSubMenusMap[parentLabel] || {};
+    const setOpenSubMenus = setOpenSubMenusMap[parentLabel] || (() => {});
 
     return subItems.map(subItem => {
       const isSubOverview = subItem.label === 'Dashboard' || subItem.label === 'Overview';
@@ -544,22 +574,7 @@ export function SidebarNav() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>
-                {subItem.subItems.map(nestedSubItem => {
-                   if (nestedSubItem.subItems) {
-                       // Recursively render nested sub-items
-                       return renderNavSubItems([nestedSubItem], subItem.label);
-                   }
-                   return (
-                      <SidebarMenuSubItem key={nestedSubItem.label}>
-                        <SidebarMenuSubButton asChild isActive={isSubItemActive(nestedSubItem.href)} size="sm">
-                          <Link href={nestedSubItem.href}>
-                            {nestedSubItem.icon && <nestedSubItem.icon />}
-                            <span>{nestedSubItem.label}</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                   );
-                })}
+                {renderNavSubItems(subItem.subItems, subItem.label)}
               </SidebarMenuSub>
             </CollapsibleContent>
           </Collapsible>
