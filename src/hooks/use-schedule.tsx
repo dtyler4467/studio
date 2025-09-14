@@ -348,6 +348,7 @@ export type W4Template = {
 export type HandbookSection = {
     title: string;
     content: string;
+    documentUri?: string | null;
 };
 
 export type Handbook = {
@@ -398,6 +399,7 @@ type ScheduleContextType = {
   handbooks: Handbook[];
   getHandbookById: (id: string) => Handbook | null;
   updateHandbookSection: (handbookId: string, sectionTitle: string, content: string) => void;
+  updateHandbookSectionDocument: (handbookId: string, sectionTitle: string, documentUri: string | null) => void;
   addHandbookSection: (handbookId: string, title: string, content: string) => void;
   addHandbook: (name: string, documentUri: string) => void;
   deleteHandbook: (id: string) => void;
@@ -760,12 +762,12 @@ export const initialHandbooks: Handbook[] = [
         content: {
             lastUpdated: 'January 1, 2024',
             sections: [
-                { title: 'Introduction', content: 'Welcome to LogiFlow! This handbook provides important information about our company policies and procedures.' },
-                { title: 'Code of Conduct', content: 'All employees are expected to maintain professional behavior. Harassment and discrimination are not tolerated.' },
-                { title: 'Employment Policies', content: 'This section covers attendance, performance reviews, and disciplinary actions.' },
-                { title: 'Compensation', content: 'Details on payroll, overtime, and expense reimbursement.' },
-                { title: 'Benefits', content: 'Information on health insurance, retirement plans, and paid time off.' },
-                { title: 'Conclusion', content: 'We are excited to have you on our team and look forward to a successful working relationship.' },
+                { title: 'Introduction', content: 'Welcome to LogiFlow! This handbook provides important information about our company policies and procedures.', documentUri: null },
+                { title: 'Code of Conduct', content: 'All employees are expected to maintain professional behavior. Harassment and discrimination are not tolerated.', documentUri: null },
+                { title: 'Employment Policies', content: 'This section covers attendance, performance reviews, and disciplinary actions.', documentUri: null },
+                { title: 'Compensation', content: 'Details on payroll, overtime, and expense reimbursement.', documentUri: null },
+                { title: 'Benefits', content: 'Information on health insurance, retirement plans, and paid time off.', documentUri: null },
+                { title: 'Conclusion', content: 'We are excited to have you on our team and look forward to a successful working relationship.', documentUri: null },
             ]
         }
     },
@@ -831,10 +833,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const updateHandbookSectionDocument = (handbookId: string, sectionTitle: string, documentUri: string | null) => {
+    setHandbooks(prev => prev.map(hb => {
+        if (hb.id === handbookId && hb.content) {
+            const newSections = hb.content.sections.map(sec => 
+                sec.title === sectionTitle ? { ...sec, documentUri } : sec
+            );
+            return { ...hb, content: { ...hb.content, sections: newSections, lastUpdated: new Date().toLocaleDateString() } };
+        }
+        return hb;
+    }));
+  };
+
+
   const addHandbookSection = (handbookId: string, title: string, content: string) => {
       setHandbooks(prev => prev.map(hb => {
           if (hb.id === handbookId && hb.content) {
-              const newSection: HandbookSection = { title, content };
+              const newSection: HandbookSection = { title, content, documentUri: null };
               const newSections = [...hb.content.sections, newSection];
               return { ...hb, content: { ...hb.content, sections: newSections, lastUpdated: new Date().toLocaleDateString() }};
           }
@@ -1625,7 +1640,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );

@@ -8,12 +8,14 @@ import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Pencil, BookOpen, PlusCircle } from 'lucide-react';
+import { Pencil, BookOpen, PlusCircle, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DocumentUpload } from '@/components/dashboard/document-upload';
 
 const EditSectionDialog = ({ 
     section, 
@@ -129,7 +131,7 @@ const AddSectionDialog = ({
 export default function HandbookDocumentPage() {
     const params = useParams();
     const { id } = params;
-    const { getHandbookById, updateHandbookSection, addHandbookSection } = useSchedule();
+    const { getHandbookById, updateHandbookSection, addHandbookSection, updateHandbookSectionDocument } = useSchedule();
     const { toast } = useToast();
     const [handbook, setHandbook] = useState<Handbook | null | undefined>(undefined);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -160,6 +162,13 @@ export default function HandbookDocumentPage() {
             toast({ title: 'Section Added', description: `The new section "${title}" has been added to the handbook.` });
         }
     };
+    
+    const handleSaveDocument = (sectionTitle: string, uri: string | null) => {
+        if (handbook) {
+            updateHandbookSectionDocument(handbook.id, sectionTitle, uri);
+            toast({ title: 'Document Saved', description: `Document for section "${sectionTitle}" has been updated.`});
+        }
+    }
 
     if (handbook === undefined) {
         return (
@@ -208,32 +217,62 @@ export default function HandbookDocumentPage() {
                             Last updated: {content.lastUpdated}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="p-6 md:p-10 space-y-12">
-                        <div className="max-w-3xl mx-auto">
-                            <div className="flex justify-between items-center mb-4 border-b pb-2">
-                                <h2 className="text-2xl font-bold font-headline">Table of Contents</h2>
-                                <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(true)}>
-                                    <PlusCircle className="mr-2 h-4 w-4"/>
-                                    Add Section
-                                </Button>
-                            </div>
-                            <ul className="space-y-1 list-disc list-inside">
-                                {content.sections.map(section => (
-                                    <li key={section.title}><a href={`#${section.title.toLowerCase().replace(/\s/g, '-')}`} className="text-primary hover:underline">{section.title}</a></li>
-                                ))}
-                            </ul>
-                        </div>
-                        {content.sections.map(section => (
-                            <section key={section.title} id={section.title.toLowerCase().replace(/\s/g, '-')} className="max-w-3xl mx-auto">
-                                <div className="flex justify-between items-center mb-4 border-b pb-2">
-                                     <h2 className="text-2xl font-bold font-headline">{section.title}</h2>
-                                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(section)}>
-                                        <Pencil className="h-4 w-4" />
-                                     </Button>
+                    <CardContent className="p-6 md:p-10">
+                        <Tabs defaultValue="content">
+                            <TabsList className="mb-6">
+                                <TabsTrigger value="content">Content</TabsTrigger>
+                                <TabsTrigger value="documents">Documents</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="content" className="space-y-12">
+                                <div className="max-w-3xl mx-auto">
+                                    <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                        <h2 className="text-2xl font-bold font-headline">Table of Contents</h2>
+                                        <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                                            <PlusCircle className="mr-2 h-4 w-4"/>
+                                            Add Section
+                                        </Button>
+                                    </div>
+                                    <ul className="space-y-1 list-disc list-inside">
+                                        {content.sections.map(section => (
+                                            <li key={section.title}><a href={`#${section.title.toLowerCase().replace(/\s/g, '-')}`} className="text-primary hover:underline">{section.title}</a></li>
+                                        ))}
+                                    </ul>
                                 </div>
-                                <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: section.content.replace(/\n/g, '<br />') }} />
-                            </section>
-                        ))}
+                                {content.sections.map(section => (
+                                    <section key={section.title} id={section.title.toLowerCase().replace(/\s/g, '-')} className="max-w-3xl mx-auto">
+                                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                            <h2 className="text-2xl font-bold font-headline">{section.title}</h2>
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(section)}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: section.content.replace(/\n/g, '<br />') }} />
+                                    </section>
+                                ))}
+                            </TabsContent>
+                             <TabsContent value="documents">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Section Documents</CardTitle>
+                                        <CardDescription>Upload supporting documents for each section of the handbook.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {content.sections.map(section => (
+                                            <div key={section.title} className="border-b pb-4 last:border-b-0">
+                                                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                                    {section.title}
+                                                </h3>
+                                                <DocumentUpload 
+                                                    onDocumentChange={(uri) => handleSaveDocument(section.title, uri)}
+                                                    currentDocument={section.documentUri || null}
+                                                />
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                        </Tabs>
                     </CardContent>
                 </Card>
                  <EditSectionDialog 
