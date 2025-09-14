@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { MoreHorizontal, Upload, FileText, Send, Pencil, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogFooter, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const UploadTemplateDialog = ({ onSave }: { onSave: (name: string, uri: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -82,7 +82,6 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
 export default function W4Page() {
   const { w4Templates, addW4Template, updateW4Template, deleteW4Template } = useSchedule();
   const { toast } = useToast();
-  const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [templateToRename, setTemplateToRename] = useState<W4Template | null>(null);
   const [newName, setNewName] = useState('');
   const [templateToDelete, setTemplateToDelete] = useState<W4Template | null>(null);
@@ -97,6 +96,16 @@ export default function W4Page() {
         title: "Action Required",
         description: `This would open an email to send "${template.name}" to an employee.`
     });
+  };
+
+  const handlePreview = (documentUri: string) => {
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.document.write(`<iframe src="${documentUri}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+      newWindow.document.title = "Template Preview";
+    } else {
+        toast({ variant: 'destructive', title: 'Popup Blocked', description: 'Please allow popups for this site to preview documents.' });
+    }
   };
 
   const handleRename = () => {
@@ -170,7 +179,7 @@ export default function W4Page() {
                                             <TableCell><ClientFormattedDate date={template.uploadedAt} /></TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex gap-1 justify-end">
-                                                    <Button variant="outline" size="sm" onClick={() => setPreviewUri(template.documentUri)}>Preview</Button>
+                                                    <Button variant="outline" size="sm" onClick={() => handlePreview(template.documentUri)}>Preview</Button>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4"/></Button>
@@ -211,17 +220,6 @@ export default function W4Page() {
         </Tabs>
         
         {/* Dialogs for actions */}
-        <Dialog open={!!previewUri} onOpenChange={() => setPreviewUri(null)}>
-            <DialogContent className="max-w-4xl h-[90vh]">
-                <DialogHeader>
-                    <DialogTitle>Template Preview</DialogTitle>
-                </DialogHeader>
-                <div className="h-full">
-                    <iframe src={previewUri || ''} className="w-full h-full border-none" title="Template Preview"/>
-                </div>
-            </DialogContent>
-        </Dialog>
-
         <Dialog open={!!templateToRename} onOpenChange={() => setTemplateToRename(null)}>
             <DialogContent>
                 <DialogHeader>
