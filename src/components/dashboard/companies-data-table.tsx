@@ -14,6 +14,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal, PlusCircle } from "lucide-react"
+import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -39,7 +40,22 @@ import { Badge } from "../ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { ClientFormattedDate } from "./crm-contacts-data-table"
+import { Skeleton } from "../ui/skeleton"
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "PPP"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-24" />;
+    }
+
+    return <span>{formattedDate}</span>;
+}
+
 
 function AddCompanyDialog({ onSave }: { onSave: (company: Omit<Company, 'id' | 'dateAdded'>) => void }) {
     const [isOpen, setIsOpen] = React.useState(false);
