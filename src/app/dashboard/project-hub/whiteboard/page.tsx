@@ -4,16 +4,20 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { PenSquare } from 'lucide-react';
-import { useSchedule, Task } from '@/hooks/use-schedule';
+import { useSchedule, Task, TaskNote as TaskNoteType } from '@/hooks/use-schedule';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { FileText } from 'lucide-react';
+import { FileText, GitCommit, Milestone } from 'lucide-react';
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+
 
 const NotesSection = ({ task }: { task: Task }) => {
     const { addTaskNote, currentUser } = useSchedule();
@@ -59,6 +63,49 @@ const NotesSection = ({ task }: { task: Task }) => {
     )
 }
 
+const TaskTimeline = ({ task }: { task: Task }) => {
+    const sortedNotes = [...(task.notes || [])].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    return (
+        <div className="pt-8 pb-4">
+            <div className="flex items-center w-full">
+                <div className="flex flex-col items-center">
+                    <Milestone className="w-8 h-8 p-1.5 bg-green-500 text-white rounded-full" />
+                    <span className="text-xs font-semibold mt-1">Start</span>
+                </div>
+                <div className="flex-1 h-1 bg-border relative -mx-1">
+                    <div className="absolute inset-0 flex items-center justify-around">
+                        {sortedNotes.map((note, index) => (
+                             <Popover key={index}>
+                                <PopoverTrigger asChild>
+                                    <button className="h-4 w-4 bg-primary rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"></button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="h-6 w-6">
+                                                <AvatarFallback className="text-xs">{note.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-semibold text-sm">{note.author}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">{format(note.timestamp, 'PPP p')}</p>
+                                        <Separator />
+                                        <p className="text-sm">{note.content}</p>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        ))}
+                    </div>
+                </div>
+                 <div className="flex flex-col items-center">
+                    <Milestone className="w-8 h-8 p-1.5 bg-blue-500 text-white rounded-full" />
+                    <span className="text-xs font-semibold mt-1">Finish</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; isOpen: boolean; onOpenChange: (open: boolean) => void }) => {
     const { employees } = useSchedule();
     if (!task) return null;
@@ -67,35 +114,46 @@ const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; i
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-3xl">
+            <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>{task.title}</DialogTitle>
                     <DialogDescription>{task.description}</DialogDescription>
                 </DialogHeader>
-                <div className="grid md:grid-cols-2 gap-6 py-4 max-h-[70vh] overflow-y-auto">
-                    <div className="space-y-4">
-                        <h4 className="font-semibold">Assigned To</h4>
-                        <div className="flex flex-wrap gap-2">
-                            {assignees.map(assignee => (
-                                <div key={assignee.id} className="flex items-center gap-2 bg-muted p-2 rounded-md">
-                                    <Avatar className="h-6 w-6">
-                                        <AvatarFallback className="text-xs">{assignee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm font-medium">{assignee.name}</span>
+                <Tabs defaultValue="details">
+                    <TabsList>
+                        <TabsTrigger value="details">Details & Notes</TabsTrigger>
+                        <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="details" className="max-h-[70vh] overflow-y-auto pr-4">
+                        <div className="grid md:grid-cols-2 gap-6 py-4">
+                             <div className="space-y-4">
+                                <h4 className="font-semibold">Assigned To</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {assignees.map(assignee => (
+                                        <div key={assignee.id} className="flex items-center gap-2 bg-muted p-2 rounded-md">
+                                            <Avatar className="h-6 w-6">
+                                                <AvatarFallback className="text-xs">{assignee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-sm font-medium">{assignee.name}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                         {task.documentUri && (
-                            <div>
-                                <h4 className="font-semibold mt-4">Attached Document</h4>
-                                <div className="mt-2 border rounded-md p-2">
-                                     <Image src={task.documentUri} alt={`Document for ${task.title}`} width={800} height={600} className="rounded-md w-full h-auto" />
-                                </div>
+                                {task.documentUri && (
+                                    <div>
+                                        <h4 className="font-semibold mt-4">Attached Document</h4>
+                                        <div className="mt-2 border rounded-md p-2">
+                                            <Image src={task.documentUri} alt={`Document for ${task.title}`} width={800} height={600} className="rounded-md w-full h-auto" />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                    <NotesSection task={task} />
-                </div>
+                            <NotesSection task={task} />
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="timeline">
+                        <TaskTimeline task={task} />
+                    </TabsContent>
+                </Tabs>
             </DialogContent>
         </Dialog>
     );
