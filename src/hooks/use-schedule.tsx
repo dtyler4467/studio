@@ -372,6 +372,16 @@ export type Handbook = {
     }
 };
 
+export type TaskStatus = 'To Do' | 'In Progress' | 'Review' | 'Done';
+
+export type Task = {
+    id: string;
+    title: string;
+    description: string;
+    assigneeId: string;
+    status: TaskStatus;
+};
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
@@ -407,6 +417,9 @@ type ScheduleContextType = {
   salesOrders: SalesOrder[];
   w4Templates: W4Template[];
   handbooks: Handbook[];
+  tasks: Task[];
+  addTask: (taskData: Omit<Task, 'id'>) => void;
+  updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   getHandbookById: (id: string) => Handbook | null;
   updateHandbookSection: (handbookId: string, sectionTitle: string, content: string) => void;
   updateHandbookSectionDocument: (handbookId: string, sectionTitle: string, documentUri: string | null) => void;
@@ -786,6 +799,13 @@ export const initialHandbooks: Handbook[] = [
     { id: 'HB-2023', name: '2023 Employee Handbook (Archived)', documentUri: 'https://picsum.photos/seed/hb2/800/1100', uploadedAt: new Date('2023-01-01') },
 ];
 
+export const initialTasks: Task[] = [
+    { id: 'TASK-1', title: 'Design new logo', description: 'Create a modern logo for the new marketing campaign.', assigneeId: 'USR004', status: 'In Progress' },
+    { id: 'TASK-2', title: 'Develop homepage prototype', description: 'Code a functional prototype using Next.js and Tailwind.', assigneeId: 'USR003', status: 'To Do' },
+    { id: 'TASK-3', title: 'Review Q2 Financials', description: 'Audit the financial statements for the second quarter.', assigneeId: 'USR004', status: 'Done' },
+    { id: 'TASK-4', title: 'Plan team offsite event', description: 'Organize location, catering, and activities for the annual team offsite.', assigneeId: 'USR002', status: 'Review' },
+];
+
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
@@ -828,6 +848,19 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(initialSalesOrders);
   const [w4Templates, setW4Templates] = useState<W4Template[]>(initialW4Templates);
   const [handbooks, setHandbooks] = useState<Handbook[]>(initialHandbooks);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  const addTask = (taskData: Omit<Task, 'id'>) => {
+    const newTask: Task = {
+        ...taskData,
+        id: `TASK-${Date.now()}`,
+    };
+    setTasks(prev => [newTask, ...prev]);
+  };
+
+  const updateTaskStatus = (taskId: string, status: TaskStatus) => {
+      setTasks(prev => prev.map(task => task.id === taskId ? { ...task, status } : task));
+  };
 
   const getHandbookById = (id: string) => {
     return handbooks.find(hb => hb.id.toLowerCase() === id.toLowerCase()) || null;
@@ -1673,7 +1706,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, tasks, addTask, updateTaskStatus, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
       {children}
     </ScheduleContext.Provider>
   );
@@ -1686,4 +1719,3 @@ export const useSchedule = () => {
   }
   return context;
 };
-
