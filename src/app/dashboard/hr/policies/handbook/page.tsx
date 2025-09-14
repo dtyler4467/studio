@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileText, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -91,6 +91,20 @@ const UploadHandbookDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name:
     );
 };
 
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+    useEffect(() => {
+        setFormattedDate(format(date, 'PPP'));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <span className="text-muted-foreground">Loading...</span>;
+    }
+
+    return <>{formattedDate}</>;
+}
+
+
 export default function HandbookPage() {
     const [handbooks, setHandbooks] = useState(initialHandbooks);
     const [isUploadOpen, setUploadOpen] = useState(false);
@@ -144,7 +158,7 @@ export default function HandbookPage() {
                                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                                 {hb.name}
                                             </td>
-                                            <td className="p-4 text-muted-foreground">{format(hb.uploadedAt, 'PPP')}</td>
+                                            <td className="p-4 text-muted-foreground"><ClientFormattedDate date={hb.uploadedAt} /></td>
                                             <td className="p-4 text-right">
                                                 <div className="flex gap-2 justify-end">
                                                     <Button variant="outline" size="sm" asChild>
