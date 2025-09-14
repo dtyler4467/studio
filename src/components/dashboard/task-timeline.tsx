@@ -158,6 +158,7 @@ export const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: b
 
 export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilestone: () => void }) => {
     const sortedEvents = [...(task.events || [])].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const [sections, setSections] = useState(3);
 
     return (
         <div className="pt-8 pb-4">
@@ -166,10 +167,12 @@ export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilest
                     <Milestone className="w-8 h-8 p-1.5 bg-green-500 text-white rounded-full" />
                     <span className="text-xs font-semibold mt-1">Start</span>
                 </div>
-                <div className="flex-1 h-1 bg-border relative -mx-1 flex items-center">
-                    <Button variant="outline" size="icon" className="h-6 w-6 rounded-full absolute left-1/2 -translate-x-1/2 z-10" onClick={onAddMilestone}>
-                        <PlusCircle className="h-4 w-4" />
-                    </Button>
+                <div className="flex-1 h-1 bg-border relative -mx-1 flex items-center justify-around">
+                     {Array.from({ length: sections }).map((_, index) => (
+                        <Button key={index} variant="outline" size="icon" className="h-6 w-6 rounded-full z-10" onClick={onAddMilestone}>
+                            <PlusCircle className="h-4 w-4" />
+                        </Button>
+                    ))}
                     <div className="absolute inset-0 flex items-center justify-around px-10">
                         {sortedEvents.map((event) => (
                              <Popover key={event.id}>
@@ -205,6 +208,9 @@ export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilest
                     <Milestone className="w-8 h-8 p-1.5 bg-blue-500 text-white rounded-full" />
                     <span className="text-xs font-semibold mt-1">Finish</span>
                 </div>
+            </div>
+             <div className="text-center mt-2">
+                <Button variant="link" size="sm" onClick={() => setSections(s => s + 1)}>Add Section</Button>
             </div>
         </div>
     )
