@@ -283,6 +283,7 @@ const navItems: NavItem[] = [
       { href: '/dashboard/hr/w4', icon: FileText, label: 'W4', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Applications', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/payroll', icon: HandCoins, label: 'Payroll', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/paycheck-stub', icon: HandCoins, label: 'Paycheck Stub', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/investigation', icon: FileScan, label: 'Investigation', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/audit', icon: FileScan, label: 'Audit', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/deposit', icon: Landmark, label: 'Deposit', roles: ['Admin', 'Manager'] },
@@ -404,6 +405,7 @@ const WarehouseAssociatesDialog = ({ isOpen, onOpenChange }: { isOpen: boolean, 
                     <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/my-pick">My Active Pick</Link></Button>
                     <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/order-queue">Order Queue</Link></Button>
                     <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/picker-assigner">Picker Assigner</Link></Button>
+                    <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/productivity">Productivity</Link></Button>
                 </div>
             </DialogContent>
         </Dialog>
