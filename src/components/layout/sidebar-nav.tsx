@@ -412,6 +412,13 @@ const navItems: NavItem[] = [
     icon: Megaphone,
     label: 'Public Relations',
     roles: ['Admin', 'Manager'],
+    subItems: [
+      { href: '/dashboard/public-relations/overview', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/public-relations/press-releases', icon: FileText, label: 'Press Releases', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/public-relations/media-contacts', icon: Contact, label: 'Media Contacts', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/public-relations/announcements', icon: Siren, label: 'Announcements', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/public-relations/media-kit', icon: Briefcase, label: 'Media Kit', roles: ['Admin', 'Manager'] },
+    ]
   },
 ];
 
@@ -552,6 +559,7 @@ export function SidebarNav() {
   const [isTimeTrackerHubOpen, setIsTimeTrackerHubOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isProjectHubOpen, setIsProjectHubOpen] = useState(false);
+  const [isPublicRelationsOpen, setIsPublicRelationsOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -579,6 +587,7 @@ export function SidebarNav() {
     setIsHrOpen(pathname.startsWith('/dashboard/recruitment-hub') || pathname.startsWith('/dashboard/hr'));
     setIsStoreOpen(pathname.startsWith('/dashboard/store'));
     setIsProjectHubOpen(pathname.startsWith('/dashboard/project-hub'));
+    setIsPublicRelationsOpen(pathname.startsWith('/dashboard/public-relations'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -813,6 +822,7 @@ export function SidebarNav() {
                         'Time Tracker HUB': isTimeTrackerHubOpen,
                         'Store': isStoreOpen,
                         'Project Hub': isProjectHubOpen,
+                        'Public Relations': isPublicRelationsOpen,
                     };
                     const setIsOpenMap = {
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -826,6 +836,7 @@ export function SidebarNav() {
                         'Time Tracker HUB': setIsTimeTrackerHubOpen,
                         'Store': setIsStoreOpen,
                         'Project Hub': setIsProjectHubOpen,
+                        'Public Relations': setIsPublicRelationsOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                     const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
