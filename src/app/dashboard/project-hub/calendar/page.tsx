@@ -6,7 +6,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Calendar as CalendarIcon, CheckCircle, Clock, PlusCircle } from 'lucide-react';
 import { useSchedule, Task, OfficeAppointment } from '@/hooks/use-schedule';
-import { DayPicker } from 'react-day-picker';
+import { DayPicker, DayProps } from 'react-day-picker';
 import { format, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -118,13 +118,15 @@ export default function ProjectCalendarPage() {
         toast({ title: 'Event Created', description: `Meeting "${event.title}" has been scheduled.` });
     };
     
-    const DayCell = ({ date, ...props }: any) => {
+    const DayCell = (props: DayProps) => {
+        const { date } = props;
         const dateKey = format(date, 'yyyy-MM-dd');
         const dayEvents = eventsByDate[dateKey];
         const hasEvents = dayEvents && (dayEvents.tasks.length > 0 || dayEvents.meetings.length > 0 || dayEvents.milestones.length > 0);
-
+        const dayModifiers = props.modifiers || {};
+        
         const content = (
-            <div className={cn("relative h-9 w-9 p-0 flex items-center justify-center", props.modifiers.today && "bg-accent text-accent-foreground rounded")}>
+            <div className={cn("relative h-9 w-9 p-0 flex items-center justify-center", dayModifiers.today && "bg-accent text-accent-foreground rounded")}>
                 {format(date, 'd')}
                 {hasEvents && <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />}
             </div>
@@ -233,4 +235,3 @@ export default function ProjectCalendarPage() {
     </div>
   );
 }
-
