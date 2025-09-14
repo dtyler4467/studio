@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DocumentUpload } from '@/components/dashboard/document-upload';
 
 type PayStub = {
     payPeriod: string;
@@ -70,7 +71,7 @@ const mockPayStubs: PayStub[] = [
     },
 ];
 
-const EditAndDownloadDialog = ({ isOpen, onOpenChange, stub }: { isOpen: boolean, onOpenChange: (open: boolean) => void, stub: PayStub | null }) => {
+const EditAndDownloadDialog = ({ isOpen, onOpenChange, stub, companyName }: { isOpen: boolean, onOpenChange: (open: boolean) => void, stub: PayStub | null, companyName: string }) => {
     const [stubData, setStubData] = useState<PayStub | null>(stub);
 
     useEffect(() => {
@@ -82,7 +83,6 @@ const EditAndDownloadDialog = ({ isOpen, onOpenChange, stub }: { isOpen: boolean
         const newEarnings = [...stubData.earnings];
         (newEarnings[index] as any)[field] = value;
         
-        // Recalculate amount if rate or hours change
         if ((field === 'rate' || field === 'hours') && newEarnings[index].rate && newEarnings[index].hours) {
             newEarnings[index].amount = newEarnings[index].rate! * newEarnings[index].hours!;
         }
@@ -136,7 +136,7 @@ const EditAndDownloadDialog = ({ isOpen, onOpenChange, stub }: { isOpen: boolean
         if (!stubData) return;
 
         const ws_data = [
-            ["Your Company Name", "", "", "Pay Statement"],
+            [companyName, "", "", "Pay Statement"],
             ["Company Address"],
             [],
             ["Employee:", stubData.employee.name, "", "Pay Period:", stubData.payPeriod],
@@ -232,12 +232,16 @@ const EditAndDownloadDialog = ({ isOpen, onOpenChange, stub }: { isOpen: boolean
     )
 }
 
-const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
+const PayStubTemplate = ({ stub, companyName, companyLogo }: { stub: PayStub, companyName: string, companyLogo: string | null }) => {
     return (
         <div className="border rounded-lg p-6 bg-white text-sm text-black">
             <header className="flex justify-between items-start pb-4 border-b">
                 <div>
-                    <h2 className="text-2xl font-bold">LogiFlow Inc.</h2>
+                    {companyLogo ? (
+                        <Image src={companyLogo} alt={`${companyName} Logo`} width={120} height={40} className="mb-2"/>
+                    ) : (
+                        <h2 className="text-2xl font-bold">{companyName}</h2>
+                    )}
                     <p className="text-xs text-gray-500">123 Logistics Lane, Anytown, USA</p>
                 </div>
                 <h3 className="text-xl font-semibold">Pay Statement</h3>
@@ -295,7 +299,7 @@ const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
     );
 };
 
-const PayStubPreview = ({ stub, template }: { stub: PayStub | null, template: CustomTemplate | 'default' | null }) => {
+const PayStubPreview = ({ stub, template, companyName, companyLogo }: { stub: PayStub | null, template: CustomTemplate | 'default' | null, companyName: string, companyLogo: string | null }) => {
     if (!stub) {
         return (
             <div className="flex items-center justify-center rounded-md border border-dashed h-96">
@@ -319,75 +323,8 @@ const PayStubPreview = ({ stub, template }: { stub: PayStub | null, template: Cu
         )
     }
 
-    return <PayStubTemplate stub={stub} />;
+    return <PayStubTemplate stub={stub} companyName={companyName} companyLogo={companyLogo} />;
 };
-
-const UploadTemplateDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onSave: (name: string, file: File, imageUrl: string) => void }) => {
-    const [name, setName] = useState('');
-    const [file, setFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            setPreviewUrl(URL.createObjectURL(selectedFile));
-            if (!name) {
-                setName(selectedFile.name.replace(/\.[^/.]+$/, ""));
-            }
-        }
-    };
-
-    const handleSave = () => {
-        if (name && file && previewUrl) {
-            onSave(name, file, previewUrl);
-            onOpenChange(false);
-            setName('');
-            setFile(null);
-            setPreviewUrl(null);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="secondary">
-                    <Upload className="mr-2"/> Upload New Template
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Upload New Template</DialogTitle>
-                    <DialogDescription>
-                        Give your template a name and upload the file.
-                    </DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="max-h-[70vh] pr-4">
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="template-name">Template Name</Label>
-                            <Input id="template-name" value={name} onChange={e => setName(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="template-file">Template File</Label>
-                            <Input id="template-file" type="file" accept=".xlsx, .xls, .png, .jpg, .jpeg" onChange={handleFileChange} />
-                        </div>
-                        {previewUrl && (
-                            <div>
-                                <p className="text-sm font-medium mb-2">Preview:</p>
-                                <Image src={previewUrl} alt="Template Preview" width={400} height={500} className="w-full h-auto border rounded-md" />
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={!name || !file}>Save Template</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
 
 export default function PaycheckStubPage() {
     const { employees } = useSchedule();
@@ -398,8 +335,10 @@ export default function PaycheckStubPage() {
     const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<CustomTemplate | 'default' | null>('default');
     const [defaultTemplateId, setDefaultTemplateId] = useState<string | 'default'>('default');
-    const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    
+    const [companyName, setCompanyName] = useState('LogiFlow Inc.');
+    const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
     const payPeriods = useMemo(() => {
         return [...new Set(mockPayStubs.map(p => p.payPeriod))];
@@ -409,10 +348,12 @@ export default function PaycheckStubPage() {
         return mockPayStubs.find(p => p.employee.id === selectedEmployeeId && p.payPeriod === selectedPayPeriod);
     }, [selectedEmployeeId, selectedPayPeriod]);
     
-    const handleAddTemplate = (name: string, file: File, imageUrl: string) => {
-        const newTemplate: CustomTemplate = { id: `tpl_${Date.now()}`, name, file, imageUrl };
+    const handleAddTemplate = (file: File) => {
+        const imageUrl = URL.createObjectURL(file);
+        const templateName = `Sample ${customTemplates.length + 1}`;
+        const newTemplate: CustomTemplate = { id: `tpl_${Date.now()}`, name: templateName, file, imageUrl };
         setCustomTemplates(prev => [...prev, newTemplate]);
-        toast({ title: 'Template Saved', description: `Template "${name}" has been added.`});
+        toast({ title: 'Template Saved', description: `Template "${templateName}" has been added.`});
     };
 
     const handleDeleteTemplate = (id: string) => {
@@ -442,55 +383,86 @@ export default function PaycheckStubPage() {
         setIsEditOpen(true);
     };
 
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            handleAddTemplate(file);
+        }
+    };
+
   return (
     <div className="flex flex-col w-full">
     <Header pageTitle="Paycheck Stubs" />
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Custom Templates</CardTitle>
-                <CardDescription>
-                    Upload and manage your custom pay stub designs.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                     <Card
-                        onClick={() => setSelectedTemplate('default')}
-                        className={cn("cursor-pointer", selectedTemplate === 'default' && "ring-2 ring-primary")}
-                    >
-                         <div className="relative aspect-[4/5] bg-gray-100 flex items-center justify-center">
-                            <FileSpreadsheet className="w-12 h-12 text-muted-foreground" />
-                             {defaultTemplateId === 'default' && <Star className="absolute top-2 right-2 w-5 h-5 fill-yellow-400 text-yellow-500" />}
-                        </div>
-                        <CardFooter className="p-2">
-                             <p className="text-sm font-medium w-full text-center">Default Template</p>
-                        </CardFooter>
-                     </Card>
-                    {customTemplates.map(template => (
-                         <Card key={template.id}
-                            onClick={() => setSelectedTemplate(template)}
-                            className={cn("cursor-pointer", (selectedTemplate !== 'default' && selectedTemplate?.id === template.id) && "ring-2 ring-primary")}
+        <div className="grid lg:grid-cols-2 gap-6">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Company Information</CardTitle>
+                    <CardDescription>
+                        Set the company name and logo for the pay stubs.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="companyName">Company Name</Label>
+                        <Input id="companyName" value={companyName} onChange={e => setCompanyName(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Company Logo</Label>
+                        <DocumentUpload onDocumentChange={setCompanyLogo} currentDocument={companyLogo} />
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Custom Templates</CardTitle>
+                    <CardDescription>
+                        Upload and manage your custom pay stub designs.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <Card
+                            onClick={() => setSelectedTemplate('default')}
+                            className={cn("cursor-pointer", selectedTemplate === 'default' && "ring-2 ring-primary")}
                         >
-                            <div className="relative aspect-[4/5]">
-                                <Image src={template.imageUrl} alt={template.name} layout="fill" objectFit="cover" className="rounded-t-lg" />
-                                {defaultTemplateId === template.id && <Star className="absolute top-2 right-2 w-5 h-5 fill-yellow-400 text-yellow-500" />}
+                            <div className="relative aspect-[4/5] bg-gray-100 flex items-center justify-center">
+                                <FileSpreadsheet className="w-12 h-12 text-muted-foreground" />
+                                {defaultTemplateId === 'default' && <Star className="absolute top-2 right-2 w-5 h-5 fill-yellow-400 text-yellow-500" />}
                             </div>
-                            <CardContent className="p-2">
-                                <p className="text-sm font-medium truncate">{template.name}</p>
-                            </CardContent>
-                             <CardFooter className="p-2 flex gap-1">
-                                 <Button size="sm" variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); setDefaultTemplateId(template.id); }}>Default</Button>
-                                <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}><Trash2 className="w-4 h-4" /></Button>
+                            <CardFooter className="p-2">
+                                <p className="text-sm font-medium w-full text-center">Default</p>
                             </CardFooter>
                         </Card>
-                    ))}
-                    <div className="flex items-center justify-center border-dashed border-2 rounded-lg aspect-[4/5]">
-                         <UploadTemplateDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} onSave={handleAddTemplate} />
+                        {customTemplates.map((template) => (
+                            <Card key={template.id}
+                                onClick={() => setSelectedTemplate(template)}
+                                className={cn("cursor-pointer", (selectedTemplate !== 'default' && selectedTemplate?.id === template.id) && "ring-2 ring-primary")}
+                            >
+                                <div className="relative aspect-[4/5]">
+                                    <Image src={template.imageUrl} alt={template.name} layout="fill" objectFit="cover" className="rounded-t-lg" />
+                                    {defaultTemplateId === template.id && <Star className="absolute top-2 right-2 w-5 h-5 fill-yellow-400 text-yellow-500" />}
+                                </div>
+                                <CardContent className="p-2">
+                                    <p className="text-sm font-medium truncate">{template.name}</p>
+                                </CardContent>
+                                <CardFooter className="p-2 flex gap-1">
+                                    <Button size="sm" variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); setDefaultTemplateId(template.id); }}>Default</Button>
+                                    <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}><Trash2 className="w-4 h-4" /></Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                        <div className="flex items-center justify-center border-dashed border-2 rounded-lg aspect-[4/5]">
+                            <Input id="template-upload" type="file" className="hidden" accept=".png, .jpg, .jpeg" onChange={handleFileUpload} />
+                            <Button asChild variant="secondary">
+                                <label htmlFor="template-upload"><Upload className="mr-2"/> Upload</label>
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </div>
+
 
         <Card>
             <CardHeader>
@@ -522,7 +494,7 @@ export default function PaycheckStubPage() {
                         </Select>
                     </div>
                 </div>
-                <PayStubPreview stub={selectedStub || null} template={selectedTemplate} />
+                <PayStubPreview stub={selectedStub || null} template={selectedTemplate} companyName={companyName} companyLogo={companyLogo} />
             </CardContent>
             <CardFooter className="gap-2">
                 <Button onClick={handlePrint} disabled={!selectedStub}><Printer className="mr-2" /> Print Stub</Button>
@@ -530,7 +502,7 @@ export default function PaycheckStubPage() {
                 <Button variant="outline" onClick={handleEmail} disabled={!selectedStub || !selectedStub.employee.email}><Mail className="mr-2" /> Email to Employee</Button>
             </CardFooter>
         </Card>
-        <EditAndDownloadDialog isOpen={isEditOpen} onOpenChange={setIsEditOpen} stub={selectedStub || null} />
+        <EditAndDownloadDialog isOpen={isEditOpen} onOpenChange={setIsEditOpen} stub={selectedStub || null} companyName={companyName} />
     </main>
     </div>
   );
