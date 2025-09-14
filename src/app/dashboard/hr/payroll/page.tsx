@@ -11,6 +11,7 @@ import { useSchedule, Employee } from '@/hooks/use-schedule';
 import { format } from 'date-fns';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { useState, useEffect } from 'react';
 
 const mockPayrollHistory = [
     { id: 'PAY-001', period: '2024-07-01 to 2024-07-15', runDate: '2024-07-20', amount: 56789.12, status: 'Paid' },
@@ -19,6 +20,12 @@ const mockPayrollHistory = [
 
 export default function PayrollPage() {
     const { employees, timeClockEvents } = useSchedule();
+    const [nextPayday, setNextPayday] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Set the date only on the client-side to prevent hydration mismatch
+        setNextPayday(format(new Date(), 'MMM dd, yyyy'));
+    }, []);
 
     const getWeekOvertime = () => {
         const oneWeekAgo = new Date();
@@ -57,7 +64,7 @@ export default function PayrollPage() {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{format(new Date(), 'MMM dd, yyyy')}</div>
+                    <div className="text-2xl font-bold">{nextPayday || 'Loading...'}</div>
                     <p className="text-xs text-muted-foreground">Bi-weekly pay cycle</p>
                 </CardContent>
             </Card>
@@ -101,7 +108,7 @@ export default function PayrollPage() {
             <CardContent>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-muted rounded-lg">
                     <div>
-                        <h3 className="font-semibold">Next Pay Period: {format(new Date(), 'MMM dd')} - {format(new Date(), 'MMM dd, yyyy')}</h3>
+                        <h3 className="font-semibold">Next Pay Period: {nextPayday ? `${format(new Date(nextPayday), 'MMM dd')} - ${format(new Date(new Date(nextPayday).setDate(new Date(nextPayday).getDate() + 14)), 'MMM dd, yyyy')}` : 'Loading...'}</h3>
                         <p className="text-sm text-muted-foreground">Review timecards and click "Run Payroll" to begin processing.</p>
                     </div>
                     <Button size="lg" className="mt-4 sm:mt-0">Run Payroll</Button>
