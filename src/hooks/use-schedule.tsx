@@ -443,7 +443,7 @@ type ScheduleContextType = {
   tasks: Task[];
   addTask: (taskData: Omit<Task, 'id' | 'events'>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
-  addTaskEvent: (taskId: string, eventData: Omit<TaskEvent, 'id' | 'author' | 'timestamp'>) => void;
+  addTaskEvent: (taskId: string, eventData: Omit<TaskEvent, 'id' | 'author'>) => void;
   getHandbookById: (id: string) => Handbook | null;
   updateHandbookSection: (handbookId: string, sectionTitle: string, content: string) => void;
   updateHandbookSectionDocument: (handbookId: string, sectionTitle: string, documentUri: string | null) => void;
@@ -894,12 +894,11 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
       setTasks(prev => prev.map(task => task.id === taskId ? { ...task, status } : task));
   };
   
-  const addTaskEvent = (taskId: string, eventData: Omit<TaskEvent, 'id' | 'author' | 'timestamp'>) => {
+  const addTaskEvent = (taskId: string, eventData: Omit<TaskEvent, 'id' | 'author'>) => {
     const newEvent: TaskEvent = {
         ...eventData,
         id: `EVT-${Date.now()}`,
         author: currentUser?.name || 'Unknown',
-        timestamp: new Date(),
     };
     setTasks(prev => prev.map(task => 
         task.id === taskId 
@@ -1765,4 +1764,5 @@ export const useSchedule = () => {
   }
   return context;
 };
+
 
