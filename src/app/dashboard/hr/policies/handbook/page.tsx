@@ -40,6 +40,7 @@ import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useSchedule, Handbook } from '@/hooks/use-schedule';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 
 const UploadHandbookDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name: string, uri: string) => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
     const [name, setName] = useState('');
@@ -128,14 +129,14 @@ export default function HandbookPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="rounded-md border">
-                            <table className="w-full">
-                                <thead className="border-b">
-                                    <tr className="text-left">
-                                        <th className="p-4">Name</th>
-                                        <th className="p-4">Date Uploaded</th>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <th className="p-4 text-left">Name</th>
+                                        <th className="p-4 text-left">Date Uploaded</th>
                                         <th className="p-4 text-right">Actions</th>
-                                    </tr>
-                                </thead>
+                                    </TableRow>
+                                </TableHeader>
                                 <tbody>
                                     {handbooks.map(hb => (
                                         <TableRow key={hb.id} onClick={() => router.push(`/dashboard/hr/policies/handbook/${hb.id}`)} className="cursor-pointer">
@@ -175,7 +176,7 @@ export default function HandbookPage() {
                                         </TableRow>
                                     ))}
                                 </tbody>
-                            </table>
+                            </Table>
                         </div>
                     </CardContent>
                 </Card>
