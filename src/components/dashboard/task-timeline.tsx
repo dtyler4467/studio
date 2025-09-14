@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -67,18 +66,18 @@ export const NotesSection = ({ task }: { task: Task }) => {
     )
 }
 
-export const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean; onOpenChange: (open: boolean) => void; onSave: (data: Omit<TaskEvent, 'id' | 'author'>) => void }) => {
+export const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave, initialDate }: { isOpen: boolean; onOpenChange: (open: boolean) => void; onSave: (data: Omit<TaskEvent, 'id' | 'author'>) => void; initialDate?: Date }) => {
     const [name, setName] = useState('');
     const [content, setContent] = useState('');
     const [documentUri, setDocumentUri] = useState<string | null>(null);
-    const [eventDate, setEventDate] = useState<Date>(new Date());
+    const [eventDate, setEventDate] = useState<Date>(initialDate || new Date());
     const { toast } = useToast();
     
     useEffect(() => {
         if(isOpen) {
-            setEventDate(new Date());
+            setEventDate(initialDate || new Date());
         }
-    }, [isOpen]);
+    }, [isOpen, initialDate]);
 
     const handleSave = () => {
         if (!name.trim()) {
@@ -156,9 +155,28 @@ export const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: b
 };
 
 
-export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilestone: () => void }) => {
+export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilestone: (date: Date) => void }) => {
     const sortedEvents = [...(task.events || [])].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
-    const [sections, setSections] = useState(3);
+    
+    // Define the timeline start and end. Could be dynamic based on task dates.
+    const timelineStart = task.events.length > 0 ? new Date(Math.min(...task.events.map(e => new Date(e.timestamp).getTime()))) : new Date();
+    const timelineEnd = task.dueDate || new Date(new Date().setDate(new Date().getDate() + 7));
+    const totalDuration = timelineEnd.getTime() - timelineStart.getTime();
+
+    const getPosition = (date: Date) => {
+        const eventTime = date.getTime();
+        if (totalDuration === 0) return 0;
+        const position = ((eventTime - timelineStart.getTime()) / totalDuration) * 100;
+        return Math.max(0, Math.min(100, position));
+    }
+    
+    const handleLineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickPosition = e.clientX - rect.left;
+        const percentage = (clickPosition / rect.width);
+        const clickTime = timelineStart.getTime() + (totalDuration * percentage);
+        onAddMilestone(new Date(clickTime));
+    }
 
     return (
         <div className="pt-8 pb-4">
@@ -167,50 +185,46 @@ export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilest
                     <Milestone className="w-8 h-8 p-1.5 bg-green-500 text-white rounded-full" />
                     <span className="text-xs font-semibold mt-1">Start</span>
                 </div>
-                <div className="flex-1 h-1 bg-border relative -mx-1 flex items-center justify-around">
-                     {Array.from({ length: sections }).map((_, index) => (
-                        <Button key={index} variant="outline" size="icon" className="h-6 w-6 rounded-full z-10" onClick={onAddMilestone}>
-                            <PlusCircle className="h-4 w-4" />
-                        </Button>
-                    ))}
-                    <div className="absolute inset-0 flex items-center justify-around px-10">
-                        {sortedEvents.map((event) => (
-                             <Popover key={event.id}>
-                                <PopoverTrigger asChild>
-                                    <button className="h-4 w-4 bg-primary rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80">
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-xs">{event.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-semibold text-sm">{event.name || event.author}</span>
-                                            <Badge variant="secondary" className="text-xs">{event.type}</Badge>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">{format(event.timestamp, 'PPP p')}</p>
-                                        <Separator />
-                                        <p className="text-sm">{event.content}</p>
-                                        {event.documentUri && (
-                                            <Button variant="link" asChild className="p-0 h-auto">
-                                                <a href={event.documentUri} target="_blank" rel="noopener noreferrer">
-                                                    View Document <ExternalLink className="ml-2 h-3 w-3" />
-                                                </a>
-                                            </Button>
-                                        )}
+                <div 
+                    className="flex-1 h-2 bg-border relative -mx-1 cursor-pointer"
+                    onClick={handleLineClick}
+                >
+                    {sortedEvents.map((event) => (
+                        <Popover key={event.id}>
+                            <PopoverTrigger asChild>
+                                <button 
+                                    className="absolute top-1/2 -translate-y-1/2 h-4 w-4 bg-primary rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                    style={{ left: `${getPosition(event.timestamp)}%` }}
+                                ></button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Avatar className="h-6 w-6">
+                                            <AvatarFallback className="text-xs">{event.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-semibold text-sm">{event.name || event.author}</span>
+                                        <Badge variant="secondary" className="text-xs">{event.type}</Badge>
                                     </div>
-                                </PopoverContent>
-                            </Popover>
-                        ))}
-                    </div>
+                                    <p className="text-xs text-muted-foreground">{format(event.timestamp, 'PPP p')}</p>
+                                    <Separator />
+                                    <p className="text-sm">{event.content}</p>
+                                    {event.documentUri && (
+                                        <Button variant="link" asChild className="p-0 h-auto">
+                                            <a href={event.documentUri} target="_blank" rel="noopener noreferrer">
+                                                View Document <ExternalLink className="ml-2 h-3 w-3" />
+                                            </a>
+                                        </Button>
+                                    )}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    ))}
                 </div>
                  <div className="flex flex-col items-center">
                     <Milestone className="w-8 h-8 p-1.5 bg-blue-500 text-white rounded-full" />
                     <span className="text-xs font-semibold mt-1">Finish</span>
                 </div>
-            </div>
-             <div className="text-center mt-2">
-                <Button variant="link" size="sm" onClick={() => setSections(s => s + 1)}>Add Section</Button>
             </div>
         </div>
     )

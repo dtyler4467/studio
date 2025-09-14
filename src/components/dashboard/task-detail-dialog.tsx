@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -14,6 +13,7 @@ import { AddMilestoneDialog, NotesSection, TaskTimeline } from './task-timeline'
 export const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; isOpen: boolean; onOpenChange: (open: boolean) => void }) => {
     const { employees, addTaskEvent } = useSchedule();
     const [isAddMilestoneOpen, setAddMilestoneOpen] = useState(false);
+    const [initialMilestoneDate, setInitialMilestoneDate] = useState<Date | undefined>(undefined);
     
     if (!task) return null;
 
@@ -22,6 +22,11 @@ export const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | 
     const handleSaveMilestone = (data: Omit<TaskEvent, 'id' | 'author'>) => {
         addTaskEvent(task.id, data);
     };
+
+    const handleOpenAddMilestone = (date?: Date) => {
+        setInitialMilestoneDate(date || new Date());
+        setAddMilestoneOpen(true);
+    }
 
     return (
         <>
@@ -63,12 +68,12 @@ export const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | 
                         </div>
                     </TabsContent>
                     <TabsContent value="timeline">
-                        <TaskTimeline task={task} onAddMilestone={() => setAddMilestoneOpen(true)} />
+                        <TaskTimeline task={task} onAddMilestone={handleOpenAddMilestone} />
                     </TabsContent>
                 </Tabs>
             </DialogContent>
         </Dialog>
-        <AddMilestoneDialog isOpen={isAddMilestoneOpen} onOpenChange={setAddMilestoneOpen} onSave={handleSaveMilestone} />
+        <AddMilestoneDialog isOpen={isAddMilestoneOpen} onOpenChange={setAddMilestoneOpen} onSave={handleSaveMilestone} initialDate={initialMilestoneDate} />
         </>
     );
 };
