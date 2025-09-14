@@ -269,7 +269,7 @@ const navItems: NavItem[] = [
    { 
     href: '#', 
     icon: Users, 
-    label: 'HR', 
+    label: 'HR HUB', 
     roles: ['Admin', 'Manager'],
     subItems: [
       { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
@@ -660,7 +660,7 @@ export function SidebarNav() {
                         'My Workspace': isWorkspaceOpen,
                         'AI': isAiOpen,
                         'Accountant': isAccountantOpen,
-                        'HR': isHrOpen,
+                        'HR HUB': isHrOpen,
                         'Time Tracker HUB': isTimeTrackerHubOpen,
                     };
                     const setIsOpenMap = {
@@ -671,7 +671,7 @@ export function SidebarNav() {
                         'My Workspace': setIsWorkspaceOpen,
                         'AI': setIsAiOpen,
                         'Accountant': setIsAccountantOpen,
-                        'HR': setIsHrOpen,
+                        'HR HUB': setIsHrOpen,
                         'Time Tracker HUB': setIsTimeTrackerHubOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
