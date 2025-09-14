@@ -152,10 +152,13 @@ const UploadTemplateDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name:
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
+             <DialogTrigger asChild>
+                <Button onClick={() => onOpenChange(true)}><Upload className="mr-2"/> Upload New Template</Button>
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Upload New Pay Stub Template</DialogTitle>
-                    <DialogDescription>Provide a name for the template and upload the document.</DialogDescription>
+                    <DialogDescription>Provide a name for the template and upload the document. You can preview the document below after selecting it.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
@@ -183,8 +186,8 @@ export default function PaycheckStubPage() {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('USR001');
     const [selectedPayPeriod, setSelectedPayPeriod] = useState<string>('2024-07-01 to 2024-07-15');
     const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
-    const [activeTemplateId, setActiveTemplateId] = useState<string | null>('default');
-    const [defaultTemplateId, setDefaultTemplateId] = useState<string | null>('default');
+    const [activeTemplateId, setActiveTemplateId] = useState<string>('default');
+    const [defaultTemplateId, setDefaultTemplateId] = useState<string>('default');
     const [isUploadOpen, setUploadOpen] = useState(false);
 
 
@@ -303,17 +306,17 @@ export default function PaycheckStubPage() {
                                 Upload your own PDF or image to use as a pay stub template.
                             </CardDescription>
                         </div>
-                         <Button onClick={() => setUploadOpen(true)}><Upload className="mr-2"/> Upload New Template</Button>
+                         <UploadTemplateDialog onSave={handleAddTemplate} isOpen={isUploadOpen} onOpenChange={setUploadOpen} />
                     </CardHeader>
                     <CardContent>
                        {customTemplates.length > 0 ? (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {customTemplates.map(template => (
-                                    <Card key={template.id} className={cn("overflow-hidden", activeTemplateId === template.id && "ring-2 ring-primary")}>
+                                    <Card key={template.id} className={cn("overflow-hidden flex flex-col", activeTemplateId === template.id && "ring-2 ring-primary")}>
                                         <CardHeader className="p-4">
                                             <CardTitle className="text-base truncate">{template.name}</CardTitle>
                                         </CardHeader>
-                                        <CardContent className="p-0 aspect-[8.5/11] bg-muted flex items-center justify-center">
+                                        <CardContent className="p-0 aspect-[8.5/11] bg-muted flex items-center justify-center flex-1">
                                              <Image src={template.uri} alt={template.name} width={200} height={260} className="object-contain" />
                                         </CardContent>
                                         <CardFooter className="p-2 grid grid-cols-2 gap-2">
@@ -332,15 +335,17 @@ export default function PaycheckStubPage() {
                                 ))}
                             </div>
                        ) : (
-                         <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                            <p className="text-muted-foreground">No custom templates uploaded yet.</p>
+                         <div className="flex flex-col items-center justify-center rounded-md border border-dashed h-96">
+                            <p className="text-muted-foreground mb-4">No custom templates uploaded yet.</p>
+                            <Button variant="secondary" onClick={() => setUploadOpen(true)}>
+                                <Upload className="mr-2" /> Upload Your First Template
+                            </Button>
                         </div>
                        )}
                     </CardContent>
                 </Card>
             </TabsContent>
         </Tabs>
-        <UploadTemplateDialog onSave={handleAddTemplate} isOpen={isUploadOpen} onOpenChange={setUploadOpen} />
       </main>
     </div>
   );
