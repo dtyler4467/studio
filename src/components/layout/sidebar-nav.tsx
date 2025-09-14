@@ -149,6 +149,16 @@ const navItems: NavItem[] = [
         { href: '/dashboard/project-hub/reports', icon: Presentation, label: 'Reports', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
   },
+  {
+    href: '#',
+    icon: Contact,
+    label: 'CRM',
+    roles: ['Admin', 'Manager'],
+    subItems: [
+        { href: '/dashboard/crm/overview', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/crm/contacts', icon: Users, label: 'Contacts', roles: ['Admin', 'Manager'] },
+    ]
+  },
    {
     href: '/dashboard/calendar',
     icon: Calendar,
@@ -547,6 +557,7 @@ export function SidebarNav() {
   const { currentUser, localLoadBoards, addLocalLoadBoard, deleteLocalLoadBoard, loadBoardHub, updateLocalLoadBoard } = useSchedule();
   const { state } = useSidebar();
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isCrmOpen, setIsCrmOpen] = useState(false);
   const [isWarehouseHubOpen, setIsWarehouseHubOpen] = useState(false);
   const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
   const [isFleetManagementOpen, setIsFleetManagementOpen] = useState(false);
@@ -576,6 +587,7 @@ export function SidebarNav() {
 
   useEffect(() => {
     setIsAiOpen(pathname.startsWith('/dashboard/ai-'));
+    setIsCrmOpen(pathname.startsWith('/dashboard/crm'));
     setIsWarehouseHubOpen(pathname.startsWith('/dashboard/warehouse-hub-manager'));
     setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
     setIsFleetManagementOpen(pathname.startsWith('/dashboard/fleet-management') || pathname.startsWith('/dashboard/repair-shop'));
@@ -641,7 +653,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9' || href === '/dashboard/store' || href === '/dashboard/hr/policies' || href === '/dashboard/hr/policies/handbook' || href === '/dashboard/project-hub' || href === '/dashboard/calendar' || href === '/dashboard/calculator' || href === '/dashboard/public-relations' || href === '/dashboard/project-hub/issues' || href === '/dashboard/hr/contracts') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9' || href === '/dashboard/store' || href === '/dashboard/hr/policies' || href === '/dashboard/hr/policies/handbook' || href === '/dashboard/project-hub' || href === '/dashboard/calendar' || href === '/dashboard/calculator' || href === '/dashboard/public-relations' || href === '/dashboard/project-hub/issues' || href === '/dashboard/hr/contracts' || href === '/dashboard/crm') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -817,6 +829,7 @@ export function SidebarNav() {
                         'Driver Hub': isDriverHubOpen,
                         'My Workspace': isWorkspaceOpen,
                         'AI': isAiOpen,
+                        'CRM': isCrmOpen,
                         'Accountant': isAccountantOpen,
                         'HR HUB': isHrOpen,
                         'Time Tracker HUB': isTimeTrackerHubOpen,
@@ -831,6 +844,7 @@ export function SidebarNav() {
                         'Driver Hub': setIsDriverHubOpen,
                         'My Workspace': setIsWorkspaceOpen,
                         'AI': setIsAiOpen,
+                        'CRM': setIsCrmOpen,
                         'Accountant': setIsAccountantOpen,
                         'HR HUB': setIsHrOpen,
                         'Time Tracker HUB': setIsTimeTrackerHubOpen,
