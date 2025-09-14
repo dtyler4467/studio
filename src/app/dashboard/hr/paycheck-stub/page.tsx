@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Printer, Mail, Download, Upload, FileSpreadsheet, Trash2, CheckCircle, Star } from 'lucide-react';
+import { Printer, Mail, Download, Upload, FileSpreadsheet, Trash2, CheckCircle, Star, PlusCircle, MinusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +69,168 @@ const mockPayStubs: PayStub[] = [
         ],
     },
 ];
+
+const EditAndDownloadDialog = ({ isOpen, onOpenChange, stub }: { isOpen: boolean, onOpenChange: (open: boolean) => void, stub: PayStub | null }) => {
+    const [stubData, setStubData] = useState<PayStub | null>(stub);
+
+    useEffect(() => {
+        setStubData(stub);
+    }, [stub]);
+    
+    const handleEarningChange = (index: number, field: keyof PayStub['earnings'][0], value: string | number) => {
+        if (!stubData) return;
+        const newEarnings = [...stubData.earnings];
+        (newEarnings[index] as any)[field] = value;
+        
+        // Recalculate amount if rate or hours change
+        if ((field === 'rate' || field === 'hours') && newEarnings[index].rate && newEarnings[index].hours) {
+            newEarnings[index].amount = newEarnings[index].rate! * newEarnings[index].hours!;
+        }
+
+        const newStubData = { ...stubData, earnings: newEarnings };
+        recalculateTotals(newStubData);
+    };
+
+    const handleDeductionChange = (index: number, field: keyof PayStub['deductions'][0], value: string | number) => {
+        if (!stubData) return;
+        const newDeductions = [...stubData.deductions];
+        (newDeductions[index] as any)[field] = value;
+        const newStubData = { ...stubData, deductions: newDeductions };
+        recalculateTotals(newStubData);
+    };
+
+    const recalculateTotals = (data: PayStub) => {
+        const grossPay = data.earnings.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const totalDeductions = data.deductions.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const netPay = grossPay - totalDeductions;
+        setStubData({ ...data, grossPay, netPay });
+    };
+
+    const addEarningRow = () => {
+        if (!stubData) return;
+        const newEarnings = [...stubData.earnings, { description: '', rate: 0, hours: 0, amount: 0 }];
+        setStubData({ ...stubData, earnings: newEarnings });
+    };
+
+    const removeEarningRow = (index: number) => {
+        if (!stubData) return;
+        const newEarnings = stubData.earnings.filter((_, i) => i !== index);
+        const newStubData = { ...stubData, earnings: newEarnings };
+        recalculateTotals(newStubData);
+    };
+    
+    const addDeductionRow = () => {
+        if (!stubData) return;
+        const newDeductions = [...stubData.deductions, { description: '', amount: 0 }];
+        setStubData({ ...stubData, deductions: newDeductions });
+    };
+
+    const removeDeductionRow = (index: number) => {
+        if (!stubData) return;
+        const newDeductions = stubData.deductions.filter((_, i) => i !== index);
+        const newStubData = { ...stubData, deductions: newDeductions };
+        recalculateTotals(newStubData);
+    };
+
+    const handleExport = () => {
+        if (!stubData) return;
+
+        const ws_data = [
+            ["Your Company Name", "", "", "Pay Statement"],
+            ["Company Address"],
+            [],
+            ["Employee:", stubData.employee.name, "", "Pay Period:", stubData.payPeriod],
+            ["Employee ID:", stubData.employee.personnelId, "", "Pay Date:", stubData.payDate],
+            [],
+            ["Earnings", "Rate", "Hours", "Amount"],
+            ...stubData.earnings.map(e => [e.description, e.rate || '', e.hours || '', e.amount]),
+            ["", "", "Gross Pay:", stubData.grossPay],
+            [],
+            ["Deductions", "", "", "Amount"],
+            ...stubData.deductions.map(d => [d.description, "", "", -d.amount]),
+            ["", "", "Total Deductions:", -stubData.deductions.reduce((a,c) => a + c.amount, 0)],
+            [],
+            ["", "", "Net Pay:", stubData.netPay],
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Pay Stub");
+        XLSX.writeFile(wb, `PayStub_${stubData.employee.name.replace(' ','_')}_${stubData.payDate}.xlsx`);
+        onOpenChange(false);
+    };
+
+    if (!stubData) return null;
+
+    return (
+         <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>Edit Pay Stub for {stubData.employee.name}</DialogTitle>
+                    <DialogDescription>
+                        Make final adjustments before downloading the Excel file. All changes are temporary for this download only.
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input value={`Pay Period: ${stubData.payPeriod}`} readOnly />
+                        <Input value={`Pay Date: ${stubData.payDate}`} readOnly />
+                    </div>
+                    
+                    <div>
+                        <h4 className="font-semibold mb-2">Earnings</h4>
+                        <div className="space-y-2">
+                            {stubData.earnings.map((earning, index) => (
+                                <div key={index} className="grid grid-cols-10 gap-2 items-center">
+                                    <Input placeholder="Description" value={earning.description} onChange={(e) => handleEarningChange(index, 'description', e.target.value)} className="col-span-4" />
+                                    <Input type="number" placeholder="Rate" value={earning.rate} onChange={(e) => handleEarningChange(index, 'rate', parseFloat(e.target.value))} className="col-span-2" />
+                                    <Input type="number" placeholder="Hours" value={earning.hours} onChange={(e) => handleEarningChange(index, 'hours', parseFloat(e.target.value))} className="col-span-2" />
+                                    <Input type="number" placeholder="Amount" value={earning.amount} onChange={(e) => handleEarningChange(index, 'amount', parseFloat(e.target.value))} className="col-span-2" />
+                                    <Button variant="ghost" size="icon" onClick={() => removeEarningRow(index)} className="col-span-0 -ml-8"><MinusCircle className="h-4 w-4 text-destructive"/></Button>
+                                </div>
+                            ))}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={addEarningRow} className="mt-2"><PlusCircle className="mr-2"/> Add Earning</Button>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2">Deductions</h4>
+                        <div className="space-y-2">
+                             {stubData.deductions.map((deduction, index) => (
+                                <div key={index} className="grid grid-cols-10 gap-2 items-center">
+                                    <Input placeholder="Description" value={deduction.description} onChange={(e) => handleDeductionChange(index, 'description', e.target.value)} className="col-span-8" />
+                                    <Input type="number" placeholder="Amount" value={deduction.amount} onChange={(e) => handleDeductionChange(index, 'amount', parseFloat(e.target.value))} className="col-span-2" />
+                                    <Button variant="ghost" size="icon" onClick={() => removeDeductionRow(index)} className="col-span-0 -ml-8"><MinusCircle className="h-4 w-4 text-destructive"/></Button>
+                                </div>
+                            ))}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={addDeductionRow} className="mt-2"><PlusCircle className="mr-2"/> Add Deduction</Button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                        <div className="p-2 bg-muted rounded">
+                            <p className="text-sm text-muted-foreground">Gross Pay</p>
+                            <p className="font-bold text-lg">${stubData.grossPay.toFixed(2)}</p>
+                        </div>
+                         <div className="p-2 bg-muted rounded">
+                            <p className="text-sm text-muted-foreground">Total Deductions</p>
+                            <p className="font-bold text-lg">-${stubData.deductions.reduce((acc, d) => acc + Number(d.amount || 0), 0).toFixed(2)}</p>
+                        </div>
+                        <div className="p-2 bg-green-100 rounded text-green-800">
+                            <p className="text-sm font-semibold">Net Pay</p>
+                            <p className="font-bold text-xl">${stubData.netPay.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+                </ScrollArea>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleExport}><Download className="mr-2"/> Download Excel</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
     return (
@@ -237,6 +399,7 @@ export default function PaycheckStubPage() {
     const [selectedTemplate, setSelectedTemplate] = useState<CustomTemplate | 'default' | null>('default');
     const [defaultTemplateId, setDefaultTemplateId] = useState<string | 'default'>('default');
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
 
     const payPeriods = useMemo(() => {
         return [...new Set(mockPayStubs.map(p => p.payPeriod))];
@@ -276,28 +439,7 @@ export default function PaycheckStubPage() {
 
     const downloadExcel = () => {
         if (!selectedStub) return;
-        const ws_data = [
-            ["Your Company Name", "", "", "Pay Statement"],
-            ["Company Address"],
-            [],
-            ["Employee:", selectedStub.employee.name, "", "Pay Period:", selectedStub.payPeriod],
-            ["Employee ID:", selectedStub.employee.personnelId, "", "Pay Date:", selectedStub.payDate],
-            [],
-            ["Earnings", "Rate", "Hours", "Amount"],
-            ...selectedStub.earnings.map(e => [e.description, e.rate || '', e.hours || '', e.amount]),
-            ["", "", "Gross Pay:", selectedStub.grossPay],
-            [],
-            ["Deductions", "Amount"],
-            ...selectedStub.deductions.map(d => [d.description, -d.amount]),
-            ["", "Total Deductions:", -selectedStub.deductions.reduce((a,c) => a + c.amount, 0)],
-            [],
-            ["", "", "Net Pay:", selectedStub.netPay],
-        ];
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Pay Stub");
-        XLSX.writeFile(wb, `PayStub_${selectedStub.employee.name.replace(' ','_')}_${selectedStub.payDate}.xlsx`);
-        toast({ title: 'Pay Stub Downloaded', description: 'The pay stub has been downloaded as an Excel file.' });
+        setIsEditOpen(true);
     };
 
   return (
@@ -384,10 +526,11 @@ export default function PaycheckStubPage() {
             </CardContent>
             <CardFooter className="gap-2">
                 <Button onClick={handlePrint} disabled={!selectedStub}><Printer className="mr-2" /> Print Stub</Button>
-                <Button variant="secondary" onClick={downloadExcel} disabled={!selectedStub}><Download className="mr-2" /> Download Excel</Button>
+                <Button variant="secondary" onClick={downloadExcel} disabled={!selectedStub}><Download className="mr-2" /> Edit & Download Excel</Button>
                 <Button variant="outline" onClick={handleEmail} disabled={!selectedStub || !selectedStub.employee.email}><Mail className="mr-2" /> Email to Employee</Button>
             </CardFooter>
         </Card>
+        <EditAndDownloadDialog isOpen={isEditOpen} onOpenChange={setIsEditOpen} stub={selectedStub || null} />
     </main>
     </div>
   );
