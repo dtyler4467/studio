@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
 import React, { useState, useMemo, useRef } from 'react';
-import { Printer, Mail, Upload } from 'lucide-react';
+import { Printer, Mail, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { Logo } from '@/components/icons/logo';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import Image from 'next/image';
+import * as XLSX from 'xlsx';
 
 type PayStub = {
     payPeriod: string;
@@ -122,7 +121,7 @@ const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
     );
 };
 
-const PayStubPreview = ({ stub, customTemplateUri }: { stub: PayStub | null, customTemplateUri: string | null }) => {
+const PayStubPreview = ({ stub }: { stub: PayStub | null }) => {
     if (!stub) {
         return (
             <div className="flex items-center justify-center rounded-md border border-dashed h-96">
@@ -131,22 +130,6 @@ const PayStubPreview = ({ stub, customTemplateUri }: { stub: PayStub | null, cus
         );
     }
     
-    if (customTemplateUri) {
-         return (
-            <div className="relative border rounded-lg h-[70vh] w-full bg-muted flex items-center justify-center">
-                <Image src={customTemplateUri} alt="Custom pay stub template" layout="fill" objectFit="contain" />
-                <div className="absolute top-10 left-10 bg-white/80 p-2 rounded text-black text-xs">
-                    <p className="font-bold">{stub.employee.name}</p>
-                    <p>{stub.payDate}</p>
-                </div>
-                 <div className="absolute bottom-10 right-10 bg-white/80 p-4 rounded text-black text-center">
-                    <p className="text-sm">Gross Pay: ${stub.grossPay.toFixed(2)}</p>
-                    <p className="text-lg font-bold">Net Pay: ${stub.netPay.toFixed(2)}</p>
-                </div>
-            </div>
-        );
-    }
-
     return <PayStubTemplate stub={stub} />;
 };
 
@@ -156,10 +139,6 @@ export default function PaycheckStubPage() {
     const { toast } = useToast();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('USR001');
     const [selectedPayPeriod, setSelectedPayPeriod] = useState<string>('2024-07-01 to 2024-07-15');
-    const [customTemplateUri, setCustomTemplateUri] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'default' | 'custom'>('default');
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
 
     const payPeriods = useMemo(() => {
         return [...new Set(mockPayStubs.map(p => p.payPeriod))];
@@ -180,25 +159,40 @@ export default function PaycheckStubPage() {
         toast({ title: 'Printing...', description: 'Your pay stub is being sent to the printer.' });
     }
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const uri = e.target?.result as string;
-            if (uri) {
-                setCustomTemplateUri(uri);
-                setViewMode('custom');
-                 toast({ title: "Template Uploaded", description: "Your custom template is now active."});
-            }
-        };
-        reader.readAsDataURL(file);
-
-        if(fileInputRef.current) {
-            fileInputRef.current.value = "";
+    const handleDownloadExcel = () => {
+        if (!selectedStub) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a pay stub to download.'});
+            return;
         }
-    };
+
+        const ws_data = [
+            ["LogiFlow Inc.", "", "", "Pay Statement"],
+            ["123 Logistics Lane, Anytown, USA"],
+            [],
+            ["Employee:", selectedStub.employee.name, "", "Pay Period:", selectedStub.payPeriod],
+            ["Employee ID:", selectedStub.employee.personnelId, "", "Pay Date:", selectedStub.payDate],
+            [],
+            ["Earnings"],
+            ["Description", "Rate", "Hours", "Amount"],
+            ...selectedStub.earnings.map(e => [e.description, e.rate || '', e.hours || '', e.amount]),
+            ["", "", "Gross Pay:", selectedStub.grossPay],
+            [],
+            ["Deductions"],
+            ["Description", "Amount"],
+            ...selectedStub.deductions.map(d => [d.description, d.amount]),
+            ["", "Total Deductions:", selectedStub.deductions.reduce((acc, d) => acc + d.amount, 0)],
+            [],
+            ["", "", "Net Pay:", selectedStub.netPay],
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Pay Stub");
+
+        XLSX.writeFile(wb, `PayStub_${selectedStub.employee.name.replace(' ','_')}_${selectedStub.payDate}.xlsx`);
+        
+        toast({ title: 'Download Started', description: 'Your Excel pay stub is being downloaded.' });
+    }
 
 
   return (
@@ -233,25 +227,12 @@ export default function PaycheckStubPage() {
                         </Select>
                     </div>
                 </div>
-                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between p-3 rounded-md bg-muted">
-                     <div className="flex items-center gap-2">
-                        <Label>Template:</Label>
-                         <Button variant={viewMode === 'default' ? 'default' : 'outline'} onClick={() => setViewMode('default')}>Default Template</Button>
-                        <Button variant={viewMode === 'custom' ? 'default' : 'outline'} onClick={() => setViewMode('custom')} disabled={!customTemplateUri}>Custom Template</Button>
-                    </div>
-                     <div>
-                        <input id="template-upload" type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf" />
-                        <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                            <Upload className="mr-2" />
-                            {customTemplateUri ? 'Upload New Custom Template' : 'Upload Custom Template'}
-                        </Button>
-                    </div>
-                </div>
-                <PayStubPreview stub={selectedStub || null} customTemplateUri={viewMode === 'custom' ? customTemplateUri : null} />
+                <PayStubPreview stub={selectedStub || null} />
             </CardContent>
             <CardFooter className="gap-2">
                 <Button onClick={handlePrint} disabled={!selectedStub}><Printer className="mr-2" /> Print Stub</Button>
                 <Button variant="outline" onClick={handleEmail} disabled={!selectedStub}><Mail className="mr-2" /> Email to Employee</Button>
+                <Button variant="outline" onClick={handleDownloadExcel} disabled={!selectedStub}><Download className="mr-2" /> Download as Excel</Button>
             </CardFooter>
         </Card>
       </main>
