@@ -8,7 +8,7 @@ import { useSchedule, Task, TaskNote as TaskNoteType } from '@/hooks/use-schedul
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FileText, GitCommit, Milestone } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -160,12 +160,17 @@ const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; i
 };
 
 
-const TaskNote = ({ task, position, rotation, onClick }: { task: Task; position: string; rotation: string; onClick: () => void }) => {
+const TaskNote = ({ task, position, onClick, onDragStart }: { task: Task; position: { x: number, y: number }; onClick: () => void, onDragStart: (e: React.DragEvent) => void }) => {
     const { employees } = useSchedule();
     const assignees = employees.filter(e => task.assigneeIds.includes(e.id));
 
     return (
-        <div className={`absolute w-64 h-auto p-4 shadow-lg rounded-md flex flex-col ${position} ${rotation}`}>
+        <div 
+            className="absolute w-64 h-auto p-4 shadow-lg rounded-md flex flex-col cursor-grab active:cursor-grabbing"
+            style={{ left: `${position.x}px`, top: `${position.y}px` }}
+            draggable
+            onDragStart={onDragStart}
+            >
             <button onClick={onClick} className="w-full text-left">
                 <Card className="bg-yellow-200 text-yellow-900 border-yellow-300 hover:shadow-xl transition-shadow">
                     <CardHeader className="pb-2">
@@ -203,14 +208,52 @@ const TaskNote = ({ task, position, rotation, onClick }: { task: Task; position:
 export default function ProjectWhiteboardPage() {
   const { tasks } = useSchedule();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskPositions, setTaskPositions] = useState<Record<string, {x: number, y: number}>>({});
 
-  const taskPositions = [
-      { position: 'top-10 left-10', rotation: '-rotate-3' },
-      { position: 'top-48 left-80', rotation: 'rotate-2' },
-      { position: 'top-20 right-20', rotation: 'rotate-1' },
-      { position: 'bottom-20 left-32', rotation: 'rotate-3' },
-      { position: 'bottom-10 right-64', rotation: '-rotate-2' },
-  ];
+  useEffect(() => {
+    // Initialize positions on first render
+    const initialPositions: Record<string, {x: number, y: number}> = {};
+    tasks.forEach((task, index) => {
+        if (!taskPositions[task.id]) {
+            initialPositions[task.id] = {
+                x: (index % 4) * 280 + 40,
+                y: Math.floor(index / 4) * 220 + 40,
+            };
+        }
+    });
+    if (Object.keys(initialPositions).length > 0) {
+        setTaskPositions(prev => ({ ...prev, ...initialPositions }));
+    }
+  }, [tasks]);
+
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData("taskId", taskId);
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    e.dataTransfer.setData("offsetX", offsetX.toString());
+    e.dataTransfer.setData("offsetY", offsetY.toString());
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("taskId");
+    const offsetX = parseInt(e.dataTransfer.getData("offsetX"), 10);
+    const offsetY = parseInt(e.dataTransfer.getData("offsetY"), 10);
+    const containerRect = e.currentTarget.getBoundingClientRect();
+    
+    setTaskPositions(prev => ({
+        ...prev,
+        [taskId]: {
+            x: e.clientX - containerRect.left - offsetX,
+            y: e.clientY - containerRect.top - offsetY
+        }
+    }));
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); // Necessary to allow drop
+  };
 
   return (
     <div className="flex flex-col w-full">
@@ -223,19 +266,25 @@ export default function ProjectWhiteboardPage() {
                     Collaborative Whiteboard
                 </CardTitle>
                 <CardDescription>
-                    A visual overview of all project tasks. Click a task to see more details and collaborate.
+                    A visual overview of all project tasks. Click a task to see more details and collaborate. Drag to rearrange.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="relative w-full h-[800px] rounded-lg border bg-muted/30 overflow-hidden p-4">
-                    {tasks.map((task, index) => (
-                        <TaskNote 
-                            key={task.id} 
-                            task={task} 
-                            position={taskPositions[index % taskPositions.length].position}
-                            rotation={taskPositions[index % taskPositions.length].rotation}
-                            onClick={() => setSelectedTask(task)}
-                        />
+                <div 
+                    className="relative w-full h-[800px] rounded-lg border bg-muted/30 overflow-hidden p-4"
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                >
+                    {tasks.map((task) => (
+                        taskPositions[task.id] && (
+                            <TaskNote 
+                                key={task.id} 
+                                task={task} 
+                                position={taskPositions[task.id]}
+                                onDragStart={(e) => handleDragStart(e, task.id)}
+                                onClick={() => setSelectedTask(task)}
+                            />
+                        )
                     ))}
                     {tasks.length === 0 && (
                         <div className="absolute inset-0 flex items-center justify-center">
