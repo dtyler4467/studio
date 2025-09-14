@@ -103,6 +103,7 @@ import {
   AlertCircle as AlertCircleIcon,
   Target,
   ListTodo,
+  Languages,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -175,6 +176,12 @@ const navItems: NavItem[] = [
     href: '/dashboard/calculator',
     icon: Calculator,
     label: 'Calculator',
+    roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+  },
+  {
+    href: '/dashboard/translator',
+    icon: Languages,
+    label: 'Translator',
     roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
   },
   { 
