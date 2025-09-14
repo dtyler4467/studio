@@ -26,6 +26,8 @@ export type Employee = {
     phoneNumber?: string;
     documentDataUri?: string | null;
     workLocation?: string[];
+    payType?: 'Hourly' | 'Salary';
+    payRate?: number;
 }
 
 export type Holiday = {
@@ -447,10 +449,10 @@ export const initialShifts: Shift[] = [
 
 
 export const mockEmployees: Employee[] = [
-    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"] },
-    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"] },
-    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", status: 'Active', personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"] },
-    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", status: 'Active', personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"] },
+    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"], payType: 'Hourly', payRate: 25.50 },
+    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"], payType: 'Hourly', payRate: 25.50 },
+    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", status: 'Active', personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"], payType: 'Salary', payRate: 65000 },
+    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", status: 'Active', personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"], payType: 'Salary', payRate: 80000 },
 ];
 
 export const initialHolidays: Holiday[] = [
