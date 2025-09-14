@@ -2,7 +2,7 @@
 "use client";
 
 import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { KanbanSquare, PlusCircle } from 'lucide-react';
 import { useSchedule, Task, TaskStatus, Employee } from '@/hooks/use-schedule';
 import React, { useMemo, useState } from 'react';
