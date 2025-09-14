@@ -10,6 +10,54 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FileText } from 'lucide-react';
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { formatDistanceToNow } from 'date-fns';
+import { Label } from '@/components/ui/label';
+
+const NotesSection = ({ task }: { task: Task }) => {
+    const { addTaskNote, currentUser } = useSchedule();
+    const [newNote, setNewNote] = useState('');
+
+    const handlePostNote = () => {
+        if (newNote.trim()) {
+            addTaskNote(task.id, newNote);
+            setNewNote('');
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <h4 className="font-semibold">Notes & Collaboration</h4>
+            <div className="space-y-2">
+                <Label htmlFor="new-note">Add a note</Label>
+                <Textarea 
+                    id="new-note"
+                    placeholder="Type your comment here..." 
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                />
+                <Button onClick={handlePostNote} size="sm" disabled={!newNote.trim()}>Post Note</Button>
+            </div>
+            <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
+                {task.notes && [...task.notes].reverse().map((note, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                         <Avatar className="h-8 w-8 border">
+                             <AvatarFallback className="text-xs">{note.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                         </Avatar>
+                         <div className="bg-muted p-3 rounded-md flex-1">
+                             <div className="flex justify-between items-center">
+                                <p className="font-semibold text-sm">{note.author}</p>
+                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(note.timestamp, { addSuffix: true })}</p>
+                             </div>
+                             <p className="text-sm mt-1">{note.content}</p>
+                         </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
 
 const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; isOpen: boolean; onOpenChange: (open: boolean) => void }) => {
     const { employees } = useSchedule();
@@ -46,12 +94,7 @@ const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; i
                             </div>
                         )}
                     </div>
-                    <div className="space-y-4">
-                        <h4 className="font-semibold">Notes & Collaboration</h4>
-                        <div className="h-full w-full min-h-[300px] bg-muted/50 rounded-md border border-dashed flex items-center justify-center">
-                            <p className="text-sm text-muted-foreground">Interactive notes coming soon.</p>
-                        </div>
-                    </div>
+                    <NotesSection task={task} />
                 </div>
             </DialogContent>
         </Dialog>
@@ -122,7 +165,7 @@ export default function ProjectWhiteboardPage() {
                     Collaborative Whiteboard
                 </CardTitle>
                 <CardDescription>
-                    A visual overview of all project tasks. Click a task to see more details.
+                    A visual overview of all project tasks. Click a task to see more details and collaborate.
                 </CardDescription>
             </CardHeader>
             <CardContent>
