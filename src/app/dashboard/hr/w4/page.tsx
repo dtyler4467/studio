@@ -79,7 +79,7 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
 }
 
 
-export default function W4Page() {
+export default function W4TemplatesPage() {
   const { w4Templates, addW4Template, updateW4Template, deleteW4Template } = useSchedule();
   const { toast } = useToast();
   const [templateToRename, setTemplateToRename] = useState<W4Template | null>(null);
@@ -129,7 +129,7 @@ export default function W4Page() {
 
   return (
     <div className="flex flex-col w-full">
-      <Header pageTitle="W4 Forms" />
+      <Header pageTitle="W4 Templates" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Tabs defaultValue="templates">
             <TabsList>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -286,7 +287,8 @@ const navItems: NavItem[] = [
         label: 'W4', 
         roles: ['Admin', 'Manager'],
         subItems: [
-            { href: '/dashboard/hr/w4', icon: FileText, label: 'W4 Form', roles: ['Admin', 'Manager'] },
+            { href: '/dashboard/hr/w4/overview', icon: BarChart, label: 'Overview', roles: ['Admin', 'Manager'] },
+            { href: '/dashboard/hr/w4', icon: FileText, label: 'Templates', roles: ['Admin', 'Manager'] },
         ]
       },
       { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Applications', roles: ['Admin', 'Manager'] },
@@ -515,7 +517,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4') {
         return pathname === href;
     }
     return pathname.startsWith(href);
