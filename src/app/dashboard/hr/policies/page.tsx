@@ -8,8 +8,9 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
-import { Pencil } from 'lucide-react';
+import { Pencil, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type PolicyItem = {
     title: string;
@@ -132,10 +133,16 @@ export default function HrPoliciesPage() {
             <CardContent className="space-y-6">
                 <div>
                     <h3 className="text-xl font-semibold mb-4">Employee Handbook</h3>
-                    <div className="prose prose-sm max-w-none text-muted-foreground p-4 border rounded-md">
-                        <p>Our employee handbook contains all the detailed information about company policies, procedures, and expectations. Please review it carefully.</p>
-                        <p>A full downloadable version will be available here.</p>
-                    </div>
+                    <Link href="/dashboard/hr/policies/handbook">
+                        <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="prose prose-sm max-w-none text-muted-foreground">
+                                    <p>Manage and distribute employee handbooks. Contains all detailed information about company policies, procedures, and expectations.</p>
+                                </div>
+                                <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
 
                  <div>
