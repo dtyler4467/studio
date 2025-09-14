@@ -81,6 +81,7 @@ import {
   CheckSquare,
   UserCheck as UserCheckIcon,
   Package,
+  FolderLock,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -273,6 +274,7 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Manager'],
     subItems: [
       { href: '/dashboard/hr', icon: Users, label: 'HR', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/policies', icon: FolderLock, label: 'Company Policies', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
     ]
   },
