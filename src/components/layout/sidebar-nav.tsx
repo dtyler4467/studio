@@ -129,7 +129,7 @@ const navItems: NavItem[] = [
                 { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { href: '/dashboard/yard-management/dock-doors', icon: Warehouse, label: 'Dock Doors', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
                 { 
-                    href: '#', 
+                    href: '/dashboard/warehouse-hub-manager/associates/my-pick', 
                     icon: Users, 
                     label: 'Warehouse Associates', 
                     roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer']
@@ -266,7 +266,15 @@ const navItems: NavItem[] = [
         { href: '/dashboard/accountant/mileage-tracker', icon: Gauge, label: 'Mileage Tracker', roles: ['Admin', 'Manager'] },
     ]
   },
-  { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
+   { 
+    href: '#', 
+    icon: Users, 
+    label: 'HR', 
+    roles: ['Admin', 'Manager'],
+    subItems: [
+      { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
+    ]
+  },
   { href: '/dashboard/store', icon: Store, label: 'Store', roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'] },
 ];
 
@@ -401,6 +409,7 @@ export function SidebarNav() {
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAccountantOpen, setIsAccountantOpen] = useState(false);
+  const [isHrOpen, setIsHrOpen] = useState(false);
   const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [isTimeTrackerHubOpen, setIsTimeTrackerHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
@@ -426,6 +435,7 @@ export function SidebarNav() {
     setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-tracker-hub') || pathname.startsWith('/dashboard/time-clock'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
+    setIsHrOpen(pathname.startsWith('/dashboard/recruitment-hub'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -469,7 +479,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -490,12 +500,12 @@ export function SidebarNav() {
       if (subItem.label === 'Warehouse Associates') {
            return (
                 <SidebarMenuSubItem key={subItem.label}>
-                    <DialogTrigger asChild>
-                        <SidebarMenuSubButton>
+                    <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)} onClick={() => setAssociatesDialogOpen(true)}>
+                         <Link href="#">
                             <subItem.icon />
                             <span>{subItem.label}</span>
-                        </SidebarMenuSubButton>
-                    </DialogTrigger>
+                        </Link>
+                    </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
            )
       }
@@ -650,6 +660,7 @@ export function SidebarNav() {
                         'My Workspace': isWorkspaceOpen,
                         'AI': isAiOpen,
                         'Accountant': isAccountantOpen,
+                        'HR': isHrOpen,
                         'Time Tracker HUB': isTimeTrackerHubOpen,
                     };
                     const setIsOpenMap = {
@@ -660,6 +671,7 @@ export function SidebarNav() {
                         'My Workspace': setIsWorkspaceOpen,
                         'AI': setIsAiOpen,
                         'Accountant': setIsAccountantOpen,
+                        'HR': setIsHrOpen,
                         'Time Tracker HUB': setIsTimeTrackerHubOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
