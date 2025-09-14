@@ -146,7 +146,7 @@ export type TrainingAssignment = {
 export type DeletionLog = {
     id: string;
     deletedItemId: string;
-    itemType: 'Shift' | 'User' | 'File' | 'Equipment' | 'BolTemplate';
+    itemType: 'Shift' | 'User' | 'File' | 'Equipment' | 'BolTemplate' | 'W4Template';
     deletedBy: string; // User ID
     deletedAt: Date;
     originalData: any;
@@ -338,6 +338,13 @@ export type SalesOrder = {
     pickEndTime?: Date;
 }
 
+export type W4Template = {
+  id: string;
+  name: string;
+  documentUri: string;
+  uploadedAt: Date;
+};
+
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -372,6 +379,10 @@ type ScheduleContextType = {
   availableStatuses: YardEventStatus[];
   qualityHolds: QualityHold[];
   salesOrders: SalesOrder[];
+  w4Templates: W4Template[];
+  addW4Template: (name: string, documentUri: string) => void;
+  updateW4Template: (id: string, name: string) => void;
+  deleteW4Template: (id: string) => void;
   assignPickerToOrder: (orderId: string, pickerId: string) => void;
   updateOrderItemStatus: (orderId: string, sku: string, picked: boolean) => void;
   completeOrderPicking: (orderId: string) => void;
@@ -713,6 +724,11 @@ export const initialSalesOrders: SalesOrder[] = [
     { id: 'SO-12347', customer: 'Stark Industries', destination: 'Atlanta, GA', shipDate: new Date('2024-08-12'), status: 'Picking', assignedPicker: 'USR001', items: [ { sku: 'SKU98765', description: 'M8 Hex Nuts', quantity: 500, location: 'Aisle 3, Bin 5', picked: true } ], pickStartTime: new Date() },
 ];
 
+export const initialW4Templates: W4Template[] = [
+    { id: 'W4-2024-STD', name: 'Standard 2024 W4', documentUri: '', uploadedAt: new Date() }
+];
+
+
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
@@ -753,7 +769,38 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
   const [qualityHolds, setQualityHolds] = useState<QualityHold[]>(initialQualityHolds);
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(initialSalesOrders);
+  const [w4Templates, setW4Templates] = useState<W4Template[]>(initialW4Templates);
   
+  const addW4Template = (name: string, documentUri: string) => {
+    const newTemplate: W4Template = {
+        id: `W4-${Date.now()}`,
+        name,
+        documentUri,
+        uploadedAt: new Date(),
+    };
+    setW4Templates(prev => [...prev, newTemplate]);
+  };
+
+  const updateW4Template = (id: string, name: string) => {
+    setW4Templates(prev => prev.map(t => t.id === id ? { ...t, name } : t));
+  };
+  
+  const deleteW4Template = (id: string) => {
+    const templateToDelete = w4Templates.find(t => t.id === id);
+    if (templateToDelete) {
+        const logEntry: DeletionLog = {
+            id: `LOG${Date.now()}`,
+            deletedItemId: id,
+            itemType: 'W4Template',
+            deletedBy: currentUser?.id || 'system',
+            deletedAt: new Date(),
+            originalData: templateToDelete,
+        };
+        setDeletionLogs(prev => [logEntry, ...prev]);
+        setW4Templates(prev => prev.filter(t => t.id !== id));
+    }
+  };
+
   const assignPickerToOrder = (orderId: string, pickerId: string) => {
     setSalesOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Picking', assignedPicker: pickerId, pickStartTime: new Date() } : o));
   };
@@ -1192,6 +1239,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
             case 'BolTemplate':
                 setBolTemplates(prev => [...prev, logEntry.originalData]);
                 break;
+             case 'W4Template':
+                setW4Templates(prev => [...prev, logEntry.originalData]);
+                break;
             default:
                 break;
         }
@@ -1458,7 +1508,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );
