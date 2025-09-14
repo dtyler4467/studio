@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
 import React, { useState, useMemo, useRef } from 'react';
-import { Printer, Mail, Download, Upload, FileText, FileSpreadsheet, Pencil } from 'lucide-react';
+import { Printer, Mail, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -154,6 +154,38 @@ const EditAndDownloadDialog = ({
         setEditableStub(stubData);
     }, [stubData]);
 
+    const handleEarningChange = (index: number, field: 'description' | 'amount', value: string) => {
+        if (!editableStub) return;
+
+        const updatedEarnings = [...editableStub.earnings];
+        const target = { ...updatedEarnings[index] };
+
+        if (field === 'description') {
+            target.description = value;
+        } else if (field === 'amount') {
+            target.amount = parseFloat(value) || 0;
+        }
+
+        updatedEarnings[index] = target;
+        setEditableStub({ ...editableStub, earnings: updatedEarnings });
+    };
+
+    const handleDeductionChange = (index: number, field: 'description' | 'amount', value: string) => {
+        if (!editableStub) return;
+        
+        const updatedDeductions = [...editableStub.deductions];
+        const target = { ...updatedDeductions[index] };
+
+        if (field === 'description') {
+            target.description = value;
+        } else if (field === 'amount') {
+            target.amount = parseFloat(value) || 0;
+        }
+        
+        updatedDeductions[index] = target;
+        setEditableStub({ ...editableStub, deductions: updatedDeductions });
+    };
+
     const handleDownload = () => {
         if (!editableStub || !templateFile) {
             toast({ variant: 'destructive', title: 'Error', description: 'No data to download.'});
@@ -190,7 +222,7 @@ const EditAndDownloadDialog = ({
                 });
                 let deductionRowIndex = 13; // Adjust based on your template
                 editableStub.deductions.forEach((deduction, index) => {
-                    XLSX.utils.sheet_add_aoa(worksheet, [[deduction.description, deduction.amount]], { origin: `A${deductionRowIndex + index}` });
+                    XLSX.utils.sheet_add_aoa(worksheet, [[deduction.description, deduction.amount]], { origin: `F${deductionRowIndex + index}` });
                 });
 
                 const newWorkbook = XLSX.utils.book_new();
@@ -234,8 +266,8 @@ const EditAndDownloadDialog = ({
                         <h5 className="font-medium mt-4 mb-2">Earnings</h5>
                          {editableStub.earnings.map((earning, index) => (
                              <div key={index} className="flex items-center gap-2 mb-2">
-                                <Input value={earning.description} className="flex-1" />
-                                <Input type="number" value={earning.amount} className="w-28" />
+                                <Input value={earning.description} onChange={e => handleEarningChange(index, 'description', e.target.value)} className="flex-1" />
+                                <Input type="number" value={earning.amount} onChange={e => handleEarningChange(index, 'amount', e.target.value)} className="w-28" />
                             </div>
                          ))}
                      </div>
@@ -243,8 +275,8 @@ const EditAndDownloadDialog = ({
                         <h5 className="font-medium mt-4 mb-2">Deductions</h5>
                           {editableStub.deductions.map((deduction, index) => (
                              <div key={index} className="flex items-center gap-2 mb-2">
-                                <Input value={deduction.description} className="flex-1" />
-                                <Input type="number" value={deduction.amount} className="w-28" />
+                                <Input value={deduction.description} onChange={e => handleDeductionChange(index, 'description', e.target.value)} className="flex-1" />
+                                <Input type="number" value={deduction.amount} onChange={e => handleDeductionChange(index, 'amount', e.target.value)} className="w-28" />
                             </div>
                          ))}
                      </div>
@@ -304,7 +336,7 @@ export default function PaycheckStubPage() {
             ["Deductions"],
             ["Description", "Amount"],
             ["[DEDUCTION_DESC_1]", "[DEDUCTION_AMOUNT_1]"],
-            ["", "Total Deductions:", "[TOTAL_DEDUCTIONS]"],
+            ["", "", "Total Deductions:", "[TOTAL_DEDUCTIONS]"],
             [],
             ["", "", "Net Pay:", "[NET_PAY]"],
         ];
@@ -393,5 +425,3 @@ export default function PaycheckStubPage() {
     </>
   );
 }
-
-    
