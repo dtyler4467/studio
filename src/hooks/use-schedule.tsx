@@ -16,6 +16,15 @@ export type Shift = {
 
 export type EmployeeRole = 'Admin' | 'Dispatcher' | 'Driver' | 'Employee' | 'Forklift' | 'Laborer' | 'Manager' | 'Visitor' | 'Vendor';
 
+export type DirectDepositAccount = {
+    id: string;
+    accountHolderName: string;
+    bankName: string;
+    accountType: 'Checking' | 'Savings';
+    routingNumber: string;
+    accountNumber: string;
+}
+
 export type Employee = {
     id: string;
     name: string;
@@ -28,6 +37,7 @@ export type Employee = {
     workLocation?: string[];
     payType?: 'Hourly' | 'Salary';
     payRate?: number;
+    directDeposit?: DirectDepositAccount[];
 }
 
 export type Holiday = {
@@ -475,6 +485,8 @@ type ScheduleContextType = {
   saveBol: (bolData: Omit<BillOfLading, 'id' | 'documentUri'>, documentUri: string | null) => BillOfLading;
   saveBolTemplate: (templateData: Omit<BolTemplate, 'id'>) => void;
   deleteBolTemplate: (templateId: string) => void;
+  addOrUpdateDirectDeposit: (employeeId: string, account: Omit<DirectDepositAccount, 'id'>) => void;
+  deleteDirectDeposit: (employeeId: string, accountId: string) => void;
 };
 
 export const initialShifts: Shift[] = [
@@ -486,10 +498,10 @@ export const initialShifts: Shift[] = [
 
 
 export const mockEmployees: Employee[] = [
-    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"], payType: 'Hourly', payRate: 25.50 },
-    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"], payType: 'Hourly', payRate: 25.50 },
-    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", status: 'Active', personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"], payType: 'Salary', payRate: 65000 },
-    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", status: 'Active', personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"], payType: 'Salary', payRate: 80000 },
+    { id: "USR001", name: "John Doe", email: "john.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-001", phoneNumber: "555-123-4567", workLocation: ["Warehouse"], payType: 'Hourly', payRate: 25.50, directDeposit: [] },
+    { id: "USR002", name: "Jane Doe", email: "jane.doe@example.com", role: "Driver", status: 'Active', personnelId: "JD-002", phoneNumber: "555-234-5678", workLocation: ["Mobile"], payType: 'Hourly', payRate: 25.50, directDeposit: [] },
+    { id: "USR003", name: "Mike Smith", email: "mike.smith@example.com", role: "Dispatcher", status: 'Active', personnelId: "MS-001", phoneNumber: "555-345-6789", workLocation: ["Site 1", "Work From Home"], payType: 'Salary', payRate: 65000, directDeposit: [] },
+    { id: "USR004", name: "Emily Jones", email: "emily.jones@example.com", role: "Admin", status: 'Active', personnelId: "EJ-001", phoneNumber: "555-456-7890", workLocation: ["Work From Home"], payType: 'Salary', payRate: 80000, directDeposit: [] },
 ];
 
 export const initialHolidays: Holiday[] = [
@@ -1638,9 +1650,30 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
+    const addOrUpdateDirectDeposit = (employeeId: string, account: Omit<DirectDepositAccount, 'id'>) => {
+        const newAccount = { ...account, id: `ACCT-${Date.now()}`};
+        setEmployees(prev => prev.map(emp => {
+            if (emp.id === employeeId) {
+                const existingAccounts = emp.directDeposit || [];
+                return { ...emp, directDeposit: [...existingAccounts, newAccount] };
+            }
+            return emp;
+        }));
+    };
+
+    const deleteDirectDeposit = (employeeId: string, accountId: string) => {
+        setEmployees(prev => prev.map(emp => {
+            if (emp.id === employeeId) {
+                const updatedAccounts = emp.directDeposit?.filter(acc => acc.id !== accountId);
+                return { ...emp, directDeposit: updatedAccounts };
+            }
+            return emp;
+        }));
+    };
+
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
       {children}
     </ScheduleContext.Provider>
   );
@@ -1653,3 +1686,4 @@ export const useSchedule = () => {
   }
   return context;
 };
+
