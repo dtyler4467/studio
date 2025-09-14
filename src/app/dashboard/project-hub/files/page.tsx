@@ -2,6 +2,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Folder } from 'lucide-react';
+import { FileDataTable } from '@/components/dashboard/file-data-table';
 
 export default function ProjectFilesPage() {
   return (
@@ -19,9 +20,7 @@ export default function ProjectFilesPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                    <p className="text-muted-foreground">Project file management coming soon.</p>
-                </div>
+                <FileDataTable />
             </CardContent>
         </Card>
       </main>
