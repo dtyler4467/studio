@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { KanbanSquare, PlusCircle } from 'lucide-react';
 import { useSchedule, Task, TaskStatus, Employee } from '@/hooks/use-schedule';
 import React, { useMemo, useState } from 'react';
@@ -11,16 +12,17 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { DocumentUpload } from '@/components/dashboard/document-upload';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 
 const statusColumns: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Done'];
 
 const TaskCard = ({ task, onDragStart }: { task: Task; onDragStart: (e: React.DragEvent, taskId: string) => void }) => {
     const { employees } = useSchedule();
-    const assignee = employees.find(e => e.id === task.assigneeId);
+    const assignees = employees.filter(e => task.assigneeIds.includes(e.id));
     
     return (
         <Card 
@@ -33,14 +35,13 @@ const TaskCard = ({ task, onDragStart }: { task: Task; onDragStart: (e: React.Dr
                 <CardDescription className="text-xs pt-1">{task.description}</CardDescription>
             </CardHeader>
             <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                {assignee && (
-                    <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
+                <div className="flex -space-x-2">
+                    {assignees.map(assignee => (
+                         <Avatar key={assignee.id} className="h-6 w-6 border-2 border-background">
                             <AvatarFallback className="text-xs">{assignee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
-                        <span className="text-xs text-muted-foreground">{assignee.name}</span>
-                    </div>
-                )}
+                    ))}
+                </div>
             </CardFooter>
         </Card>
     );
@@ -53,23 +54,29 @@ const AddTaskDialog = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [assigneeId, setAssigneeId] = useState('');
+    const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+    const [documentUri, setDocumentUri] = useState<string | null>(null);
+
+    const employeeOptions: MultiSelectOption[] = useMemo(() => employees.map(e => ({ value: e.id, label: e.name })), [employees]);
 
     const handleSave = () => {
-        if (!title || !assigneeId) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a title and assignee.' });
+        if (!title || assigneeIds.length === 0) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a title and at least one assignee.' });
             return;
         }
         addTask({
             title,
             description,
-            assigneeId,
+            assigneeIds,
             status: 'To Do',
+            projectId: 'PROJ-1', // Mock project ID
+            documentUri,
         });
         setIsOpen(false);
         setTitle('');
         setDescription('');
-        setAssigneeId('');
+        setAssigneeIds([]);
+        setDocumentUri(null);
         toast({ title: 'Task Created', description: `New task "${title}" has been added.` });
     }
 
@@ -94,16 +101,16 @@ const AddTaskDialog = () => {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="assignee">Assign To</Label>
-                        <Select value={assigneeId} onValueChange={setAssigneeId}>
-                            <SelectTrigger id="assignee">
-                                <SelectValue placeholder="Select an employee" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {employees.map(emp => (
-                                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <MultiSelect 
+                            options={employeeOptions}
+                            selected={assigneeIds}
+                            onChange={setAssigneeIds}
+                            placeholder="Select employees..."
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Attach Document (Optional)</Label>
+                        <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
                     </div>
                 </div>
                 <DialogFooter>

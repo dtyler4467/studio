@@ -378,10 +378,11 @@ export type Task = {
     id: string;
     title: string;
     description: string;
-    assigneeId: string;
+    assigneeIds: string[];
     status: TaskStatus;
     projectId: string;
     dueDate?: Date;
+    documentUri?: string | null;
 };
 
 export type Project = {
@@ -817,10 +818,10 @@ export const initialProjects: Project[] = [
 ];
 
 export const initialTasks: Task[] = [
-    { id: 'TASK-1', projectId: 'PROJ-1', title: 'Design new logo', description: 'Create a modern logo for the new marketing campaign.', assigneeId: 'USR004', status: 'In Progress', dueDate: new Date(new Date().setDate(new Date().getDate() + 3)) },
-    { id: 'TASK-2', projectId: 'PROJ-2', title: 'Develop homepage prototype', description: 'Code a functional prototype using Next.js and Tailwind.', assigneeId: 'USR003', status: 'To Do', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)) },
-    { id: 'TASK-3', projectId: 'PROJ-2', title: 'Review Q2 Financials', description: 'Audit the financial statements for the second quarter.', assigneeId: 'USR004', status: 'Done' },
-    { id: 'TASK-4', projectId: 'PROJ-3', title: 'Plan team offsite event', description: 'Organize location, catering, and activities for the annual team offsite.', assigneeId: 'USR002', status: 'Review', dueDate: new Date(new Date().setDate(new Date().getDate() + 14)) },
+    { id: 'TASK-1', projectId: 'PROJ-1', title: 'Design new logo', description: 'Create a modern logo for the new marketing campaign.', assigneeIds: ['USR004'], status: 'In Progress', dueDate: new Date(new Date().setDate(new Date().getDate() + 3)), documentUri: 'https://picsum.photos/seed/logo-design/400/300' },
+    { id: 'TASK-2', projectId: 'PROJ-2', title: 'Develop homepage prototype', description: 'Code a functional prototype using Next.js and Tailwind.', assigneeIds: ['USR003'], status: 'To Do', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)) },
+    { id: 'TASK-3', projectId: 'PROJ-2', title: 'Review Q2 Financials', description: 'Audit the financial statements for the second quarter.', assigneeIds: ['USR004'], status: 'Done' },
+    { id: 'TASK-4', projectId: 'PROJ-3', title: 'Plan team offsite event', description: 'Organize location, catering, and activities for the annual team offsite.', assigneeIds: ['USR002', 'USR004'], status: 'Review', dueDate: new Date(new Date().setDate(new Date().getDate() + 14)) },
 ];
 
 
