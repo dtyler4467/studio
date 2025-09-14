@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -815,7 +816,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [handbooks, setHandbooks] = useState<Handbook[]>(initialHandbooks);
 
   const getHandbookById = (id: string) => {
-    return handbooks.find(hb => hb.id === id) || null;
+    return handbooks.find(hb => hb.id.toLowerCase() === id.toLowerCase()) || null;
   }
 
   const updateHandbookSection = (handbookId: string, sectionTitle: string, content: string) => {
