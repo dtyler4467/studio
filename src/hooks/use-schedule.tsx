@@ -419,6 +419,16 @@ export type CrmTask = {
   associatedWith?: string; // Contact or Company Name
 };
 
+export type CrmContact = {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    company: string;
+    status: 'Lead' | 'Contact' | 'Customer';
+    dateAdded: Date;
+};
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
@@ -457,6 +467,8 @@ type ScheduleContextType = {
   projects: Project[];
   tasks: Task[];
   crmTasks: CrmTask[];
+  crmContacts: CrmContact[];
+  addCrmContact: (contactData: Omit<CrmContact, 'id' | 'dateAdded'>) => void;
   addCrmTask: (taskData: Omit<CrmTask, 'id' | 'status'>) => void;
   updateCrmTaskStatus: (taskId: string, status: CrmTaskStatus) => void;
   addTask: (taskData: Omit<Task, 'id' | 'events'>) => void;
@@ -673,6 +685,7 @@ Be wary of emails that:
 - Ask for personal information or passwords.
 - Contain suspicious links or attachments.
 - Come from unknown or unexpected senders.
+- Contain suspicious links or attachments.
                 `,
                  exam: [
                     {
@@ -860,6 +873,13 @@ export const initialCrmTasks: CrmTask[] = [
     { id: 'CRMTASK-3', title: 'Schedule demo with Stark Industries', status: 'To Do', priority: 'Medium', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)), taskType: 'Meeting', assignedTo: 'USR003', associatedWith: 'Stark Industries' },
 ];
 
+export const initialCrmContacts: CrmContact[] = [
+    { id: 'CRMCONT-1', name: 'John Doe', email: 'john.d@acme.com', phone: '555-0101', company: 'Acme Inc.', status: 'Customer', dateAdded: new Date('2023-05-10') },
+    { id: 'CRMCONT-2', name: 'Jane Smith', email: 'jane.s@globex.com', phone: '555-0102', company: 'Globex Corp.', status: 'Customer', dateAdded: new Date('2023-08-15') },
+    { id: 'CRMCONT-3', name: 'Peter Jones', email: 'p.jones@stark.com', phone: '555-0103', company: 'Stark Industries', status: 'Contact', dateAdded: new Date('2024-01-20') },
+    { id: 'CRMCONT-4', name: 'Susan Reid', email: 'susan@weyland.com', phone: '555-0104', company: 'Weyland-Yutani', status: 'Lead', dateAdded: new Date('2024-03-30') },
+];
+
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
@@ -905,6 +925,16 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [crmTasks, setCrmTasks] = useState<CrmTask[]>(initialCrmTasks);
+  const [crmContacts, setCrmContacts] = useState<CrmContact[]>(initialCrmContacts);
+
+  const addCrmContact = (contactData: Omit<CrmContact, 'id' | 'dateAdded'>) => {
+    const newContact: CrmContact = {
+        ...contactData,
+        id: `CRMCONT-${Date.now()}`,
+        dateAdded: new Date(),
+    };
+    setCrmContacts(prev => [newContact, ...prev]);
+  };
 
   const addCrmTask = (taskData: Omit<CrmTask, 'id' | 'status'>) => {
     const newTask: CrmTask = {
@@ -1185,7 +1215,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
     const permanentlyDeleteItem = (logId: string) => {
         setDeletionLogs(prev => prev.filter(log => log.id !== logId));
-    }
+    };
 
   const logFileShare = (fileName: string, sharedBy: string, sharedWith: string[]) => {
     const newLog: ShareHistoryLog = {
@@ -1789,7 +1819,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, tasks, projects, crmTasks, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, projects, tasks, crmTasks, crmContacts, addCrmContact, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
       {children}
     </ScheduleContext.Provider>
   );
@@ -1805,3 +1835,6 @@ export const useSchedule = () => {
 
 
 
+
+
+    
