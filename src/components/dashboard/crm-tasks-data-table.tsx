@@ -37,7 +37,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
-import { useSchedule, CrmTask } from "@/hooks/use-schedule"
+import { useSchedule, CrmTask, CrmTaskStatus } from "@/hooks/use-schedule"
 import { Badge } from "../ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Label } from "../ui/label"
@@ -167,6 +167,8 @@ export function CrmTasksDataTable() {
         toast({ title: 'Task Completed' });
     }
 
+    const data = React.useMemo(() => crmTasks.filter(t => t.status !== 'Completed'), [crmTasks]);
+
     const columns: ColumnDef<CrmTask>[] = [
       {
         id: "select",
@@ -229,7 +231,7 @@ export function CrmTasksDataTable() {
     ];
 
   const table = useReactTable({
-    data: crmTasks.filter(t => t.status !== 'Completed'),
+    data,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
