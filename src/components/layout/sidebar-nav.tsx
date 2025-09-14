@@ -276,6 +276,8 @@ const navItems: NavItem[] = [
       { href: '/dashboard/hr', icon: Users, label: 'HR', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/hr/policies', icon: FolderLock, label: 'Company Policies', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/w4', icon: FileText, label: 'W4', roles: ['Admin', 'Manager'] },
+      { href: '/dashboard/hr/applications', icon: ClipboardList, label: 'Applications', roles: ['Admin', 'Manager'] },
     ]
   },
   { href: '/dashboard/store', icon: Store, label: 'Store', roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'] },
