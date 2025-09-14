@@ -87,6 +87,8 @@ import {
   Gavel,
   FileScan,
   HandCoins,
+  Percent,
+  Tag,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -311,7 +313,18 @@ const navItems: NavItem[] = [
       { href: '/dashboard/hr/lawsuits', icon: Gavel, label: 'Lawsuits', roles: ['Admin', 'Manager'] },
     ]
   },
-  { href: '/dashboard/store', icon: Store, label: 'Store', roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'] },
+  { 
+    href: '/dashboard/store',
+    icon: Store, 
+    label: 'Store', 
+    roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'],
+    subItems: [
+        { href: '/dashboard/store/overview', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/store/products', icon: Package, label: 'Products', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/store/orders', icon: ShoppingCart, label: 'Orders', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/store/customers', icon: Users, label: 'Customers', roles: ['Admin', 'Manager'] },
+    ]
+   },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -449,6 +462,7 @@ export function SidebarNav() {
   const [isHrOpen, setIsHrOpen] = useState(false);
   const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [isTimeTrackerHubOpen, setIsTimeTrackerHubOpen] = useState(false);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -474,6 +488,7 @@ export function SidebarNav() {
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
     setIsHrOpen(pathname.startsWith('/dashboard/recruitment-hub') || pathname.startsWith('/dashboard/hr'));
+    setIsStoreOpen(pathname.startsWith('/dashboard/store'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -527,7 +542,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9' || href === '/dashboard/store') {
         return pathname === href;
     }
     return pathname.startsWith(href);
@@ -706,6 +721,7 @@ export function SidebarNav() {
                         'Accountant': isAccountantOpen,
                         'HR HUB': isHrOpen,
                         'Time Tracker HUB': isTimeTrackerHubOpen,
+                        'Store': isStoreOpen,
                     };
                     const setIsOpenMap = {
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -717,6 +733,7 @@ export function SidebarNav() {
                         'Accountant': setIsAccountantOpen,
                         'HR HUB': setIsHrOpen,
                         'Time Tracker HUB': setIsTimeTrackerHubOpen,
+                        'Store': setIsStoreOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                     const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
