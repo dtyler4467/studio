@@ -134,8 +134,7 @@ const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
     );
 };
 
-const UploadTemplateDialog = ({ onSave }: { onSave: (name: string, uri: string) => void }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const UploadTemplateDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name: string, uri: string) => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
     const [name, setName] = useState('');
     const [documentUri, setDocumentUri] = useState<string | null>(null);
     const { toast } = useToast();
@@ -146,16 +145,13 @@ const UploadTemplateDialog = ({ onSave }: { onSave: (name: string, uri: string) 
             return;
         }
         onSave(name, documentUri);
-        setIsOpen(false);
+        onOpenChange(false);
         setName('');
         setDocumentUri(null);
     }
     
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button><Upload className="mr-2"/> Upload New Template</Button>
-            </DialogTrigger>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Upload New Pay Stub Template</DialogTitle>
@@ -172,7 +168,7 @@ const UploadTemplateDialog = ({ onSave }: { onSave: (name: string, uri: string) 
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleSave}>Save Template</Button>
                 </DialogFooter>
             </DialogContent>
@@ -189,6 +185,7 @@ export default function PaycheckStubPage() {
     const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
     const [activeTemplateId, setActiveTemplateId] = useState<string | null>('default');
     const [defaultTemplateId, setDefaultTemplateId] = useState<string | null>('default');
+    const [isUploadOpen, setUploadOpen] = useState(false);
 
 
     const payPeriods = useMemo(() => {
@@ -306,7 +303,7 @@ export default function PaycheckStubPage() {
                                 Upload your own PDF or image to use as a pay stub template.
                             </CardDescription>
                         </div>
-                        <UploadTemplateDialog onSave={handleAddTemplate} />
+                         <Button onClick={() => setUploadOpen(true)}><Upload className="mr-2"/> Upload New Template</Button>
                     </CardHeader>
                     <CardContent>
                        {customTemplates.length > 0 ? (
@@ -343,6 +340,7 @@ export default function PaycheckStubPage() {
                 </Card>
             </TabsContent>
         </Tabs>
+        <UploadTemplateDialog onSave={handleAddTemplate} isOpen={isUploadOpen} onOpenChange={setUploadOpen} />
       </main>
     </div>
   );
