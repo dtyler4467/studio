@@ -70,7 +70,7 @@ export function DealCard({ deal, onDragStart }: DealCardProps) {
                 )}
             </CardContent>
             <CardFooter className="p-4 pt-0 text-xs text-muted-foreground">
-                 <p><ClientFormattedDate date={deal.closeDate} /></p>
+                 <div><ClientFormattedDate date={deal.closeDate} /></div>
             </CardFooter>
         </Card>
     );
