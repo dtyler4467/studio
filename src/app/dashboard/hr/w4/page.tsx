@@ -6,7 +6,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSchedule, W4Template } from '@/hooks/use-schedule';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { MoreHorizontal, Upload, FileText, Send, Pencil, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const UploadTemplateDialog = ({ onSave }: { onSave: (name: string, uri: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -63,6 +63,19 @@ const UploadTemplateDialog = ({ onSave }: { onSave: (name: string, uri: string) 
             </DialogContent>
         </Dialog>
     )
+}
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+    useEffect(() => {
+        setFormattedDate(format(date, 'PPP p'));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <span className="text-muted-foreground">Loading...</span>;
+    }
+
+    return <>{formattedDate}</>;
 }
 
 
@@ -154,7 +167,7 @@ export default function W4Page() {
                                     {sortedTemplates.map(template => (
                                         <TableRow key={template.id}>
                                             <TableCell className="font-medium">{template.name}</TableCell>
-                                            <TableCell>{format(template.uploadedAt, 'PPP p')}</TableCell>
+                                            <TableCell><ClientFormattedDate date={template.uploadedAt} /></TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex gap-1 justify-end">
                                                     <Button variant="outline" size="sm" onClick={() => setPreviewUri(template.documentUri)}>Preview</Button>
