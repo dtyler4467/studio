@@ -159,30 +159,29 @@ const FilePreviewDialog = ({ file, isOpen, onOpenChange }: { file: File | null, 
 
 
 type FileDataTableProps = {
-    onRowClick?: 'navigate' | 'dialog';
+    onRowClick?: (file: File) => void;
 }
 
-export function FileDataTable({ onRowClick = 'navigate' }: FileDataTableProps) {
+export function FileDataTable({ onRowClick }: FileDataTableProps) {
     const { files, deleteFile, currentUser, addFile, logFileShare } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-    const [rowSelection, setRowSelection] = React.useState({})
+    const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
     const [globalFilter, setGlobalFilter] = React.useState("");
     const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [isShareOpen, setShareOpen] = React.useState(false);
     const [fileToShare, setFileToShare] = React.useState<File | null>(null);
     const [fileToDelete, setFileToDelete] = React.useState<File | null>(null);
-    const [fileToPreview, setFileToPreview] = React.useState<File | null>(null);
 
     const handleRowClick = (file: File) => {
-        if (onRowClick === 'navigate') {
-            router.push(`/dashboard/administration/files/${file.id}`);
+        if (onRowClick) {
+            onRowClick(file);
         } else {
-            setFileToPreview(file);
+            router.push(`/dashboard/administration/files/${file.id}`);
         }
     }
 
@@ -544,7 +543,6 @@ export function FileDataTable({ onRowClick = 'navigate' }: FileDataTableProps) {
         </div>
       </div>
       <ShareDialog file={fileToShare} isOpen={isShareOpen} onOpenChange={setShareOpen} />
-      <FilePreviewDialog file={fileToPreview} isOpen={!!fileToPreview} onOpenChange={() => setFileToPreview(null)} />
     </div>
   )
 }
