@@ -380,6 +380,7 @@ export type Task = {
     description: string;
     assigneeId: string;
     status: TaskStatus;
+    dueDate?: Date;
 };
 
 type ScheduleContextType = {
@@ -800,10 +801,10 @@ export const initialHandbooks: Handbook[] = [
 ];
 
 export const initialTasks: Task[] = [
-    { id: 'TASK-1', title: 'Design new logo', description: 'Create a modern logo for the new marketing campaign.', assigneeId: 'USR004', status: 'In Progress' },
-    { id: 'TASK-2', title: 'Develop homepage prototype', description: 'Code a functional prototype using Next.js and Tailwind.', assigneeId: 'USR003', status: 'To Do' },
-    { id: 'TASK-3', title: 'Review Q2 Financials', description: 'Audit the financial statements for the second quarter.', assigneeId: 'USR004', status: 'Done' },
-    { id: 'TASK-4', title: 'Plan team offsite event', description: 'Organize location, catering, and activities for the annual team offsite.', assigneeId: 'USR002', status: 'Review' },
+    { id: 'TASK-1', title: 'Design new logo', description: 'Create a modern logo for the new marketing campaign.', assigneeId: 'USR004', status: 'In Progress', dueDate: new Date(new Date().setDate(new Date().getDate() + 3)) },
+    { id: 'TASK-2', title: 'Develop homepage prototype', description: 'Code a functional prototype using Next.js and Tailwind.', assigneeId: 'USR003', status: 'To Do', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)) },
+    { id: 'TASK-3', title: 'Review Q2 Financials', description: 'Audit the financial statements for the second quarter.', assigneeId: 'USR004', status: 'Done', dueDate: new Date(new Date().setDate(new Date().getDate() - 2)) },
+    { id: 'TASK-4', title: 'Plan team offsite event', description: 'Organize location, catering, and activities for the annual team offsite.', assigneeId: 'USR002', status: 'Review', dueDate: new Date(new Date().setDate(new Date().getDate() + 14)) },
 ];
 
 
