@@ -8,5 +8,6 @@ import '@/ai/flows/assistant-flow.ts';
 import '@/ai/flows/extract-receipt-data.ts';
 import '@/ai/tools/data-tools.ts';
 import '@/ai/flows/edit-receipt-image-flow.ts';
+import '@/ai/flows/translate-text-flow.ts';
 
     

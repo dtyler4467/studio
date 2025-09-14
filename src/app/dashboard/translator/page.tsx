@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRightLeft, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { translateText } from '@/ai/flows/translate-text-flow';
 
 const languages = [
     { code: 'en', name: 'English' },
@@ -17,6 +18,12 @@ const languages = [
     { code: 'de', name: 'German' },
     { code: 'it', name: 'Italian' },
     { code: 'pt', name: 'Portuguese' },
+    { code: 'ja', name: 'Japanese' },
+    { code: 'ko', name: 'Korean' },
+    { code: 'zh', name: 'Chinese' },
+    { code: 'ru', name: 'Russian' },
+    { code: 'ar', name: 'Arabic' },
+    { code: 'hi', name: 'Hindi' },
 ];
 
 export default function TranslatorPage() {
@@ -27,18 +34,22 @@ export default function TranslatorPage() {
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
-    const handleTranslate = () => {
+    const handleTranslate = async () => {
         if (!inputText.trim()) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please enter text to translate.' });
             return;
         }
         setIsLoading(true);
-        // In a real app, this would call an AI translation flow
-        setTimeout(() => {
-            setOutputText(`(Translated) ${inputText}`);
+        setOutputText('');
+        try {
+            const result = await translateText({ text: inputText, targetLang: languages.find(l => l.code === targetLang)?.name || 'Spanish' });
+            setOutputText(result.translatedText);
+        } catch (error) {
+            console.error("Translation error:", error);
+            toast({ variant: 'destructive', title: 'Translation Failed', description: 'Could not translate the text. Please try again.' });
+        } finally {
             setIsLoading(false);
-            toast({ title: 'Text Translated', description: 'This is a mock translation.' });
-        }, 1000);
+        }
     };
 
     const handleSwapLanguages = () => {
@@ -102,7 +113,7 @@ export default function TranslatorPage() {
                             </div>
                             <div className="space-y-2">
                                 <Textarea
-                                    placeholder="Translation..."
+                                    placeholder={isLoading ? 'Translating...' : 'Translation...'}
                                     value={outputText}
                                     readOnly
                                     className="h-48 resize-none bg-muted"
