@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Printer, Mail, Download, Upload, FileSpreadsheet, Trash2, CheckCircle, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type PayStub = {
     payPeriod: string;
@@ -199,22 +200,24 @@ const UploadTemplateDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolea
                         Give your template a name and upload the file.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="template-name">Template Name</Label>
-                        <Input id="template-name" value={name} onChange={e => setName(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="template-file">Template File</Label>
-                        <Input id="template-file" type="file" accept=".xlsx, .xls, .png, .jpg, .jpeg" onChange={handleFileChange} />
-                    </div>
-                    {previewUrl && (
-                        <div>
-                            <p className="text-sm font-medium mb-2">Preview:</p>
-                            <Image src={previewUrl} alt="Template Preview" width={400} height={500} className="w-full h-auto border rounded-md" />
+                <ScrollArea className="max-h-[70vh] pr-4">
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="template-name">Template Name</Label>
+                            <Input id="template-name" value={name} onChange={e => setName(e.target.value)} />
                         </div>
-                    )}
-                </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="template-file">Template File</Label>
+                            <Input id="template-file" type="file" accept=".xlsx, .xls, .png, .jpg, .jpeg" onChange={handleFileChange} />
+                        </div>
+                        {previewUrl && (
+                            <div>
+                                <p className="text-sm font-medium mb-2">Preview:</p>
+                                <Image src={previewUrl} alt="Template Preview" width={400} height={500} className="w-full h-auto border rounded-md" />
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleSave} disabled={!name || !file}>Save Template</Button>
