@@ -6,15 +6,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Printer, Mail, Upload, PlusCircle, Trash2, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Logo } from '@/components/icons/logo';
 import { Separator } from '@/components/ui/separator';
-import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -133,48 +131,6 @@ const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
     );
 };
 
-const UploadTemplateDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name: string, uri: string) => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
-    const [name, setName] = useState('');
-    const [documentUri, setDocumentUri] = useState<string | null>(null);
-    const { toast } = useToast();
-
-    const handleSave = () => {
-        if (!name || !documentUri) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a name and upload a document.' });
-            return;
-        }
-        onSave(name, documentUri);
-        onOpenChange(false);
-        setName('');
-        setDocumentUri(null);
-    }
-    
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Upload New Pay Stub Template</DialogTitle>
-                    <DialogDescription>Provide a name for the template and upload the document. You can preview the document below after selecting it.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="template-name">Template Name</Label>
-                        <Input id="template-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Compact Stub" />
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Document Preview</Label>
-                        <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Template</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 
 export default function PaycheckStubPage() {
     const { employees } = useSchedule();
@@ -184,7 +140,7 @@ export default function PaycheckStubPage() {
     const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
     const [activeTemplateId, setActiveTemplateId] = useState<string>('default');
     const [defaultTemplateId, setDefaultTemplateId] = useState<string>('default');
-    const [isUploadOpen, setUploadOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
 
     const payPeriods = useMemo(() => {
@@ -222,20 +178,50 @@ export default function PaycheckStubPage() {
         }
         toast({ variant: 'destructive', title: 'Template Deleted' });
     };
+    
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const uri = e.target?.result as string;
+            if (uri) {
+                const newName = `Sample ${customTemplates.length + 1}`;
+                handleAddTemplate(newName, uri);
+            }
+        };
+        reader.readAsDataURL(file);
+
+        if(fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
 
   return (
     <div className="flex flex-col w-full">
       <Header pageTitle="Paycheck Stubs" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
-            <CardHeader className="flex flex-row items-start justify-between">
+            <CardHeader className="flex-row items-start justify-between">
                 <div>
                     <CardTitle className="font-headline">Manage Pay Stub Templates</CardTitle>
                     <CardDescription>
                         Select a default template, or upload your own PDF/image to use as a pay stub layout.
                     </CardDescription>
                 </div>
-                <Button onClick={() => setUploadOpen(true)}><Upload className="mr-2"/> Upload New Template</Button>
+                 <Input 
+                    id="template-upload" 
+                    type="file" 
+                    className="hidden" 
+                    ref={fileInputRef} 
+                    onChange={handleFileUpload} 
+                    accept="image/*,.pdf" 
+                />
+                <Button onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2"/> Upload New Template
+                </Button>
             </CardHeader>
             <CardContent>
                 {customTemplates.length > 0 ? (
@@ -283,7 +269,7 @@ export default function PaycheckStubPage() {
                 ) : (
                     <div className="flex flex-col items-center justify-center rounded-md border border-dashed h-64">
                         <p className="text-muted-foreground mb-4">No custom templates uploaded yet.</p>
-                        <Button variant="secondary" onClick={() => setUploadOpen(true)}>
+                         <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
                             <Upload className="mr-2" /> Upload Your First Template
                         </Button>
                     </div>
@@ -323,7 +309,7 @@ export default function PaycheckStubPage() {
                     activeTemplateId === 'default' ? (
                         <PayStubTemplate stub={selectedStub} />
                     ) : (
-                        <div className="h-96 border rounded-lg flex items-center justify-center bg-muted">
+                        <div className="h-[70vh] border rounded-lg flex items-center justify-center bg-muted">
                             <iframe src={customTemplates.find(t => t.id === activeTemplateId)?.uri} className="w-full h-full" title="Custom Template Preview" />
                         </div>
                     )
@@ -338,10 +324,7 @@ export default function PaycheckStubPage() {
                 <Button variant="outline" onClick={handleEmail} disabled={!selectedStub}><Mail className="mr-2" /> Email to Employee</Button>
             </CardFooter>
         </Card>
-        <UploadTemplateDialog onSave={handleAddTemplate} isOpen={isUploadOpen} onOpenChange={setUploadOpen} />
       </main>
     </div>
   );
 }
-
-    
