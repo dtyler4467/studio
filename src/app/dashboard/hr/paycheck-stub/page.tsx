@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSchedule, Employee } from '@/hooks/use-schedule';
 import React, { useState, useMemo } from 'react';
-import { Printer, Mail, Upload } from 'lucide-react';
+import { Printer, Mail, Upload, PlusCircle, Trash2, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Logo } from '@/components/icons/logo';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+
 
 type PayStub = {
     payPeriod: string;
@@ -25,6 +30,12 @@ type PayStub = {
     earnings: { description: string; rate?: number; hours?: number; amount: number }[];
     deductions: { description: string; amount: number }[];
 };
+
+type CustomTemplate = {
+    id: string;
+    name: string;
+    uri: string;
+}
 
 const mockPayStubs: PayStub[] = [
     {
@@ -123,13 +134,62 @@ const PayStubTemplate = ({ stub }: { stub: PayStub }) => {
     );
 };
 
+const UploadTemplateDialog = ({ onSave }: { onSave: (name: string, uri: string) => void }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [name, setName] = useState('');
+    const [documentUri, setDocumentUri] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    const handleSave = () => {
+        if (!name || !documentUri) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a name and upload a document.' });
+            return;
+        }
+        onSave(name, documentUri);
+        setIsOpen(false);
+        setName('');
+        setDocumentUri(null);
+    }
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button><Upload className="mr-2"/> Upload New Template</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Upload New Pay Stub Template</DialogTitle>
+                    <DialogDescription>Provide a name for the template and upload the document.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="template-name">Template Name</Label>
+                        <Input id="template-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Compact Stub" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Document</Label>
+                        <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Template</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export default function PaycheckStubPage() {
     const { employees } = useSchedule();
     const { toast } = useToast();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('USR001');
     const [selectedPayPeriod, setSelectedPayPeriod] = useState<string>('2024-07-01 to 2024-07-15');
-    const [customTemplateUri, setCustomTemplateUri] = useState<string | null>(null);
+    const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+    const [activeTemplateId, setActiveTemplateId] = useState<string | null>('default');
+    const [defaultTemplateId, setDefaultTemplateId] = useState<string | null>('default');
+
 
     const payPeriods = useMemo(() => {
         return [...new Set(mockPayStubs.map(p => p.payPeriod))];
@@ -150,11 +210,28 @@ export default function PaycheckStubPage() {
         toast({ title: 'Printing...', description: 'Your pay stub is being sent to the printer.' });
     }
 
+    const handleAddTemplate = (name: string, uri: string) => {
+        const newTemplate = { id: `template-${Date.now()}`, name, uri };
+        setCustomTemplates(prev => [...prev, newTemplate]);
+        toast({ title: 'Template Uploaded', description: `${name} has been added.` });
+    };
+
+    const handleDeleteTemplate = (templateId: string) => {
+        setCustomTemplates(prev => prev.filter(t => t.id !== templateId));
+        if (activeTemplateId === templateId) {
+            setActiveTemplateId('default');
+        }
+        if (defaultTemplateId === templateId) {
+            setDefaultTemplateId('default');
+        }
+        toast({ variant: 'destructive', title: 'Template Deleted' });
+    };
+
   return (
     <div className="flex flex-col w-full">
       <Header pageTitle="Paycheck Stubs" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Tabs defaultValue="view">
+        <Tabs defaultValue="view" value={activeTemplateId === 'default' ? 'view' : 'templates'} onValueChange={value => setActiveTemplateId(value)}>
             <TabsList>
                 <TabsTrigger value="view">View Paycheck Stub</TabsTrigger>
                 <TabsTrigger value="templates">Custom Templates</TabsTrigger>
@@ -189,17 +266,25 @@ export default function PaycheckStubPage() {
                             </div>
                             <div className="grid w-full items-center gap-1.5">
                                 <Label htmlFor="template">Select Template</Label>
-                                <Select defaultValue="default">
+                                 <Select value={activeTemplateId || ''} onValueChange={value => setActiveTemplateId(value)}>
                                     <SelectTrigger id="template"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="default">Default Template</SelectItem>
-                                        <SelectItem value="compact" disabled>Compact Template (Coming Soon)</SelectItem>
+                                        {customTemplates.map(t => (
+                                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
                         {selectedStub ? (
-                            <PayStubTemplate stub={selectedStub} />
+                            activeTemplateId === 'default' ? (
+                                <PayStubTemplate stub={selectedStub} />
+                            ) : (
+                                <div className="h-96 border rounded-lg flex items-center justify-center bg-muted">
+                                    <iframe src={customTemplates.find(t => t.id === activeTemplateId)?.uri} className="w-full h-full" title="Custom Template Preview" />
+                                </div>
+                            )
                         ) : (
                             <div className="flex items-center justify-center rounded-md border border-dashed h-96">
                                 <p className="text-muted-foreground">No pay stub available for the selected employee and period.</p>
@@ -214,14 +299,46 @@ export default function PaycheckStubPage() {
             </TabsContent>
             <TabsContent value="templates">
                  <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Custom Pay Stub Templates</CardTitle>
-                        <CardDescription>
-                            Upload an image or document to create your own pay stub template.
-                        </CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="font-headline">Custom Pay Stub Templates</CardTitle>
+                            <CardDescription>
+                                Upload your own PDF or image to use as a pay stub template.
+                            </CardDescription>
+                        </div>
+                        <UploadTemplateDialog onSave={handleAddTemplate} />
                     </CardHeader>
                     <CardContent>
-                        <DocumentUpload onDocumentChange={setCustomTemplateUri} currentDocument={customTemplateUri} />
+                       {customTemplates.length > 0 ? (
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {customTemplates.map(template => (
+                                    <Card key={template.id} className={cn("overflow-hidden", activeTemplateId === template.id && "ring-2 ring-primary")}>
+                                        <CardHeader className="p-4">
+                                            <CardTitle className="text-base truncate">{template.name}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-0 aspect-[8.5/11] bg-muted flex items-center justify-center">
+                                             <Image src={template.uri} alt={template.name} width={200} height={260} className="object-contain" />
+                                        </CardContent>
+                                        <CardFooter className="p-2 grid grid-cols-2 gap-2">
+                                            <Button variant="outline" size="sm" onClick={() => setActiveTemplateId(template.id)}>
+                                                {activeTemplateId === template.id ? <CheckCircle className="mr-2" /> : null}
+                                                Select
+                                            </Button>
+                                            <Button variant={defaultTemplateId === template.id ? 'default' : 'secondary'} size="sm" onClick={() => setDefaultTemplateId(template.id)}>
+                                                Set Default
+                                            </Button>
+                                            <Button variant="destructive" size="sm" className="col-span-2" onClick={() => handleDeleteTemplate(template.id)}>
+                                                <Trash2 className="mr-2" /> Delete
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                ))}
+                            </div>
+                       ) : (
+                         <div className="flex items-center justify-center rounded-md border border-dashed h-96">
+                            <p className="text-muted-foreground">No custom templates uploaded yet.</p>
+                        </div>
+                       )}
                     </CardContent>
                 </Card>
             </TabsContent>
