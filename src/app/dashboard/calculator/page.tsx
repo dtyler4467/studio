@@ -11,6 +11,7 @@ import { FileDataTable } from '@/components/dashboard/file-data-table';
 import { Folder, CalculatorIcon, FileText } from 'lucide-react';
 import { useSchedule, File } from '@/hooks/use-schedule';
 import Image from 'next/image';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function CalculatorPage() {
   const [display, setDisplay] = useState('0');
@@ -141,44 +142,46 @@ export default function CalculatorPage() {
   }
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full h-screen">
       <Header pageTitle="Calculator & Files" />
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 md:gap-8 md:p-8">
-        <div className="lg:col-span-2 flex flex-col gap-4">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2">
-                        <Folder />
-                        File Management
-                    </CardTitle>
-                    <CardDescription>Select a file to view its preview alongside the calculator.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <FileDataTable onRowClick={setSelectedFile} />
-                </CardContent>
-            </Card>
-            {selectedFile && (
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 md:gap-8 md:p-8 overflow-hidden">
+        <ScrollArea className="lg:col-span-2 h-full">
+            <div className="flex flex-col gap-4 pr-4">
                 <Card>
                     <CardHeader>
-                         <CardTitle className="font-headline flex items-center gap-2">
-                            <FileText />
-                            File Preview
+                        <CardTitle className="font-headline flex items-center gap-2">
+                            <Folder />
+                            File Management
                         </CardTitle>
-                        <CardDescription>Viewing: {selectedFile.name}</CardDescription>
+                        <CardDescription>Select a file to view its preview alongside the calculator.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex items-center justify-center p-4 min-h-64">
-                         {selectedFile.type === 'Image' ? (
-                            <Image src={'https://picsum.photos/seed/doc/800/1100'} alt={selectedFile.name} width={400} height={550} className="max-h-[550px] w-auto object-contain" />
-                        ) : (
-                            <div className="text-center text-muted-foreground">
-                                <FileText className="mx-auto h-12 w-12" />
-                                <p className="mt-2">Preview not available for this file type.</p>
-                            </div>
-                        )}
+                    <CardContent>
+                        <FileDataTable onRowClick={setSelectedFile} />
                     </CardContent>
                 </Card>
-            )}
-        </div>
+                {selectedFile && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline flex items-center gap-2">
+                                <FileText />
+                                File Preview
+                            </CardTitle>
+                            <CardDescription>Viewing: {selectedFile.name}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex items-center justify-center p-4 min-h-64">
+                            {selectedFile.type === 'Image' ? (
+                                <Image src={'https://picsum.photos/seed/doc/800/1100'} alt={selectedFile.name} width={400} height={550} className="max-h-[550px] w-auto object-contain" />
+                            ) : (
+                                <div className="text-center text-muted-foreground">
+                                    <FileText className="mx-auto h-12 w-12" />
+                                    <p className="mt-2">Preview not available for this file type.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </ScrollArea>
         
         <div className="lg:col-span-1">
              <Card className="w-full max-w-sm mx-auto sticky top-4">
