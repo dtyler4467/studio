@@ -380,8 +380,17 @@ export type Task = {
     description: string;
     assigneeId: string;
     status: TaskStatus;
+    projectId: string;
     dueDate?: Date;
 };
+
+export type Project = {
+    id: string;
+    name: string;
+    description: string;
+    team: string[]; // array of employee IDs
+    dueDate?: Date;
+}
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -419,6 +428,7 @@ type ScheduleContextType = {
   w4Templates: W4Template[];
   handbooks: Handbook[];
   tasks: Task[];
+  projects: Project[];
   addTask: (taskData: Omit<Task, 'id'>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   getHandbookById: (id: string) => Handbook | null;
@@ -800,11 +810,17 @@ export const initialHandbooks: Handbook[] = [
     { id: 'HB-2023', name: '2023 Employee Handbook (Archived)', documentUri: 'https://picsum.photos/seed/hb2/800/1100', uploadedAt: new Date('2023-01-01') },
 ];
 
+export const initialProjects: Project[] = [
+    { id: 'PROJ-1', name: 'Q3 Marketing Campaign', description: 'Launch new marketing materials for the third quarter.', team: ['USR004', 'USR003'], dueDate: new Date(new Date().setDate(new Date().getDate() + 30)) },
+    { id: 'PROJ-2', name: 'Website V2 Development', description: 'Complete the redesign and development of the new company website.', team: ['USR003', 'USR002'], dueDate: new Date(new Date().setDate(new Date().getDate() + 60)) },
+    { id: 'PROJ-3', name: 'Mobile App Feature Update', description: 'Add new features to the driver mobile app.', team: ['USR001', 'USR002'], dueDate: new Date(new Date().setDate(new Date().getDate() + 45)) },
+];
+
 export const initialTasks: Task[] = [
-    { id: 'TASK-1', title: 'Design new logo', description: 'Create a modern logo for the new marketing campaign.', assigneeId: 'USR004', status: 'In Progress', dueDate: new Date(new Date().setDate(new Date().getDate() + 3)) },
-    { id: 'TASK-2', title: 'Develop homepage prototype', description: 'Code a functional prototype using Next.js and Tailwind.', assigneeId: 'USR003', status: 'To Do', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)) },
-    { id: 'TASK-3', title: 'Review Q2 Financials', description: 'Audit the financial statements for the second quarter.', assigneeId: 'USR004', status: 'Done', dueDate: new Date(new Date().setDate(new Date().getDate() - 2)) },
-    { id: 'TASK-4', title: 'Plan team offsite event', description: 'Organize location, catering, and activities for the annual team offsite.', assigneeId: 'USR002', status: 'Review', dueDate: new Date(new Date().setDate(new Date().getDate() + 14)) },
+    { id: 'TASK-1', projectId: 'PROJ-1', title: 'Design new logo', description: 'Create a modern logo for the new marketing campaign.', assigneeId: 'USR004', status: 'In Progress', dueDate: new Date(new Date().setDate(new Date().getDate() + 3)) },
+    { id: 'TASK-2', projectId: 'PROJ-2', title: 'Develop homepage prototype', description: 'Code a functional prototype using Next.js and Tailwind.', assigneeId: 'USR003', status: 'To Do', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)) },
+    { id: 'TASK-3', projectId: 'PROJ-2', title: 'Review Q2 Financials', description: 'Audit the financial statements for the second quarter.', assigneeId: 'USR004', status: 'Done' },
+    { id: 'TASK-4', projectId: 'PROJ-3', title: 'Plan team offsite event', description: 'Organize location, catering, and activities for the annual team offsite.', assigneeId: 'USR002', status: 'Review', dueDate: new Date(new Date().setDate(new Date().getDate() + 14)) },
 ];
 
 
@@ -850,6 +866,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [w4Templates, setW4Templates] = useState<W4Template[]>(initialW4Templates);
   const [handbooks, setHandbooks] = useState<Handbook[]>(initialHandbooks);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
 
   const addTask = (taskData: Omit<Task, 'id'>) => {
     const newTask: Task = {
@@ -1707,7 +1724,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, tasks, addTask, updateTaskStatus, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, tasks, projects, addTask, updateTaskStatus, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
       {children}
     </ScheduleContext.Provider>
   );
