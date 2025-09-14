@@ -11,7 +11,6 @@ import { Printer, Mail, Upload, PlusCircle, Trash2, CheckCircle } from 'lucide-r
 import { format } from 'date-fns';
 import { Logo } from '@/components/icons/logo';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -152,9 +151,6 @@ const UploadTemplateDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name:
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-             <DialogTrigger asChild>
-                <Button onClick={() => onOpenChange(true)}><Upload className="mr-2"/> Upload New Template</Button>
-            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Upload New Pay Stub Template</DialogTitle>
@@ -166,7 +162,7 @@ const UploadTemplateDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name:
                         <Input id="template-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Compact Stub" />
                     </div>
                      <div className="space-y-2">
-                        <Label>Document</Label>
+                        <Label>Document Preview</Label>
                         <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
                     </div>
                 </div>
@@ -231,122 +227,121 @@ export default function PaycheckStubPage() {
     <div className="flex flex-col w-full">
       <Header pageTitle="Paycheck Stubs" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Tabs defaultValue="view" value={activeTemplateId === 'default' ? 'view' : 'templates'} onValueChange={value => setActiveTemplateId(value)}>
-            <TabsList>
-                <TabsTrigger value="view">View Paycheck Stub</TabsTrigger>
-                <TabsTrigger value="templates">Custom Templates</TabsTrigger>
-            </TabsList>
-            <TabsContent value="view">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Employee Paycheck Stubs</CardTitle>
-                        <CardDescription>
-                            View and manage employee paycheck stubs. This data will be auto-populated when payroll is run.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="grid w-full items-center gap-1.5">
-                                <Label htmlFor="employee">Select Employee</Label>
-                                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                                    <SelectTrigger id="employee"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        {employees.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid w-full items-center gap-1.5">
-                                <Label htmlFor="pay-period">Select Pay Period</Label>
-                                <Select value={selectedPayPeriod} onValueChange={setSelectedPayPeriod}>
-                                    <SelectTrigger id="pay-period"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        {payPeriods.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid w-full items-center gap-1.5">
-                                <Label htmlFor="template">Select Template</Label>
-                                 <Select value={activeTemplateId || ''} onValueChange={value => setActiveTemplateId(value)}>
-                                    <SelectTrigger id="template"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="default">Default Template</SelectItem>
-                                        {customTemplates.map(t => (
-                                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+        <Card>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle className="font-headline">Manage Pay Stub Templates</CardTitle>
+                    <CardDescription>
+                        Select a default template, or upload your own PDF/image to use as a pay stub layout.
+                    </CardDescription>
+                </div>
+                <Button onClick={() => setUploadOpen(true)}><Upload className="mr-2"/> Upload New Template</Button>
+            </CardHeader>
+            <CardContent>
+                {customTemplates.length > 0 ? (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                         <Card className={cn("overflow-hidden flex flex-col", activeTemplateId === 'default' && "ring-2 ring-primary")}>
+                            <CardHeader className="p-4">
+                                <CardTitle className="text-base truncate">Default Template</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 aspect-[8.5/11] bg-muted flex items-center justify-center flex-1">
+                                <Logo className="w-16 h-16 text-muted-foreground" />
+                            </CardContent>
+                            <CardFooter className="p-2 grid grid-cols-2 gap-2">
+                                <Button variant="outline" size="sm" onClick={() => setActiveTemplateId('default')}>
+                                    {activeTemplateId === 'default' ? <CheckCircle className="mr-2" /> : null}
+                                    Select
+                                </Button>
+                                <Button variant={defaultTemplateId === 'default' ? 'default' : 'secondary'} size="sm" onClick={() => setDefaultTemplateId('default')}>
+                                    Set Default
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                        {customTemplates.map(template => (
+                            <Card key={template.id} className={cn("overflow-hidden flex flex-col", activeTemplateId === template.id && "ring-2 ring-primary")}>
+                                <CardHeader className="p-4">
+                                    <CardTitle className="text-base truncate">{template.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0 aspect-[8.5/11] bg-muted flex items-center justify-center flex-1">
+                                    <Image src={template.uri} alt={template.name} width={200} height={260} className="object-contain" />
+                                </CardContent>
+                                <CardFooter className="p-2 grid grid-cols-2 gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => setActiveTemplateId(template.id)}>
+                                        {activeTemplateId === template.id ? <CheckCircle className="mr-2" /> : null}
+                                        Select
+                                    </Button>
+                                    <Button variant={defaultTemplateId === template.id ? 'default' : 'secondary'} size="sm" onClick={() => setDefaultTemplateId(template.id)}>
+                                        Set Default
+                                    </Button>
+                                    <Button variant="destructive" size="sm" className="col-span-2" onClick={() => handleDeleteTemplate(template.id)}>
+                                        <Trash2 className="mr-2" /> Delete
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center rounded-md border border-dashed h-64">
+                        <p className="text-muted-foreground mb-4">No custom templates uploaded yet.</p>
+                        <Button variant="secondary" onClick={() => setUploadOpen(true)}>
+                            <Upload className="mr-2" /> Upload Your First Template
+                        </Button>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Employee Paycheck Stubs</CardTitle>
+                <CardDescription>
+                    View and manage employee paycheck stubs. This data will be auto-populated when payroll is run.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="employee">Select Employee</Label>
+                        <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                            <SelectTrigger id="employee"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {employees.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="pay-period">Select Pay Period</Label>
+                        <Select value={selectedPayPeriod} onValueChange={setSelectedPayPeriod}>
+                            <SelectTrigger id="pay-period"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {payPeriods.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                {selectedStub ? (
+                    activeTemplateId === 'default' ? (
+                        <PayStubTemplate stub={selectedStub} />
+                    ) : (
+                        <div className="h-96 border rounded-lg flex items-center justify-center bg-muted">
+                            <iframe src={customTemplates.find(t => t.id === activeTemplateId)?.uri} className="w-full h-full" title="Custom Template Preview" />
                         </div>
-                        {selectedStub ? (
-                            activeTemplateId === 'default' ? (
-                                <PayStubTemplate stub={selectedStub} />
-                            ) : (
-                                <div className="h-96 border rounded-lg flex items-center justify-center bg-muted">
-                                    <iframe src={customTemplates.find(t => t.id === activeTemplateId)?.uri} className="w-full h-full" title="Custom Template Preview" />
-                                </div>
-                            )
-                        ) : (
-                            <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                                <p className="text-muted-foreground">No pay stub available for the selected employee and period.</p>
-                            </div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="gap-2">
-                        <Button onClick={handlePrint} disabled={!selectedStub}><Printer className="mr-2" /> Print Stub</Button>
-                        <Button variant="outline" onClick={handleEmail} disabled={!selectedStub}><Mail className="mr-2" /> Email to Employee</Button>
-                    </CardFooter>
-                </Card>
-            </TabsContent>
-            <TabsContent value="templates">
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="font-headline">Custom Pay Stub Templates</CardTitle>
-                            <CardDescription>
-                                Upload your own PDF or image to use as a pay stub template.
-                            </CardDescription>
-                        </div>
-                         <UploadTemplateDialog onSave={handleAddTemplate} isOpen={isUploadOpen} onOpenChange={setUploadOpen} />
-                    </CardHeader>
-                    <CardContent>
-                       {customTemplates.length > 0 ? (
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {customTemplates.map(template => (
-                                    <Card key={template.id} className={cn("overflow-hidden flex flex-col", activeTemplateId === template.id && "ring-2 ring-primary")}>
-                                        <CardHeader className="p-4">
-                                            <CardTitle className="text-base truncate">{template.name}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-0 aspect-[8.5/11] bg-muted flex items-center justify-center flex-1">
-                                             <Image src={template.uri} alt={template.name} width={200} height={260} className="object-contain" />
-                                        </CardContent>
-                                        <CardFooter className="p-2 grid grid-cols-2 gap-2">
-                                            <Button variant="outline" size="sm" onClick={() => setActiveTemplateId(template.id)}>
-                                                {activeTemplateId === template.id ? <CheckCircle className="mr-2" /> : null}
-                                                Select
-                                            </Button>
-                                            <Button variant={defaultTemplateId === template.id ? 'default' : 'secondary'} size="sm" onClick={() => setDefaultTemplateId(template.id)}>
-                                                Set Default
-                                            </Button>
-                                            <Button variant="destructive" size="sm" className="col-span-2" onClick={() => handleDeleteTemplate(template.id)}>
-                                                <Trash2 className="mr-2" /> Delete
-                                            </Button>
-                                        </CardFooter>
-                                    </Card>
-                                ))}
-                            </div>
-                       ) : (
-                         <div className="flex flex-col items-center justify-center rounded-md border border-dashed h-96">
-                            <p className="text-muted-foreground mb-4">No custom templates uploaded yet.</p>
-                            <Button variant="secondary" onClick={() => setUploadOpen(true)}>
-                                <Upload className="mr-2" /> Upload Your First Template
-                            </Button>
-                        </div>
-                       )}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
+                    )
+                ) : (
+                    <div className="flex items-center justify-center rounded-md border border-dashed h-96">
+                        <p className="text-muted-foreground">No pay stub available for the selected employee and period.</p>
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter className="gap-2">
+                <Button onClick={handlePrint} disabled={!selectedStub}><Printer className="mr-2" /> Print Stub</Button>
+                <Button variant="outline" onClick={handleEmail} disabled={!selectedStub}><Mail className="mr-2" /> Email to Employee</Button>
+            </CardFooter>
+        </Card>
+        <UploadTemplateDialog onSave={handleAddTemplate} isOpen={isUploadOpen} onOpenChange={setUploadOpen} />
       </main>
     </div>
   );
 }
+
+    
