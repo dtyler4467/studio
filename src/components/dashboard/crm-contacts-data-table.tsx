@@ -19,7 +19,6 @@ import { ArrowUpDown, ChevronDown, MoreHorizontal, PlusCircle } from "lucide-rea
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -42,6 +41,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { format } from "date-fns"
+import { Skeleton } from "../ui/skeleton"
 
 function AddContactDialog({ onSave }: { onSave: (contact: Omit<CrmContact, 'id' | 'dateAdded'>) => void }) {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -110,6 +110,21 @@ function AddContactDialog({ onSave }: { onSave: (contact: Omit<CrmContact, 'id' 
     )
 }
 
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setFormattedDate(format(date, "PPP"));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-24" />;
+    }
+
+    return <span>{formattedDate}</span>;
+}
+
+
 export function CrmContactsDataTable() {
     const { crmContacts, addCrmContact } = useSchedule();
     const { toast } = useToast();
@@ -150,7 +165,7 @@ export function CrmContactsDataTable() {
                 Date Added <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
         ),
-        cell: ({ row }) => format(row.original.dateAdded, "PPP"),
+        cell: ({ row }) => <ClientFormattedDate date={row.original.dateAdded} />,
       },
       {
         id: "actions",
@@ -229,5 +244,3 @@ export function CrmContactsDataTable() {
     </div>
   )
 }
-
-    
