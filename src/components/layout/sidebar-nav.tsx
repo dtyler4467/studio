@@ -201,7 +201,7 @@ const navItems: NavItem[] = [
     label: 'Fleet Management',
     roles: ['Admin', 'Dispatcher', 'Manager'],
     subItems: [
-        { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management', icon: Wrench, label: 'Maintenance', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/fleet-management/vendor', icon: Building2, label: 'Vendor', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/fleet-management/customer', icon: Contact, label: 'Customer', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/fleet-management/equipment-assignment', icon: ClipboardPaste, label: 'Equipment Assignment', roles: ['Admin', 'Dispatcher', 'Manager'] },
@@ -267,7 +267,6 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard/recruitment-hub', icon: Briefcase, label: 'Recruitment Hub', roles: ['Admin', 'Manager'] },
-  { href: '/dashboard/repair-shop', icon: Wrench, label: 'Repair Shop', roles: ['Admin', 'Manager', 'Dispatcher'] },
   { href: '/dashboard/store', icon: Store, label: 'Store', roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'] },
 ];
 
