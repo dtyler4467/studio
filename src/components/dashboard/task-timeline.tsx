@@ -157,39 +157,39 @@ export const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave, initialDate }
 
 
 export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilestone: (date: Date) => void }) => {
+    const [intermediatePoints, setIntermediatePoints] = useState(3);
     const sortedEvents = [...(task.events || [])].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
     
-    // Define the timeline start and end. Could be dynamic based on task dates.
     const timelineStart = task.events.length > 0 ? new Date(Math.min(...task.events.map(e => new Date(e.timestamp).getTime()))) : new Date();
     const timelineEnd = task.dueDate || new Date(new Date().setDate(new Date().getDate() + 7));
     const totalDuration = timelineEnd.getTime() - timelineStart.getTime();
 
     const getPosition = (date: Date) => {
         const eventTime = date.getTime();
-        if (totalDuration === 0) return 0;
+        if (totalDuration <= 0) return 0;
         const position = ((eventTime - timelineStart.getTime()) / totalDuration) * 100;
         return Math.max(0, Math.min(100, position));
     }
     
-    const handleLineClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const clickPosition = e.clientX - rect.left;
-        const percentage = (clickPosition / rect.width);
-        const clickTime = timelineStart.getTime() + (totalDuration * percentage);
-        onAddMilestone(new Date(clickTime));
+    const getDateFromPosition = (percentage: number) => {
+        const timeOffset = totalDuration * (percentage / 100);
+        return new Date(timelineStart.getTime() + timeOffset);
     }
 
     return (
         <div className="pt-8 pb-4">
+            <div className="flex justify-end mb-2">
+                 <Button variant="outline" size="sm" onClick={() => setIntermediatePoints(p => p + 1)}>
+                    Add Section
+                </Button>
+            </div>
             <div className="flex items-center w-full">
                 <div className="flex flex-col items-center">
                     <Milestone className="w-8 h-8 p-1.5 bg-green-500 text-white rounded-full" />
                     <span className="text-xs font-semibold mt-1">Start</span>
                 </div>
-                <div 
-                    className="flex-1 h-2 bg-border relative -mx-1 cursor-pointer"
-                    onClick={handleLineClick}
-                >
+                <div className="flex-1 h-2 bg-border relative -mx-1">
+                    {/* Existing event nodes */}
                     {sortedEvents.map((event) => (
                         <Popover key={event.id}>
                             <PopoverTrigger asChild>
@@ -221,6 +221,23 @@ export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilest
                             </PopoverContent>
                         </Popover>
                     ))}
+
+                    {/* Plus icons for adding new events */}
+                    {Array.from({ length: intermediatePoints }).map((_, i) => {
+                        const percentage = (100 / (intermediatePoints + 1)) * (i + 1);
+                        const date = getDateFromPosition(percentage);
+                        return (
+                             <button
+                                key={`add-${i}`}
+                                className="absolute top-1/2 -translate-y-1/2 h-5 w-5 bg-muted rounded-full hover:scale-125 hover:bg-primary/20 transition-transform focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center justify-center"
+                                style={{ left: `${percentage}%` }}
+                                onClick={() => onAddMilestone(date)}
+                            >
+                                <PlusCircle className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                        )
+                    })}
+
                 </div>
                  <div className="flex flex-col items-center">
                     <Milestone className="w-8 h-8 p-1.5 bg-blue-500 text-white rounded-full" />
@@ -230,3 +247,5 @@ export const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilest
         </div>
     )
 }
+
+    
