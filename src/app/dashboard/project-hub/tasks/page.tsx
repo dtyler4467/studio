@@ -18,10 +18,11 @@ import { cn } from '@/lib/utils';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TaskDetailDialog } from '@/components/dashboard/task-detail-dialog';
 
 const statusColumns: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Done'];
 
-const TaskCard = ({ task, onDragStart }: { task: Task; onDragStart: (e: React.DragEvent, taskId: string) => void }) => {
+const TaskCard = ({ task, onDragStart, onClick }: { task: Task; onDragStart: (e: React.DragEvent, taskId: string) => void, onClick: () => void }) => {
     const { employees } = useSchedule();
     const assignees = employees.filter(e => task.assigneeIds.includes(e.id));
     
@@ -29,7 +30,8 @@ const TaskCard = ({ task, onDragStart }: { task: Task; onDragStart: (e: React.Dr
         <Card 
             draggable
             onDragStart={(e) => onDragStart(e, task.id)}
-            className="cursor-grab active:cursor-grabbing"
+            onClick={onClick}
+            className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
         >
             <CardHeader className="p-4">
                 <CardTitle className="text-base">{task.title}</CardTitle>
@@ -129,6 +131,7 @@ const AddTaskDialog = () => {
 export default function ProjectTasksPage() {
     const { tasks, updateTaskStatus } = useSchedule();
     const [draggedOverColumn, setDraggedOverColumn] = useState<TaskStatus | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     const columns = useMemo(() => {
         const cols: Record<TaskStatus, Task[]> = {
@@ -164,6 +167,7 @@ export default function ProjectTasksPage() {
 
 
   return (
+    <>
     <div className="flex flex-col w-full">
       <Header pageTitle="Project Tasks" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -198,7 +202,12 @@ export default function ProjectTasksPage() {
                                 draggedOverColumn === status && "bg-primary/20"
                                 )}>
                                 {columns[status].map(task => (
-                                    <TaskCard key={task.id} task={task} onDragStart={handleDragStart} />
+                                    <TaskCard 
+                                        key={task.id} 
+                                        task={task} 
+                                        onDragStart={handleDragStart} 
+                                        onClick={() => setSelectedTask(task)}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -208,5 +217,11 @@ export default function ProjectTasksPage() {
         </Card>
       </main>
     </div>
+     <TaskDetailDialog 
+        task={selectedTask}
+        isOpen={!!selectedTask}
+        onOpenChange={(open) => !open && setSelectedTask(null)}
+    />
+    </>
   );
 }

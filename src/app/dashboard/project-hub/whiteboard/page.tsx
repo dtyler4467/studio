@@ -4,280 +4,14 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { PenSquare, PlusCircle } from 'lucide-react';
-import { useSchedule, Task, TaskEvent } from '@/hooks/use-schedule';
+import { PenSquare } from 'lucide-react';
+import { useSchedule, Task } from '@/hooks/use-schedule';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { FileText, GitCommit, Milestone, ExternalLink, CalendarIcon } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { format, formatDistanceToNow } from 'date-fns';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { DocumentUpload } from '@/components/dashboard/document-upload';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { Calendar } from '@/components/ui/calendar';
-
-
-const NotesSection = ({ task }: { task: Task }) => {
-    const { addTaskEvent, currentUser } = useSchedule();
-    const [newNote, setNewNote] = useState('');
-
-    const handlePostNote = () => {
-        if (newNote.trim()) {
-            addTaskEvent(task.id, {
-                type: 'note',
-                content: newNote.trim(),
-                timestamp: new Date(),
-            });
-            setNewNote('');
-        }
-    };
-
-    return (
-        <div className="space-y-4">
-            <h4 className="font-semibold">Notes & Collaboration</h4>
-            <div className="space-y-2">
-                <Label htmlFor="new-note">Add a note</Label>
-                <Textarea 
-                    id="new-note"
-                    placeholder="Type your comment here..." 
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                />
-                <Button onClick={handlePostNote} size="sm" disabled={!newNote.trim()}>Post Note</Button>
-            </div>
-            <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-                {task.events && [...task.events].filter(e => e.type === 'note').reverse().map((note) => (
-                    <div key={note.id} className="flex items-start gap-3">
-                         <Avatar className="h-8 w-8 border">
-                             <AvatarFallback className="text-xs">{note.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
-                         </Avatar>
-                         <div className="bg-muted p-3 rounded-md flex-1">
-                             <div className="flex justify-between items-center">
-                                <p className="font-semibold text-sm">{note.author}</p>
-                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(note.timestamp, { addSuffix: true })}</p>
-                             </div>
-                             <p className="text-sm mt-1">{note.content}</p>
-                         </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
-}
-
-const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean; onOpenChange: (open: boolean) => void; onSave: (data: Omit<TaskEvent, 'id' | 'author'>) => void }) => {
-    const [name, setName] = useState('');
-    const [content, setContent] = useState('');
-    const [documentUri, setDocumentUri] = useState<string | null>(null);
-    const [eventDate, setEventDate] = useState<Date>(new Date());
-    const { toast } = useToast();
-    
-    useEffect(() => {
-        if(isOpen) {
-            setEventDate(new Date());
-        }
-    }, [isOpen]);
-
-    const handleSave = () => {
-        if (!name.trim()) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a name for the milestone.' });
-            return;
-        }
-        onSave({ type: 'milestone', name, content, documentUri, timestamp: eventDate });
-        onOpenChange(false);
-        setName('');
-        setContent('');
-        setDocumentUri(null);
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>Add New Timeline Event</DialogTitle>
-                    <DialogDescription>
-                        Create a new milestone or event on the task timeline.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="event-date">Event Date & Time</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn("w-full justify-start text-left font-normal")}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {format(eventDate, "PPP p")}
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={eventDate}
-                                    onSelect={(d) => d && setEventDate(d)}
-                                    initialFocus
-                                />
-                                <div className="p-2 border-t">
-                                     <Input type="time" value={format(eventDate, 'HH:mm')} onChange={(e) => {
-                                         const [hours, minutes] = e.target.value.split(':');
-                                         const newDate = new Date(eventDate);
-                                         newDate.setHours(parseInt(hours));
-                                         newDate.setMinutes(parseInt(minutes));
-                                         setEventDate(newDate);
-                                     }} />
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="milestone-name">Event Name</Label>
-                        <Input id="milestone-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Client Approval" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="milestone-content">Description/Notes</Label>
-                        <Textarea id="milestone-content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Add any relevant details..." />
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Attach Document (Optional)</Label>
-                        <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Event</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-
-const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilestone: () => void }) => {
-    const sortedEvents = [...(task.events || [])].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
-
-    return (
-        <div className="pt-8 pb-4">
-            <div className="flex items-center w-full">
-                <div className="flex flex-col items-center">
-                    <Milestone className="w-8 h-8 p-1.5 bg-green-500 text-white rounded-full" />
-                    <span className="text-xs font-semibold mt-1">Start</span>
-                </div>
-                <div className="flex-1 h-1 bg-border relative -mx-1 flex items-center">
-                    <Button variant="outline" size="icon" className="h-6 w-6 rounded-full absolute left-1/2 -translate-x-1/2 z-10" onClick={onAddMilestone}>
-                        <PlusCircle className="h-4 w-4" />
-                    </Button>
-                    <div className="absolute inset-0 flex items-center justify-around px-10">
-                        {sortedEvents.map((event) => (
-                             <Popover key={event.id}>
-                                <PopoverTrigger asChild>
-                                    <button className="h-4 w-4 bg-primary rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80">
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-xs">{event.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-semibold text-sm">{event.name || event.author}</span>
-                                            <Badge variant="secondary" className="text-xs">{event.type}</Badge>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">{format(event.timestamp, 'PPP p')}</p>
-                                        <Separator />
-                                        <p className="text-sm">{event.content}</p>
-                                        {event.documentUri && (
-                                            <Button variant="link" asChild className="p-0 h-auto">
-                                                <a href={event.documentUri} target="_blank" rel="noopener noreferrer">
-                                                    View Document <ExternalLink className="ml-2 h-3 w-3" />
-                                                </a>
-                                            </Button>
-                                        )}
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        ))}
-                    </div>
-                </div>
-                 <div className="flex flex-col items-center">
-                    <Milestone className="w-8 h-8 p-1.5 bg-blue-500 text-white rounded-full" />
-                    <span className="text-xs font-semibold mt-1">Finish</span>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; isOpen: boolean; onOpenChange: (open: boolean) => void }) => {
-    const { employees, addTaskEvent } = useSchedule();
-    const [isAddMilestoneOpen, setAddMilestoneOpen] = useState(false);
-    
-    if (!task) return null;
-
-    const assignees = employees.filter(e => task.assigneeIds.includes(e.id));
-    
-    const handleSaveMilestone = (data: Omit<TaskEvent, 'id' | 'author'>) => {
-        addTaskEvent(task.id, data);
-    };
-
-    return (
-        <>
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-4xl">
-                <DialogHeader>
-                    <DialogTitle>{task.title}</DialogTitle>
-                    <DialogDescription>{task.description}</DialogDescription>
-                </DialogHeader>
-                <Tabs defaultValue="details">
-                    <TabsList>
-                        <TabsTrigger value="details">Details & Notes</TabsTrigger>
-                        <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="details" className="max-h-[70vh] overflow-y-auto pr-4">
-                        <div className="grid md:grid-cols-2 gap-6 py-4">
-                             <div className="space-y-4">
-                                <h4 className="font-semibold">Assigned To</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {assignees.map(assignee => (
-                                        <div key={assignee.id} className="flex items-center gap-2 bg-muted p-2 rounded-md">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-xs">{assignee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-sm font-medium">{assignee.name}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                {task.documentUri && (
-                                    <div>
-                                        <h4 className="font-semibold mt-4">Attached Document</h4>
-                                        <div className="mt-2 border rounded-md p-2">
-                                            <Image src={task.documentUri} alt={`Document for ${task.title}`} width={800} height={600} className="rounded-md w-full h-auto" />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            <NotesSection task={task} />
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="timeline">
-                        <TaskTimeline task={task} onAddMilestone={() => setAddMilestoneOpen(true)} />
-                    </TabsContent>
-                </Tabs>
-            </DialogContent>
-        </Dialog>
-        <AddMilestoneDialog isOpen={isAddMilestoneOpen} onOpenChange={setAddMilestoneOpen} onSave={handleSaveMilestone} />
-        </>
-    );
-};
-
+import { TaskDetailDialog } from '@/components/dashboard/task-detail-dialog';
 
 const TaskNote = ({ task, position, onClick, onDragStart }: { task: Task; position: { x: number, y: number }; onClick: () => void, onDragStart: (e: React.DragEvent) => void }) => {
     const { employees } = useSchedule();
@@ -336,7 +70,7 @@ export default function ProjectWhiteboardPage() {
         if (!taskPositions[task.id]) {
             initialPositions[task.id] = {
                 x: (index % 4) * 280 + 40,
-                y: Math.floor(index / 4) * 220 + 40,
+                y: Math.floor(index / 4) * 300 + 40,
             };
         }
     });
@@ -385,7 +119,7 @@ export default function ProjectWhiteboardPage() {
                     Collaborative Whiteboard
                 </CardTitle>
                 <CardDescription>
-                    A visual overview of all project tasks. Click a task to see more details and collaborate. Drag to rearrange.
+                    A visual overview of all project tasks. This space will transform into a fully interactive whiteboard for your team to brainstorm, plan, and create together. Click a task to see details and collaborate. Drag to rearrange.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -422,5 +156,3 @@ export default function ProjectWhiteboardPage() {
     </div>
   );
 }
-
-
