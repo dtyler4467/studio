@@ -50,6 +50,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Skeleton } from "../ui/skeleton"
 import { MultiSelect, MultiSelectOption } from "../ui/multi-select"
 import { useSchedule, File } from "@/hooks/use-schedule"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 const getFileIcon = (type: File['type']) => {
     switch (type) {
@@ -126,10 +128,44 @@ const ShareDialog = ({ file, isOpen, onOpenChange }: { file: File | null, isOpen
     )
 }
 
+const FilePreviewDialog = ({ file, isOpen, onOpenChange }: { file: File | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
+    if (!file) return null;
 
-export function FileDataTable() {
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>{file.name}</DialogTitle>
+                    <DialogDescription>{file.type} - {(file.size / (1024*1024)).toFixed(2)} MB</DialogDescription>
+                </DialogHeader>
+                <div className="p-4 border rounded-md bg-muted h-[70vh] flex items-center justify-center">
+                    {file.type === 'Image' ? (
+                        <Image src={'https://picsum.photos/seed/doc/800/1100'} alt={file.name} width={800} height={1100} className="max-h-full max-w-full object-contain" />
+                    ) : (
+                         <div className="text-center text-muted-foreground">
+                            <FileIcon className="mx-auto h-24 w-24" />
+                            <p className="mt-4">Preview not available for this file type.</p>
+                            <p className="text-sm">You can download the file to view it.</p>
+                        </div>
+                    )}
+                </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+
+type FileDataTableProps = {
+    onRowClick?: 'navigate' | 'dialog';
+}
+
+export function FileDataTable({ onRowClick = 'navigate' }: FileDataTableProps) {
     const { files, deleteFile, currentUser, addFile, logFileShare } = useSchedule();
     const { toast } = useToast();
+    const router = useRouter();
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -140,6 +176,15 @@ export function FileDataTable() {
     const [isShareOpen, setShareOpen] = React.useState(false);
     const [fileToShare, setFileToShare] = React.useState<File | null>(null);
     const [fileToDelete, setFileToDelete] = React.useState<File | null>(null);
+    const [fileToPreview, setFileToPreview] = React.useState<File | null>(null);
+
+    const handleRowClick = (file: File) => {
+        if (onRowClick === 'navigate') {
+            router.push(`/dashboard/administration/files/${file.id}`);
+        } else {
+            setFileToPreview(file);
+        }
+    }
 
     const handleShareClick = (file: File) => {
         setFileToShare(file);
@@ -444,9 +489,15 @@ export function FileDataTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => handleRowClick(row.original)}
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} onClick={(e) => {
+                        if (cell.column.id === 'select' || cell.column.id === 'actions') {
+                            e.stopPropagation();
+                        }
+                    }}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -493,6 +544,7 @@ export function FileDataTable() {
         </div>
       </div>
       <ShareDialog file={fileToShare} isOpen={isShareOpen} onOpenChange={setShareOpen} />
+      <FilePreviewDialog file={fileToPreview} isOpen={!!fileToPreview} onOpenChange={() => setFileToPreview(null)} />
     </div>
   )
 }
