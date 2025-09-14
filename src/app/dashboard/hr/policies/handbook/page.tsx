@@ -4,7 +4,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
+import { PlusCircle, FileText, MoreHorizontal, Trash2, Pencil, Copy } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -40,7 +40,7 @@ import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useSchedule, Handbook } from '@/hooks/use-schedule';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const UploadHandbookDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name: string, uri: string) => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
     const [name, setName] = useState('');
@@ -97,10 +97,12 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
 
 
 export default function HandbookPage() {
-    const { handbooks, addHandbook, deleteHandbook } = useSchedule();
+    const { handbooks, addHandbook, deleteHandbook, duplicateHandbook, updateHandbook } = useSchedule();
     const [isUploadOpen, setUploadOpen] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
+    const [handbookToRename, setHandbookToRename] = useState<Handbook | null>(null);
+    const [newName, setNewName] = useState('');
 
     const handleSaveHandbook = (name: string, documentUri: string) => {
         addHandbook(name, documentUri);
@@ -112,6 +114,21 @@ export default function HandbookPage() {
         deleteHandbook(id);
         toast({ variant: 'destructive', title: 'Handbook Deleted' });
     }
+    
+    const handleDuplicate = (id: string) => {
+        duplicateHandbook(id);
+        toast({ title: 'Handbook Duplicated', description: 'A copy of the handbook has been created.' });
+    }
+
+    const handleRename = () => {
+        if (handbookToRename && newName) {
+            updateHandbook({ ...handbookToRename, name: newName });
+            toast({ title: 'Handbook Renamed' });
+            setHandbookToRename(null);
+            setNewName('');
+        }
+    };
+
 
     return (
         <div className="flex flex-col w-full">
@@ -132,12 +149,12 @@ export default function HandbookPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <th className="p-4 text-left">Name</th>
-                                        <th className="p-4 text-left">Date Uploaded</th>
-                                        <th className="p-4 text-right">Actions</th>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Date Uploaded</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <tbody>
+                                <TableBody>
                                     {handbooks.map(hb => (
                                         <TableRow key={hb.id} onClick={() => router.push(`/dashboard/hr/policies/handbook/${hb.id}`)} className="cursor-pointer">
                                             <TableCell className="font-medium flex items-center gap-2">
@@ -152,7 +169,8 @@ export default function HandbookPage() {
                                                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}><MoreHorizontal/></Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                                                            <DropdownMenuItem><Pencil className="mr-2"/> Rename</DropdownMenuItem>
+                                                             <DropdownMenuItem onSelect={() => handleDuplicate(hb.id)}><Copy className="mr-2"/> Duplicate</DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => {setHandbookToRename(hb); setNewName(hb.name)}}><Pencil className="mr-2"/> Rename</DropdownMenuItem>
                                                             <DropdownMenuSeparator/>
                                                             <AlertDialogTrigger asChild>
                                                                 <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}><Trash2 className="mr-2"/> Delete</DropdownMenuItem>
@@ -175,12 +193,27 @@ export default function HandbookPage() {
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                </tbody>
+                                </TableBody>
                             </Table>
                         </div>
                     </CardContent>
                 </Card>
                 <UploadHandbookDialog isOpen={isUploadOpen} onOpenChange={setUploadOpen} onSave={handleSaveHandbook} />
+                <Dialog open={!!handbookToRename} onOpenChange={() => setHandbookToRename(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Rename Handbook</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4 space-y-2">
+                            <Label htmlFor="new-name">New Handbook Name</Label>
+                            <Input id="new-name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setHandbookToRename(null)}>Cancel</Button>
+                            <Button onClick={handleRename}>Save Name</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );

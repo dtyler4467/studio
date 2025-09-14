@@ -399,6 +399,8 @@ type ScheduleContextType = {
   updateHandbookSection: (handbookId: string, sectionTitle: string, content: string) => void;
   addHandbook: (name: string, documentUri: string) => void;
   deleteHandbook: (id: string) => void;
+  updateHandbook: (updatedHandbook: Handbook) => void;
+  duplicateHandbook: (handbookId: string) => void;
   addW4Template: (name: string, documentUri: string) => void;
   updateW4Template: (id: string, name: string) => void;
   deleteW4Template: (id: string) => void;
@@ -455,6 +457,7 @@ type ScheduleContextType = {
   updateYardEventStatus: (eventId: string, status: YardEventStatus, notes?: string) => void;
   getExpenseReportById: (id: string) => ExpenseReport | null;
   setExpenseReports: React.Dispatch<React.SetStateAction<ExpenseReport[]>>;
+  receipts: Receipt[];
   setReceipts: React.Dispatch<React.SetStateAction<Receipt[]>>;
   getTrainingModuleById: (id: string) => TrainingModule | null;
   assignTraining: (employeeId: string, moduleId: string) => void;
@@ -849,6 +852,23 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
           };
           setDeletionLogs(prev => [logEntry, ...prev]);
           setHandbooks(prev => prev.filter(hb => hb.id !== id));
+      }
+  };
+
+  const updateHandbook = (updatedHandbook: Handbook) => {
+    setHandbooks(prev => prev.map(hb => hb.id === updatedHandbook.id ? updatedHandbook : hb));
+  };
+  
+  const duplicateHandbook = (handbookId: string) => {
+      const handbookToCopy = handbooks.find(hb => hb.id === handbookId);
+      if (handbookToCopy) {
+          const newHandbook: Handbook = {
+              ...handbookToCopy,
+              id: `HB-${Date.now()}`,
+              name: `Copy of ${handbookToCopy.name}`,
+              uploadedAt: new Date(),
+          };
+          setHandbooks(prev => [newHandbook, ...prev]);
       }
   };
   
@@ -1592,7 +1612,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, addHandbook, deleteHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );
