@@ -94,6 +94,11 @@ import {
   FilePlus2,
   UserCog,
   Calculator,
+  View,
+  KanbanSquare,
+  PenSquare,
+  Presentation,
+  Columns,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -131,7 +136,15 @@ const navItems: NavItem[] = [
     href: '/dashboard/project-hub',
     icon: Package,
     label: 'Project Hub',
-    roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer']
+    roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+    subItems: [
+        { href: '/dashboard/project-hub/overview', icon: View, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/project-hub/tasks', icon: KanbanSquare, label: 'Tasks', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/project-hub/calendar', icon: Calendar, label: 'Calendar', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/project-hub/whiteboard', icon: PenSquare, label: 'Whiteboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/project-hub/files', icon: Folder, label: 'Files', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/project-hub/reports', icon: Presentation, label: 'Reports', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+    ]
   },
    {
     href: '/dashboard/calendar',
@@ -528,6 +541,7 @@ export function SidebarNav() {
   const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [isTimeTrackerHubOpen, setIsTimeTrackerHubOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [isProjectHubOpen, setIsProjectHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -554,6 +568,7 @@ export function SidebarNav() {
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
     setIsHrOpen(pathname.startsWith('/dashboard/recruitment-hub') || pathname.startsWith('/dashboard/hr'));
     setIsStoreOpen(pathname.startsWith('/dashboard/store'));
+    setIsProjectHubOpen(pathname.startsWith('/dashboard/project-hub'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -787,6 +802,7 @@ export function SidebarNav() {
                         'HR HUB': isHrOpen,
                         'Time Tracker HUB': isTimeTrackerHubOpen,
                         'Store': isStoreOpen,
+                        'Project Hub': isProjectHubOpen,
                     };
                     const setIsOpenMap = {
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -799,6 +815,7 @@ export function SidebarNav() {
                         'HR HUB': setIsHrOpen,
                         'Time Tracker HUB': setIsTimeTrackerHubOpen,
                         'Store': setIsStoreOpen,
+                        'Project Hub': setIsProjectHubOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                     const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
