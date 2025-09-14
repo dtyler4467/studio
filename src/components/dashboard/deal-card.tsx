@@ -8,11 +8,28 @@ import { DollarSign, MoreVertical } from "lucide-react";
 import { Button } from "../ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { format } from "date-fns";
+import React, { useEffect, useState } from 'react';
+import { Skeleton } from "../ui/skeleton";
 
 interface DealCardProps {
     deal: Deal;
     onDragStart: (e: React.DragEvent<HTMLDivElement>, dealId: string) => void;
 }
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        setFormattedDate(format(date, 'MMM dd, yyyy'));
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-24" />;
+    }
+
+    return <>Close Date: {formattedDate}</>;
+}
+
 
 export function DealCard({ deal, onDragStart }: DealCardProps) {
     const { employees } = useSchedule();
@@ -53,7 +70,7 @@ export function DealCard({ deal, onDragStart }: DealCardProps) {
                 )}
             </CardContent>
             <CardFooter className="p-4 pt-0 text-xs text-muted-foreground">
-                 <p>Close Date: {format(deal.closeDate, 'MMM dd, yyyy')}</p>
+                 <p><ClientFormattedDate date={deal.closeDate} /></p>
             </CardFooter>
         </Card>
     );
