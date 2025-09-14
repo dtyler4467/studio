@@ -1,15 +1,16 @@
 
+
 "use client";
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { PenSquare } from 'lucide-react';
-import { useSchedule, Task, TaskNote as TaskNoteType } from '@/hooks/use-schedule';
+import { PenSquare, PlusCircle } from 'lucide-react';
+import { useSchedule, Task, TaskEvent } from '@/hooks/use-schedule';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { FileText, GitCommit, Milestone } from 'lucide-react';
+import { FileText, GitCommit, Milestone, ExternalLink } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -17,15 +18,20 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-
+import { DocumentUpload } from '@/components/dashboard/document-upload';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const NotesSection = ({ task }: { task: Task }) => {
-    const { addTaskNote, currentUser } = useSchedule();
+    const { addTaskEvent, currentUser } = useSchedule();
     const [newNote, setNewNote] = useState('');
 
     const handlePostNote = () => {
         if (newNote.trim()) {
-            addTaskNote(task.id, newNote);
+            addTaskEvent(task.id, {
+                type: 'note',
+                content: newNote.trim(),
+            });
             setNewNote('');
         }
     };
@@ -44,8 +50,8 @@ const NotesSection = ({ task }: { task: Task }) => {
                 <Button onClick={handlePostNote} size="sm" disabled={!newNote.trim()}>Post Note</Button>
             </div>
             <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-                {task.notes && [...task.notes].reverse().map((note, index) => (
-                    <div key={index} className="flex items-start gap-3">
+                {task.events && [...task.events].filter(e => e.type === 'note').reverse().map((note) => (
+                    <div key={note.id} className="flex items-start gap-3">
                          <Avatar className="h-8 w-8 border">
                              <AvatarFallback className="text-xs">{note.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
                          </Avatar>
@@ -63,8 +69,59 @@ const NotesSection = ({ task }: { task: Task }) => {
     )
 }
 
-const TaskTimeline = ({ task }: { task: Task }) => {
-    const sortedNotes = [...(task.notes || [])].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
+const AddMilestoneDialog = ({ isOpen, onOpenChange, onSave }: { isOpen: boolean; onOpenChange: (open: boolean) => void; onSave: (data: Omit<TaskEvent, 'id' | 'author' | 'timestamp'>) => void }) => {
+    const [name, setName] = useState('');
+    const [content, setContent] = useState('');
+    const [documentUri, setDocumentUri] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    const handleSave = () => {
+        if (!name.trim()) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a name for the milestone.' });
+            return;
+        }
+        onSave({ type: 'milestone', name, content, documentUri });
+        onOpenChange(false);
+        setName('');
+        setContent('');
+        setDocumentUri(null);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>Add New Timeline Event</DialogTitle>
+                    <DialogDescription>
+                        Create a new milestone or event on the task timeline.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="milestone-name">Event Name</Label>
+                        <Input id="milestone-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Client Approval" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="milestone-content">Description/Notes</Label>
+                        <Textarea id="milestone-content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Add any relevant details..." />
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Attach Document (Optional)</Label>
+                        <DocumentUpload onDocumentChange={setDocumentUri} currentDocument={documentUri} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Event</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
+const TaskTimeline = ({ task, onAddMilestone }: { task: Task, onAddMilestone: () => void }) => {
+    const sortedEvents = [...(task.events || [])].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     return (
         <div className="pt-8 pb-4">
@@ -73,10 +130,13 @@ const TaskTimeline = ({ task }: { task: Task }) => {
                     <Milestone className="w-8 h-8 p-1.5 bg-green-500 text-white rounded-full" />
                     <span className="text-xs font-semibold mt-1">Start</span>
                 </div>
-                <div className="flex-1 h-1 bg-border relative -mx-1">
-                    <div className="absolute inset-0 flex items-center justify-around">
-                        {sortedNotes.map((note, index) => (
-                             <Popover key={index}>
+                <div className="flex-1 h-1 bg-border relative -mx-1 flex items-center">
+                    <Button variant="outline" size="icon" className="h-6 w-6 rounded-full absolute left-1/2 -translate-x-1/2 z-10" onClick={onAddMilestone}>
+                        <PlusCircle className="h-4 w-4" />
+                    </Button>
+                    <div className="absolute inset-0 flex items-center justify-around px-10">
+                        {sortedEvents.map((event) => (
+                             <Popover key={event.id}>
                                 <PopoverTrigger asChild>
                                     <button className="h-4 w-4 bg-primary rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"></button>
                                 </PopoverTrigger>
@@ -84,13 +144,21 @@ const TaskTimeline = ({ task }: { task: Task }) => {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-xs">{note.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                                                <AvatarFallback className="text-xs">{event.author.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
                                             </Avatar>
-                                            <span className="font-semibold text-sm">{note.author}</span>
+                                            <span className="font-semibold text-sm">{event.name || event.author}</span>
+                                            <Badge variant="secondary" className="text-xs">{event.type}</Badge>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">{format(note.timestamp, 'PPP p')}</p>
+                                        <p className="text-xs text-muted-foreground">{format(event.timestamp, 'PPP p')}</p>
                                         <Separator />
-                                        <p className="text-sm">{note.content}</p>
+                                        <p className="text-sm">{event.content}</p>
+                                        {event.documentUri && (
+                                            <Button variant="link" asChild className="p-0 h-auto">
+                                                <a href={event.documentUri} target="_blank" rel="noopener noreferrer">
+                                                    View Document <ExternalLink className="ml-2 h-3 w-3" />
+                                                </a>
+                                            </Button>
+                                        )}
                                     </div>
                                 </PopoverContent>
                             </Popover>
@@ -107,12 +175,19 @@ const TaskTimeline = ({ task }: { task: Task }) => {
 }
 
 const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; isOpen: boolean; onOpenChange: (open: boolean) => void }) => {
-    const { employees } = useSchedule();
+    const { employees, addTaskEvent } = useSchedule();
+    const [isAddMilestoneOpen, setAddMilestoneOpen] = useState(false);
+    
     if (!task) return null;
 
     const assignees = employees.filter(e => task.assigneeIds.includes(e.id));
+    
+    const handleSaveMilestone = (data: Omit<TaskEvent, 'id' | 'author' | 'timestamp'>) => {
+        addTaskEvent(task.id, data);
+    };
 
     return (
+        <>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
@@ -151,11 +226,13 @@ const TaskDetailDialog = ({ task, isOpen, onOpenChange }: { task: Task | null; i
                         </div>
                     </TabsContent>
                     <TabsContent value="timeline">
-                        <TaskTimeline task={task} />
+                        <TaskTimeline task={task} onAddMilestone={() => setAddMilestoneOpen(true)} />
                     </TabsContent>
                 </Tabs>
             </DialogContent>
         </Dialog>
+        <AddMilestoneDialog isOpen={isAddMilestoneOpen} onOpenChange={setAddMilestoneOpen} onSave={handleSaveMilestone} />
+        </>
     );
 };
 
@@ -303,3 +380,4 @@ export default function ProjectWhiteboardPage() {
     </div>
   );
 }
+
