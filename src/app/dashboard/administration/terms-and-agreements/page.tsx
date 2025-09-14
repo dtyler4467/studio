@@ -1,7 +1,10 @@
 
+"use client";
+
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect } from 'react';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="space-y-2">
@@ -11,6 +14,12 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 );
 
 export default function AdminTermsAndAgreementsPage() {
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+  }, []);
+
   return (
     <div className="flex flex-col w-full">
       <Header pageTitle="Terms & Agreements" />
@@ -19,7 +28,7 @@ export default function AdminTermsAndAgreementsPage() {
             <CardHeader>
                 <CardTitle className="font-headline">LogiFlow Application Terms of Service</CardTitle>
                 <CardDescription>
-                    Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. Please review these terms carefully.
+                    {lastUpdated ? `Last Updated: ${lastUpdated}. Please review these terms carefully.` : 'Loading...'}
                 </CardDescription>
             </CardHeader>
             <CardContent>
