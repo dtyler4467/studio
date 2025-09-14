@@ -381,7 +381,7 @@ const WarehouseAssociatesDialog = ({ isOpen, onOpenChange }: { isOpen: boolean, 
                 </DialogHeader>
                 <div className="flex flex-col gap-2 py-4">
                     <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/my-pick">My Active Pick</Link></Button>
-                    <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/order-queue">Picker Queue</Link></Button>
+                    <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/order-queue">Order Queue</Link></Button>
                     <Button asChild variant="outline" onClick={() => onOpenChange(false)}><Link href="/dashboard/warehouse-hub-manager/associates/picker-assigner">Picker Assigner</Link></Button>
                 </div>
             </DialogContent>
