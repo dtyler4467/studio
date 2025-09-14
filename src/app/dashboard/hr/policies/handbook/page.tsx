@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileText, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -38,18 +39,7 @@ import { Input } from '@/components/ui/input';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-
-type Handbook = {
-    id: string;
-    name: string;
-    documentUri: string;
-    uploadedAt: Date;
-};
-
-const initialHandbooks: Handbook[] = [
-    { id: 'HB-2024', name: '2024 Employee Handbook', documentUri: 'https://picsum.photos/seed/hb1/800/1100', uploadedAt: new Date('2024-01-01') },
-    { id: 'HB-2023', name: '2023 Employee Handbook (Archived)', documentUri: 'https://picsum.photos/seed/hb2/800/1100', uploadedAt: new Date('2023-01-01') },
-];
+import { useSchedule, Handbook } from '@/hooks/use-schedule';
 
 const UploadHandbookDialog = ({ onSave, isOpen, onOpenChange }: { onSave: (name: string, uri: string) => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
     const [name, setName] = useState('');
@@ -106,24 +96,19 @@ const ClientFormattedDate = ({ date }: { date: Date }) => {
 
 
 export default function HandbookPage() {
-    const [handbooks, setHandbooks] = useState(initialHandbooks);
+    const { handbooks, addHandbook, deleteHandbook } = useSchedule();
     const [isUploadOpen, setUploadOpen] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
 
     const handleSaveHandbook = (name: string, documentUri: string) => {
-        const newHandbook: Handbook = {
-            id: `HB-${Date.now()}`,
-            name,
-            documentUri,
-            uploadedAt: new Date(),
-        };
-        setHandbooks(prev => [newHandbook, ...prev]);
+        addHandbook(name, documentUri);
         setUploadOpen(false);
         toast({ title: 'Handbook Uploaded', description: `Successfully uploaded ${name}.` });
     };
 
     const handleDelete = (id: string) => {
-        setHandbooks(prev => prev.filter(hb => hb.id !== id));
+        deleteHandbook(id);
         toast({ variant: 'destructive', title: 'Handbook Deleted' });
     }
 
@@ -153,46 +138,41 @@ export default function HandbookPage() {
                                 </thead>
                                 <tbody>
                                     {handbooks.map(hb => (
-                                        <tr key={hb.id} className="border-b">
-                                            <td className="p-4 font-medium flex items-center gap-2">
+                                        <TableRow key={hb.id} onClick={() => router.push(`/dashboard/hr/policies/handbook/${hb.id}`)} className="cursor-pointer">
+                                            <TableCell className="font-medium flex items-center gap-2">
                                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                                 {hb.name}
-                                            </td>
-                                            <td className="p-4 text-muted-foreground"><ClientFormattedDate date={hb.uploadedAt} /></td>
-                                            <td className="p-4 text-right">
-                                                <div className="flex gap-2 justify-end">
-                                                    <Button variant="outline" size="sm" asChild>
-                                                        <a href={hb.documentUri} target="_blank" rel="noopener noreferrer">Preview</a>
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal/></Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent>
-                                                                <DropdownMenuItem><Pencil className="mr-2"/> Rename</DropdownMenuItem>
-                                                                <DropdownMenuSeparator/>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}><Trash2 className="mr-2"/> Delete</DropdownMenuItem>
-                                                                </AlertDialogTrigger>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    This action cannot be undone. This will permanently delete the handbook "{hb.name}".
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(hb.id)}>Delete</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                            <TableCell><ClientFormattedDate date={hb.uploadedAt} /></TableCell>
+                                            <TableCell className="p-4 text-right">
+                                                <AlertDialog>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}><MoreHorizontal/></Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                                            <DropdownMenuItem><Pencil className="mr-2"/> Rename</DropdownMenuItem>
+                                                            <DropdownMenuSeparator/>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}><Trash2 className="mr-2"/> Delete</DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete the handbook "{hb.name}".
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(hb.id)}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
                                 </tbody>
                             </table>

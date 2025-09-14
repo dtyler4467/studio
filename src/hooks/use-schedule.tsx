@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -146,7 +145,7 @@ export type TrainingAssignment = {
 export type DeletionLog = {
     id: string;
     deletedItemId: string;
-    itemType: 'Shift' | 'User' | 'File' | 'Equipment' | 'BolTemplate' | 'W4Template';
+    itemType: 'Shift' | 'User' | 'File' | 'Equipment' | 'BolTemplate' | 'W4Template' | 'Handbook';
     deletedBy: string; // User ID
     deletedAt: Date;
     originalData: any;
@@ -345,6 +344,21 @@ export type W4Template = {
   uploadedAt: Date;
 };
 
+export type HandbookSection = {
+    title: string;
+    content: string;
+};
+
+export type Handbook = {
+    id: string;
+    name: string;
+    documentUri?: string | null;
+    uploadedAt: Date;
+    content?: {
+        lastUpdated: string;
+        sections: HandbookSection[];
+    }
+};
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -380,6 +394,11 @@ type ScheduleContextType = {
   qualityHolds: QualityHold[];
   salesOrders: SalesOrder[];
   w4Templates: W4Template[];
+  handbooks: Handbook[];
+  getHandbookById: (id: string) => Handbook | null;
+  updateHandbookSection: (handbookId: string, sectionTitle: string, content: string) => void;
+  addHandbook: (name: string, documentUri: string) => void;
+  deleteHandbook: (id: string) => void;
   addW4Template: (name: string, documentUri: string) => void;
   updateW4Template: (id: string, name: string) => void;
   deleteW4Template: (id: string) => void;
@@ -728,6 +747,25 @@ export const initialW4Templates: W4Template[] = [
     { id: 'W4-2024-STD', name: 'Standard 2024 W4', documentUri: '', uploadedAt: new Date() }
 ];
 
+export const initialHandbooks: Handbook[] = [
+    { 
+        id: 'HB-2024', 
+        name: '2024 Employee Handbook', 
+        uploadedAt: new Date('2024-01-01'),
+        content: {
+            lastUpdated: 'January 1, 2024',
+            sections: [
+                { title: 'Introduction', content: 'Welcome to LogiFlow! This handbook provides important information about our company policies and procedures.' },
+                { title: 'Code of Conduct', content: 'All employees are expected to maintain professional behavior. Harassment and discrimination are not tolerated.' },
+                { title: 'Employment Policies', content: 'This section covers attendance, performance reviews, and disciplinary actions.' },
+                { title: 'Compensation', content: 'Details on payroll, overtime, and expense reimbursement.' },
+                { title: 'Benefits', content: 'Information on health insurance, retirement plans, and paid time off.' },
+                { title: 'Conclusion', content: 'We are excited to have you on our team and look forward to a successful working relationship.' },
+            ]
+        }
+    },
+    { id: 'HB-2023', name: '2023 Employee Handbook (Archived)', documentUri: 'https://picsum.photos/seed/hb2/800/1100', uploadedAt: new Date('2023-01-01') },
+];
 
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
@@ -770,6 +808,49 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [qualityHolds, setQualityHolds] = useState<QualityHold[]>(initialQualityHolds);
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(initialSalesOrders);
   const [w4Templates, setW4Templates] = useState<W4Template[]>(initialW4Templates);
+  const [handbooks, setHandbooks] = useState<Handbook[]>(initialHandbooks);
+
+  const getHandbookById = (id: string) => {
+    return handbooks.find(hb => hb.id === id) || null;
+  }
+
+  const updateHandbookSection = (handbookId: string, sectionTitle: string, content: string) => {
+    setHandbooks(prev => prev.map(hb => {
+        if (hb.id === handbookId && hb.content) {
+            const newSections = hb.content.sections.map(sec => 
+                sec.title === sectionTitle ? { ...sec, content } : sec
+            );
+            return { ...hb, content: { ...hb.content, sections: newSections, lastUpdated: new Date().toLocaleDateString() } };
+        }
+        return hb;
+    }));
+  };
+
+  const addHandbook = (name: string, documentUri: string) => {
+      const newHandbook: Handbook = {
+          id: `HB-${Date.now()}`,
+          name,
+          documentUri,
+          uploadedAt: new Date(),
+      };
+      setHandbooks(prev => [newHandbook, ...prev]);
+  };
+
+  const deleteHandbook = (id: string) => {
+      const handbookToDelete = handbooks.find(hb => hb.id === id);
+      if (handbookToDelete) {
+          const logEntry: DeletionLog = {
+              id: `LOG${Date.now()}`,
+              deletedItemId: id,
+              itemType: 'Handbook',
+              deletedBy: currentUser?.id || 'system',
+              deletedAt: new Date(),
+              originalData: handbookToDelete,
+          };
+          setDeletionLogs(prev => [logEntry, ...prev]);
+          setHandbooks(prev => prev.filter(hb => hb.id !== id));
+      }
+  };
   
   const addW4Template = (name: string, documentUri: string) => {
     const newTemplate: W4Template = {
@@ -1242,6 +1323,9 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
              case 'W4Template':
                 setW4Templates(prev => [...prev, logEntry.originalData]);
                 break;
+            case 'Handbook':
+                setHandbooks(prev => [...prev, logEntry.originalData]);
+                break;
             default:
                 break;
         }
@@ -1508,7 +1592,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, getHandbookById, updateHandbookSection, addHandbook, deleteHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate }}>
       {children}
     </ScheduleContext.Provider>
   );
