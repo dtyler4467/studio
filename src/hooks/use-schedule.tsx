@@ -439,6 +439,18 @@ export type Company = {
   website?: string;
 };
 
+export type DealStage = 'New' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Won' | 'Lost';
+
+export type Deal = {
+  id: string;
+  title: string;
+  company: string;
+  value: number;
+  stage: DealStage;
+  closeDate: Date;
+  ownerId: string; // Employee ID
+}
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
@@ -479,6 +491,9 @@ type ScheduleContextType = {
   crmTasks: CrmTask[];
   crmContacts: CrmContact[];
   companies: Company[];
+  deals: Deal[];
+  addDeal: (dealData: Omit<Deal, 'id'>) => void;
+  updateDealStage: (dealId: string, stage: DealStage) => void;
   addCompany: (companyData: Omit<Company, 'id' | 'dateAdded'>) => void;
   addCrmContact: (contactData: Omit<CrmContact, 'id' | 'dateAdded'>) => void;
   addCrmTask: (taskData: Omit<CrmTask, 'id' | 'status'>) => void;
@@ -899,6 +914,15 @@ export const initialCompanies: Company[] = [
     { id: 'COMP-4', name: 'Weyland-Yutani', industry: 'Biotechnology', status: 'Lead', primaryContact: 'Susan Reid', dateAdded: new Date('2024-03-30') },
 ];
 
+export const initialDeals: Deal[] = [
+  { id: 'DEAL-001', title: 'Q3 Logistics Contract', company: 'Acme Inc.', value: 50000, stage: 'Proposal', closeDate: new Date('2024-08-15'), ownerId: 'USR004' },
+  { id: 'DEAL-002', title: 'Software Integration', company: 'Stark Industries', value: 75000, stage: 'Qualification', closeDate: new Date('2024-09-01'), ownerId: 'USR003' },
+  { id: 'DEAL-003', title: 'Warehouse Automation', company: 'Globex Corp.', value: 120000, stage: 'New', closeDate: new Date('2024-09-20'), ownerId: 'USR004' },
+  { id: 'DEAL-004', title: 'Fleet Upgrade', company: 'Weyland-Yutani', value: 250000, stage: 'Negotiation', closeDate: new Date('2024-08-10'), ownerId: 'USR003' },
+  { id: 'DEAL-005', title: 'Annual Service Agreement', company: 'Cyberdyne Systems', value: 30000, stage: 'Won', closeDate: new Date('2024-07-20'), ownerId: 'USR004' },
+  { id: 'DEAL-006', title: 'Consulting Services', company: 'InGen', value: 20000, stage: 'Lost', closeDate: new Date('2024-07-15'), ownerId: 'USR003' },
+];
+
 
 const initialAvailableStatuses: YardEventStatus[] = ['Checked In', 'Loaded', 'Empty', 'Blocked', 'Repair Needed', 'Rejected', 'Late', 'Early', 'Product on hold', 'Exited', 'Waiting for dock', 'At Dock Door', 'At Parking Lane'];
 
@@ -946,6 +970,19 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [crmTasks, setCrmTasks] = useState<CrmTask[]>(initialCrmTasks);
   const [crmContacts, setCrmContacts] = useState<CrmContact[]>(initialCrmContacts);
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
+  const [deals, setDeals] = useState<Deal[]>(initialDeals);
+
+  const addDeal = (dealData: Omit<Deal, 'id'>) => {
+    const newDeal: Deal = {
+        ...dealData,
+        id: `DEAL-${Date.now()}`,
+    };
+    setDeals(prev => [newDeal, ...prev]);
+  };
+
+  const updateDealStage = (dealId: string, stage: DealStage) => {
+    setDeals(prev => prev.map(deal => deal.id === dealId ? { ...deal, stage } : deal));
+  };
 
   const addCompany = (companyData: Omit<Company, 'id' | 'dateAdded'>) => {
     const newCompany: Company = {
@@ -1848,7 +1885,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, projects, tasks, crmTasks, crmContacts, companies, addCompany, addCrmContact, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
+    <ScheduleContext.Provider value={{ shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, projects, tasks, crmTasks, crmContacts, companies, deals, addDeal, updateDealStage, addCompany, addCrmContact, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit }}>
       {children}
     </ScheduleContext.Provider>
   );
