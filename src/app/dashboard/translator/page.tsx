@@ -11,6 +11,7 @@ import { ArrowRightLeft, Volume2, Mic } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text-flow';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const languages = [
     { code: 'en', name: 'English' },
@@ -33,36 +34,45 @@ export default function TranslatorPage() {
     const [sourceLang, setSourceLang] = useState('en');
     const [targetLang, setTargetLang] = useState('es');
     const [isLoading, setIsLoading] = useState(false);
-    const [isRecording, setIsRecording] = useState(false);
+    const [isRecording, setIsRecording] = useState<'source' | 'target' | null>(null);
     const recognitionRef = useRef<any>(null);
     const { toast } = useToast();
     
-    useEffect(() => {
+    const handleTranslate = async (text: string, source: string, target: string, setTextCallback: (text: string) => void) => {
+        if (!text.trim()) {
+            return;
+        }
+        setIsLoading(true);
+        setTextCallback('');
+        try {
+            const result = await translateText({ text, targetLang: languages.find(l => l.code === target)?.name || 'Spanish' });
+            setTextCallback(result.translatedText);
+        } catch (error) {
+            console.error("Translation error:", error);
+            toast({ variant: 'destructive', title: 'Translation Failed', description: 'Could not translate the text. Please try again.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const setupRecognition = useCallback((lang: string, onResult: (transcript: string) => void) => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            return;
+            return null;
         }
 
         const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = sourceLang;
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = lang;
 
         recognition.onresult = (event: any) => {
-            let interimTranscript = '';
-            let finalTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                } else {
-                    interimTranscript += event.results[i][0].transcript;
-                }
-            }
-             setInputText(prev => prev + finalTranscript);
+            const transcript = event.results[0][0].transcript;
+            onResult(transcript);
         };
         
         recognition.onend = () => {
-            setIsRecording(false);
+            setIsRecording(null);
         }
 
         recognition.onerror = (event: any) => {
@@ -71,41 +81,53 @@ export default function TranslatorPage() {
                 title: "Speech Recognition Error",
                 description: `An error occurred: ${event.error}`,
             });
-            setIsRecording(false);
+            setIsRecording(null);
         }
         
-        recognitionRef.current = recognition;
-
-        return () => {
-            if (recognitionRef.current) {
-                recognitionRef.current.stop();
-            }
-        }
-    }, [sourceLang, toast]);
+        return recognition;
+    }, [toast]);
 
 
-    const handleTranslate = async () => {
-        if (!inputText.trim()) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please enter text to translate.' });
+    const handleMicClick = (side: 'source' | 'target') => {
+        if (isRecording) {
+            recognitionRef.current?.stop();
+            setIsRecording(null);
             return;
         }
-        setIsLoading(true);
-        setOutputText('');
-        try {
-            const result = await translateText({ text: inputText, targetLang: languages.find(l => l.code === targetLang)?.name || 'Spanish' });
-            setOutputText(result.translatedText);
-        } catch (error) {
-            console.error("Translation error:", error);
-            toast({ variant: 'destructive', title: 'Translation Failed', description: 'Could not translate the text. Please try again.' });
-        } finally {
-            setIsLoading(false);
+        
+        const lang = side === 'source' ? sourceLang : targetLang;
+        const onResult = (transcript: string) => {
+            if (side === 'source') {
+                setInputText(transcript);
+                handleTranslate(transcript, sourceLang, targetLang, setOutputText);
+            } else {
+                setOutputText(transcript);
+                handleTranslate(transcript, targetLang, sourceLang, setInputText);
+            }
+        };
+
+        const recognition = setupRecognition(lang, onResult);
+        if (recognition) {
+            recognitionRef.current = recognition;
+            recognition.start();
+            setIsRecording(side);
+        } else {
+             toast({
+                variant: "destructive",
+                title: "Unsupported Browser",
+                description: "Your browser does not support voice recognition.",
+            });
         }
     };
 
     const handleSwapLanguages = () => {
-        const temp = sourceLang;
+        const tempLang = sourceLang;
         setSourceLang(targetLang);
-        setTargetLang(temp);
+        setTargetLang(tempLang);
+        
+        const tempText = inputText;
+        setInputText(outputText);
+        setOutputText(tempText);
     };
     
     const handleSpeak = (text: string, lang: string) => {
@@ -117,25 +139,6 @@ export default function TranslatorPage() {
             toast({ variant: 'destructive', title: 'Not Supported', description: 'Your browser does not support text-to-speech.' });
         }
     };
-    
-    const handleMicClick = () => {
-        if (!recognitionRef.current) {
-            toast({
-                variant: "destructive",
-                title: "Unsupported Browser",
-                description: "Your browser does not support voice recognition.",
-            });
-            return;
-        }
-
-        if (isRecording) {
-            recognitionRef.current.stop();
-        } else {
-            recognitionRef.current.start();
-        }
-        setIsRecording(!isRecording);
-    };
-
 
     return (
         <div className="flex flex-col w-full">
@@ -145,7 +148,7 @@ export default function TranslatorPage() {
                     <CardHeader>
                         <CardTitle className="font-headline">Language Translator</CardTitle>
                         <CardDescription>
-                            Translate text between different languages. Powered by AI.
+                            Translate text and speech between different languages. Powered by AI.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -167,11 +170,16 @@ export default function TranslatorPage() {
                             </Select>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <Textarea
-                                    placeholder={`Enter text in ${languages.find(l => l.code === sourceLang)?.name}...`}
+                                    placeholder={`Enter or speak text in ${languages.find(l => l.code === sourceLang)?.name}...`}
                                     value={inputText}
-                                    onChange={(e) => setInputText(e.target.value)}
+                                    onChange={(e) => {
+                                        setInputText(e.target.value);
+                                        if (e.target.value === "") {
+                                            setOutputText("");
+                                        }
+                                    }}
                                     className="h-48 resize-none"
                                 />
                                 <div className="flex gap-2">
@@ -182,31 +190,53 @@ export default function TranslatorPage() {
                                     <Button 
                                         variant="outline"
                                         size="sm"
-                                        onClick={handleMicClick}
-                                        className={cn(isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                                        onClick={() => handleMicClick('source')}
+                                        className={cn(isRecording === 'source' && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
                                     >
                                         <Mic className="mr-2" />
-                                        {isRecording ? 'Stop' : 'Speak'}
+                                        {isRecording === 'source' ? 'Stop' : 'Speak'}
+                                    </Button>
+                                    <Button size="sm" onClick={() => handleTranslate(inputText, sourceLang, targetLang, setOutputText)} disabled={isLoading || !inputText}>
+                                        Translate
                                     </Button>
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <Textarea
-                                    placeholder={isLoading ? 'Translating...' : 'Translation...'}
-                                    value={outputText}
-                                    readOnly
-                                    className="h-48 resize-none bg-muted"
-                                />
-                                <Button variant="outline" size="sm" onClick={() => handleSpeak(outputText, targetLang)} disabled={!outputText}>
-                                     <Volume2 className="mr-2" />
-                                     Listen
-                                </Button>
+                           <div className="space-y-2">
+                                {isLoading ? (
+                                    <div className="h-48 rounded-md bg-muted p-3 space-y-2">
+                                        <Skeleton className="h-4 w-3/4" />
+                                        <Skeleton className="h-4 w-1/2" />
+                                    </div>
+                                ) : (
+                                    <Textarea
+                                        placeholder='Translation...'
+                                        value={outputText}
+                                        readOnly
+                                        onChange={(e) => {
+                                            setOutputText(e.target.value);
+                                            if (e.target.value === "") {
+                                                setInputText("");
+                                            }
+                                        }}
+                                        className="h-48 resize-none bg-muted"
+                                    />
+                                )}
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleSpeak(outputText, targetLang)} disabled={!outputText}>
+                                        <Volume2 className="mr-2" />
+                                        Listen
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleMicClick('target')}
+                                        className={cn(isRecording === 'target' && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                                    >
+                                        <Mic className="mr-2" />
+                                        {isRecording === 'target' ? 'Stop' : 'Speak'}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                             <Button onClick={handleTranslate} disabled={isLoading}>
-                                {isLoading ? 'Translating...' : 'Translate'}
-                            </Button>
                         </div>
                     </CardContent>
                 </Card>
