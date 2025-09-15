@@ -13,11 +13,14 @@ import { PlusCircle, Save, Trash2, Search, Mic, Printer, Upload, Download } from
 import { format } from 'date-fns';
 import { NoteList } from '@/components/dashboard/note-list';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Translator } from '@/components/dashboard/translator';
 
 
 export default function NotesPage() {
     const { notes, addNote, updateNote, deleteNote, bulkAddNotes } = useSchedule();
     const { toast } = useToast();
+    const [activeTab, setActiveTab] = useState('editor');
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
     const [noteTitle, setNoteTitle] = useState('');
     const [noteContent, setNoteContent] = useState('');
@@ -159,6 +162,16 @@ export default function NotesPage() {
         reader.readAsText(file);
         event.target.value = ''; // Reset file input
     }
+    
+    const handleCopyToNote = (text: string) => {
+        const currentContent = noteContent.trim();
+        setNoteContent(currentContent ? `${currentContent}\n\n---\n\n${text}` : text);
+        if (!noteTitle.trim()) {
+            setNoteTitle("Translated Note");
+        }
+        setActiveTab('editor');
+        toast({ title: "Text Copied to Note", description: "The translated text has been added to your current note." });
+    }
 
 
     return (
@@ -176,47 +189,62 @@ export default function NotesPage() {
                     />
                 </div>
                 <div className="lg:col-span-2">
-                    <Card className="flex flex-col h-full">
-                        <CardHeader>
-                            <Input
-                                placeholder="Note Title"
-                                className="text-2xl font-bold border-none shadow-none focus-visible:ring-0 font-headline"
-                                value={noteTitle}
-                                onChange={(e) => setNoteTitle(e.target.value)}
-                            />
-                            <CardDescription>
-                                {selectedNote ? `Last updated: ${format(selectedNote.date, 'PPP p')}` : 'A new note'}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col">
-                            <Textarea
-                                placeholder="Start writing your note here... or use the microphone to speak."
-                                className="flex-1 resize-none border-none shadow-none focus-visible:ring-0 text-base"
-                                value={noteContent}
-                                onChange={(e) => setNoteContent(e.target.value)}
-                            />
-                        </CardContent>
-                        <CardFooter className="flex-wrap gap-2 justify-end">
-                            <Button variant="ghost" onClick={handlePrint} disabled={!selectedNote}>
-                                <Printer className="mr-2"/> Print
-                            </Button>
-                             <Button 
-                                variant="outline" 
-                                onClick={handleMicClick}
-                                className={cn(isRecording && "bg-destructive text-white hover:bg-destructive/90")}
-                            >
-                                <Mic className="mr-2"/> {isRecording ? 'Stop Recording' : 'Talk to Text'}
-                            </Button>
-                            {selectedNote && (
-                                <Button variant="destructive" onClick={handleDeleteNote}>
-                                    <Trash2 className="mr-2"/> Delete Note
-                                </Button>
-                            )}
-                            <Button onClick={handleSaveNote}>
-                                <Save className="mr-2"/> Save Note
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="editor">Editor</TabsTrigger>
+                            <TabsTrigger value="translator">Translator</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="editor" className="flex-1">
+                            <Card className="flex flex-col h-full">
+                                <CardHeader>
+                                    <Input
+                                        placeholder="Note Title"
+                                        className="text-2xl font-bold border-none shadow-none focus-visible:ring-0 font-headline"
+                                        value={noteTitle}
+                                        onChange={(e) => setNoteTitle(e.target.value)}
+                                    />
+                                    <CardDescription>
+                                        {selectedNote ? `Last updated: ${format(selectedNote.date, 'PPP p')}` : 'A new note'}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex-1 flex flex-col">
+                                    <Textarea
+                                        placeholder="Start writing your note here... or use the microphone to speak."
+                                        className="flex-1 resize-none border-none shadow-none focus-visible:ring-0 text-base"
+                                        value={noteContent}
+                                        onChange={(e) => setNoteContent(e.target.value)}
+                                    />
+                                </CardContent>
+                                <CardFooter className="flex-wrap gap-2 justify-end">
+                                    <Button variant="ghost" onClick={handlePrint} disabled={!selectedNote}>
+                                        <Printer className="mr-2"/> Print
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={handleMicClick}
+                                        className={cn(isRecording && "bg-destructive text-white hover:bg-destructive/90")}
+                                    >
+                                        <Mic className="mr-2"/> {isRecording ? 'Stop Recording' : 'Talk to Text'}
+                                    </Button>
+                                    {selectedNote && (
+                                        <Button variant="destructive" onClick={handleDeleteNote}>
+                                            <Trash2 className="mr-2"/> Delete Note
+                                        </Button>
+                                    )}
+                                    <Button onClick={handleSaveNote}>
+                                        <Save className="mr-2"/> Save Note
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="translator" className="flex-1">
+                            <Card className="h-full">
+                                <CardContent className="pt-6">
+                                    <Translator onCopyToNote={handleCopyToNote} />
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 </div>
             </main>
         </div>
