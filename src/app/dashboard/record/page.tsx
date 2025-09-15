@@ -1,29 +1,24 @@
-import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Videotape } from 'lucide-react';
+
+"use client";
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function RecordPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to the overview page by default
+    router.replace('/dashboard/record/overview');
+  }, [router]);
+
   return (
-    <div className="flex flex-col w-full">
-      <Header pageTitle="Record" />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2">
-                    <Videotape />
-                    Record
-                </CardTitle>
-                <CardDescription>
-                    This is the page for recording.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                    <p className="text-muted-foreground">Recording functionality coming soon.</p>
-                </div>
-            </CardContent>
-        </Card>
-      </main>
+     <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-4 w-48" />
+        </div>
     </div>
   );
 }

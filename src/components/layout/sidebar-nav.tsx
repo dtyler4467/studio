@@ -105,7 +105,8 @@ import {
   Languages,
   ConciergeBell,
   Videotape,
-  CheckSquare,
+  Monitor,
+  Mic,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -199,10 +200,15 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
   },
   {
-    href: '/dashboard/record',
+    href: '#',
     icon: Videotape,
     label: 'Record',
     roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+    subItems: [
+        { href: '/dashboard/record/overview', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/record/screen-record', icon: Monitor, label: 'Screen Record', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/record/voice-record', icon: Mic, label: 'Voice Record', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+    ]
   },
   { 
     href: '#', 
@@ -604,6 +610,7 @@ export function SidebarNav() {
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isProjectHubOpen, setIsProjectHubOpen] = useState(false);
   const [isPublicRelationsOpen, setIsPublicRelationsOpen] = useState(false);
+  const [isRecordOpen, setIsRecordOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -633,6 +640,7 @@ export function SidebarNav() {
     setIsStoreOpen(pathname.startsWith('/dashboard/store'));
     setIsProjectHubOpen(pathname.startsWith('/dashboard/project-hub'));
     setIsPublicRelationsOpen(pathname.startsWith('/dashboard/public-relations'));
+    setIsRecordOpen(pathname.startsWith('/dashboard/record'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -869,6 +877,7 @@ export function SidebarNav() {
                         'Store': isStoreOpen,
                         'Project Hub': isProjectHubOpen,
                         'Public Relations': isPublicRelationsOpen,
+                        'Record': isRecordOpen,
                     };
                     const setIsOpenMap = {
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -884,6 +893,7 @@ export function SidebarNav() {
                         'Store': setIsStoreOpen,
                         'Project Hub': setIsProjectHubOpen,
                         'Public Relations': setIsPublicRelationsOpen,
+                        'Record': setIsRecordOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                     const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
