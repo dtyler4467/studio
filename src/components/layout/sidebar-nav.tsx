@@ -107,6 +107,7 @@ import {
   Videotape,
   Monitor,
   Mic,
+  CheckSquare,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
