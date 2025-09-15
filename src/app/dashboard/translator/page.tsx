@@ -1,15 +1,16 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRightLeft, Volume2 } from 'lucide-react';
+import { ArrowRightLeft, Volume2, Mic } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text-flow';
+import { cn } from '@/lib/utils';
 
 const languages = [
     { code: 'en', name: 'English' },
@@ -32,7 +33,56 @@ export default function TranslatorPage() {
     const [sourceLang, setSourceLang] = useState('en');
     const [targetLang, setTargetLang] = useState('es');
     const [isLoading, setIsLoading] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const recognitionRef = useRef<any>(null);
     const { toast } = useToast();
+    
+    useEffect(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = sourceLang;
+
+        recognition.onresult = (event: any) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+             setInputText(prev => prev + finalTranscript);
+        };
+        
+        recognition.onend = () => {
+            setIsRecording(false);
+        }
+
+        recognition.onerror = (event: any) => {
+             toast({
+                variant: "destructive",
+                title: "Speech Recognition Error",
+                description: `An error occurred: ${event.error}`,
+            });
+            setIsRecording(false);
+        }
+        
+        recognitionRef.current = recognition;
+
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        }
+    }, [sourceLang, toast]);
+
 
     const handleTranslate = async () => {
         if (!inputText.trim()) {
@@ -66,6 +116,24 @@ export default function TranslatorPage() {
         } else {
             toast({ variant: 'destructive', title: 'Not Supported', description: 'Your browser does not support text-to-speech.' });
         }
+    };
+    
+    const handleMicClick = () => {
+        if (!recognitionRef.current) {
+            toast({
+                variant: "destructive",
+                title: "Unsupported Browser",
+                description: "Your browser does not support voice recognition.",
+            });
+            return;
+        }
+
+        if (isRecording) {
+            recognitionRef.current.stop();
+        } else {
+            recognitionRef.current.start();
+        }
+        setIsRecording(!isRecording);
     };
 
 
@@ -106,10 +174,21 @@ export default function TranslatorPage() {
                                     onChange={(e) => setInputText(e.target.value)}
                                     className="h-48 resize-none"
                                 />
-                                <Button variant="outline" size="sm" onClick={() => handleSpeak(inputText, sourceLang)} disabled={!inputText}>
-                                    <Volume2 className="mr-2" />
-                                    Listen
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleSpeak(inputText, sourceLang)} disabled={!inputText}>
+                                        <Volume2 className="mr-2" />
+                                        Listen
+                                    </Button>
+                                    <Button 
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleMicClick}
+                                        className={cn(isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                                    >
+                                        <Mic className="mr-2" />
+                                        {isRecording ? 'Stop' : 'Speak'}
+                                    </Button>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Textarea
