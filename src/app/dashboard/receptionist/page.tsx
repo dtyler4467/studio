@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Users, LogIn, LogOut, Camera, Check, X } from 'lucide-react';
+import { User, Users, LogIn, LogOut, Camera, Check, X, MessageSquare } from 'lucide-react';
 import { useSchedule, Visitor, OfficeAppointment, Note } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -21,10 +21,17 @@ import { OfficeAppointmentDataTable } from '@/components/dashboard/office-appoin
 import { NoteList } from '@/components/dashboard/note-list';
 import { Translator } from '@/components/dashboard/translator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChatLayout } from '@/components/dashboard/chat/chat-layout';
 
 const VisitorLogTable = () => {
     const { visitors, updateVisitorStatus } = useSchedule();
-    const sortedVisitors = [...visitors].sort((a,b) => b.checkInTime.getTime() - a.checkInTime.getTime());
+    const [sortedVisitors, setSortedVisitors] = useState<Visitor[]>([]);
+    
+    useEffect(() => {
+        const sorted = [...visitors].sort((a,b) => b.checkInTime.getTime() - a.checkInTime.getTime());
+        setSortedVisitors(sorted);
+    }, [visitors]);
+
 
     return (
         <Card>
@@ -228,7 +235,8 @@ const SelfServiceKioskView = () => {
                 })
                 .catch(err => console.error("camera error:", err));
         } else if (videoRef.current?.srcObject) {
-            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
         }
     }, [step]);
 
@@ -448,8 +456,9 @@ export default function ReceptionistPage() {
       <Header pageTitle="Receptionist Dashboard" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Tabs defaultValue="visitors" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="visitors">Visitor Management</TabsTrigger>
+            <TabsTrigger value="intercom">Intercom</TabsTrigger>
             <TabsTrigger value="appointments">Appointments</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="translator">Translator</TabsTrigger>
@@ -466,6 +475,24 @@ export default function ReceptionistPage() {
                 </div>
                 {mode === 'live' ? <LiveReceptionistView /> : <SelfServiceKioskView />}
           </TabsContent>
+
+          <TabsContent value="intercom" className="h-full">
+            <Card className="h-full">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2">
+                        <MessageSquare />
+                        Intercom
+                    </CardTitle>
+                    <CardDescription>
+                        Communicate with personnel in real-time.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[calc(100vh-20rem)] p-0">
+                    <ChatLayout />
+                </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="appointments">
              <Card>
@@ -488,7 +515,7 @@ export default function ReceptionistPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Language Translator</CardTitle>
-                    <CardDescription>Translate text between languages.</CardDescription>
+                    <CardDescription>Translate text between languages. Powered by AI.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Translator />

@@ -47,13 +47,13 @@ const MessageStatusIcon = ({ status }: { status: MessageStatus }) => {
 
 export function ConversationView({ user, onBack }: { user: Employee, onBack: () => void }) {
     const { currentUser } = useSchedule();
-    const [messages, setMessages] = useState<Message[]>(mockMessages[user.id] || []);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [isRecording, setIsRecording] = useState(false);
     const recognitionRef = useRef<any>(null);
     const { toast } = useToast();
-
+    
     useEffect(() => {
         setMessages(mockMessages[user.id] || []);
     }, [user]);
