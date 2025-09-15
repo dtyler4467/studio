@@ -459,6 +459,16 @@ export type Note = {
     tags: string[];
 }
 
+export type Visitor = {
+    id: string;
+    name: string;
+    company: string;
+    visiting: string; // Employee name
+    reason?: string;
+    checkInTime: Date;
+    checkOutTime?: Date;
+}
+
 type ScheduleContextType = {
   shifts: Shift[];
   employees: Employee[];
@@ -501,6 +511,9 @@ type ScheduleContextType = {
   companies: Company[];
   deals: Deal[];
   notes: Note[];
+  visitors: Visitor[];
+  addVisitor: (visitorData: Omit<Visitor, 'id' | 'checkInTime'>) => void;
+  checkOutVisitor: (visitorId: string) => void;
   addNote: (note: Omit<Note, 'id' | 'date'>) => Note;
   updateNote: (noteId: string, updates: Partial<Omit<Note, 'id' | 'date'>>) => void;
   deleteNote: (noteId: string) => void;
@@ -790,6 +803,10 @@ const initialDeals: Deal[] = [
     { id: 'DEAL-003', title: 'West Coast Distribution', company: 'Stark Industries', value: 120000, stage: 'New', closeDate: new Date('2024-09-20'), ownerId: 'USR005' },
 ];
 
+const initialVisitors: Visitor[] = [
+    { id: 'VISIT-001', name: 'Laura Palmer', company: 'One-Eyed Jacks', visiting: 'Emily Jones', checkInTime: new Date(Date.now() - 30 * 60000), reason: 'Quarterly Review' },
+];
+
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
@@ -836,6 +853,20 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [holidays, setHolidays] = useState<Holiday[]>(initialHolidays);
   const [currentUser, setCurrentUser] = useState<Employee | null>(mockEmployees.find(e => e.role === 'Admin') || null);
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
+  const [visitors, setVisitors] = useState<Visitor[]>(initialVisitors);
+
+  const addVisitor = (visitorData: Omit<Visitor, 'id' | 'checkInTime'>) => {
+    const newVisitor: Visitor = {
+        ...visitorData,
+        id: `VISITOR-${Date.now()}`,
+        checkInTime: new Date(),
+    };
+    setVisitors(prev => [newVisitor, ...prev]);
+  };
+  
+  const checkOutVisitor = (visitorId: string) => {
+    setVisitors(prev => prev.map(v => v.id === visitorId ? { ...v, checkOutTime: new Date() } : v));
+  };
 
   const addNote = (note: Omit<Note, 'id' | 'date'>) => {
     const newNote = { ...note, id: `NOTE-${Date.now()}`, date: new Date() };
@@ -1565,7 +1596,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ScheduleContext.Provider value={{ 
-        shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, projects, tasks, crmTasks, crmContacts, companies, deals, notes, addNote, updateNote, deleteNote, bulkAddNotes, addDeal, updateDealStage, addCompany, addCrmContact, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit
+        shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, projects, tasks, crmTasks, crmContacts, companies, deals, notes, visitors, addVisitor, checkOutVisitor, addNote, updateNote, deleteNote, bulkAddNotes, addDeal, updateDealStage, addCompany, addCrmContact, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit
     }}>
       {children}
     </ScheduleContext.Provider>
@@ -1580,5 +1611,8 @@ export const useSchedule = () => {
     }
     return context;
   };
+
+
+
 
 
