@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Users, LogIn, LogOut } from 'lucide-react';
+import { User, Users, LogIn, LogOut, Camera, Check, X } from 'lucide-react';
 import { useSchedule, Visitor, OfficeAppointment, Note } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -20,9 +20,10 @@ import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar';
 import { OfficeAppointmentDataTable } from '@/components/dashboard/office-appointment-data-table';
 import { NoteList } from '@/components/dashboard/note-list';
 import { Translator } from '@/components/dashboard/translator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const VisitorLogTable = () => {
-    const { visitors } = useSchedule();
+    const { visitors, updateVisitorStatus } = useSchedule();
     const sortedVisitors = [...visitors].sort((a,b) => b.checkInTime.getTime() - a.checkInTime.getTime());
 
     return (
@@ -39,24 +40,36 @@ const VisitorLogTable = () => {
                                 <TableHead>Visitor</TableHead>
                                 <TableHead>Visiting</TableHead>
                                 <TableHead>Check-in</TableHead>
-                                <TableHead>Check-out</TableHead>
+                                <TableHead>Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {sortedVisitors.map(visitor => (
                                 <TableRow key={visitor.id}>
                                     <TableCell>
-                                        <p className="font-medium">{visitor.name}</p>
-                                        <p className="text-sm text-muted-foreground">{visitor.company}</p>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar>
+                                                {visitor.photoDataUri && <AvatarImage src={visitor.photoDataUri} alt={visitor.name} />}
+                                                <AvatarFallback>{visitor.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium">{visitor.name}</p>
+                                                <p className="text-sm text-muted-foreground">{visitor.company}</p>
+                                            </div>
+                                        </div>
                                     </TableCell>
                                     <TableCell>{visitor.visiting}</TableCell>
                                     <TableCell>{format(visitor.checkInTime, 'p')}</TableCell>
                                     <TableCell>
-                                        {visitor.checkOutTime ? (
-                                            format(visitor.checkOutTime, 'p')
-                                        ) : (
-                                            <Badge variant="secondary">Checked In</Badge>
-                                        )}
+                                        <Badge 
+                                            variant={
+                                                visitor.status === 'Accepted' ? 'default' :
+                                                visitor.status === 'Declined' ? 'destructive' : 'secondary'
+                                            }
+                                            className={visitor.status === 'Accepted' ? 'bg-green-600' : ''}
+                                        >
+                                            {visitor.status}
+                                        </Badge>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -86,6 +99,8 @@ const LiveReceptionistView = () => {
             company: formData.company,
             visiting: formData.visiting,
             reason: formData.reason,
+            visitType: 'Walk-in',
+            photoDataUri: null,
         });
 
         toast({
@@ -142,71 +157,170 @@ const LiveReceptionistView = () => {
 }
 
 const SelfServiceKioskView = () => {
-    const { employees, addVisitor } = useSchedule();
+    const { employees, addVisitor, updateVisitorStatus } = useSchedule();
     const { toast } = useToast();
-    const [formData, setFormData] = useState({ name: '', company: '', visiting: '', reason: '' });
-    const [isComplete, setIsComplete] = useState(false);
+    const [step, setStep] = useState(1);
+    const [visitorData, setVisitorData] = useState<Partial<Visitor>>({});
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const handleNext = () => setStep(prev => prev + 1);
+    const handleBack = () => setStep(prev => prev - 1);
     
-    const visitingEmployee = employees.find(e => e.name === formData.visiting);
+    const handleCapture = () => {
+        const canvas = document.createElement('canvas');
+        if (videoRef.current) {
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+            const photoDataUri = canvas.toDataURL('image/png');
+            setVisitorData(prev => ({...prev, photoDataUri}));
+            handleNext();
+        }
+    }
 
     const handleCheckIn = () => {
-        if (!formData.name || !formData.visiting) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please enter your name and select who you are visiting.' });
+        if (!visitorData.name || !visitorData.visiting) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Missing information.' });
             return;
         }
-       
-        addVisitor({
-            name: formData.name,
-            company: formData.company,
-            visiting: formData.visiting,
-            reason: formData.reason,
+
+        const newVisitor = addVisitor({
+            name: visitorData.name,
+            company: visitorData.company || 'N/A',
+            visiting: visitorData.visiting,
+            reason: visitorData.reason || 'Walk-in',
+            visitType: visitorData.visitType || 'Walk-in',
+            appointmentTime: visitorData.appointmentTime,
+            photoDataUri: visitorData.photoDataUri || null,
         });
 
-        setIsComplete(true);
-    };
+        toast({
+            duration: 10000,
+            title: `Alert Sent to ${visitorData.visiting}`,
+            description: `${visitorData.name} is waiting for you in the lobby.`,
+            action: (
+                 <div className="flex flex-col gap-2">
+                    <Button size="sm" onClick={() => updateVisitorStatus(newVisitor.id, 'Accepted')}>
+                        <Check className="mr-2" /> Accept
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => updateVisitorStatus(newVisitor.id, 'Declined')}>
+                        <X className="mr-2"/> Decline
+                    </Button>
+                </div>
+            )
+        });
 
-    const handleReset = () => {
-        setFormData({ name: '', company: '', visiting: '', reason: '' });
-        setIsComplete(false);
-    }
+        handleNext();
+    };
     
-    if (isComplete) {
-        return (
-            <div className="text-center py-20">
-                <h2 className="text-3xl font-bold font-headline">Thank You, {formData.name}!</h2>
-                <p className="text-lg text-muted-foreground mt-2">
-                    {visitingEmployee?.name || 'Your party'} has been notified of your arrival.
-                </p>
-                <p className="mt-4">Please have a seat in the lobby.</p>
-                <Button onClick={handleReset} className="mt-8">New Check-in</Button>
-            </div>
-        )
+     const handleReset = () => {
+        setVisitorData({});
+        setStep(1);
     }
+
+    const visitingEmployee = employees.find(e => e.name === visitorData.visiting);
+
+    useEffect(() => {
+        if (step === 2 && videoRef.current) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    if(videoRef.current) videoRef.current.srcObject = stream;
+                })
+                .catch(err => console.error("camera error:", err));
+        } else if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+        }
+    }, [step]);
 
     return (
         <Card className="max-w-2xl mx-auto">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">Welcome! Please Check In</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="visitor-name-kiosk" className="text-lg">Your Full Name</Label>
-                    <Input id="visitor-name-kiosk" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-12 text-lg" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="visitor-company-kiosk" className="text-lg">Your Company</Label>
-                    <Input id="visitor-company-kiosk" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="h-12 text-lg" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="visiting-kiosk" className="text-lg">Who are you here to see?</Label>
-                     <Select value={formData.visiting} onValueChange={value => setFormData({...formData, visiting: value})}>
-                        <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Select an employee..." /></SelectTrigger>
-                        <SelectContent>
-                            {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <Button onClick={handleCheckIn} className="w-full h-14 text-xl"><LogIn className="mr-2"/>Check In</Button>
+            <CardContent>
+                {step === 1 && (
+                    <div className="space-y-6">
+                         <div className="space-y-2">
+                            <Label htmlFor="visitor-name-kiosk" className="text-lg">Your Full Name</Label>
+                            <Input id="visitor-name-kiosk" value={visitorData.name || ''} onChange={e => setVisitorData({...visitorData, name: e.target.value})} className="h-12 text-lg" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="visitor-company-kiosk" className="text-lg">Your Company</Label>
+                            <Input id="visitor-company-kiosk" value={visitorData.company || ''} onChange={e => setVisitorData({...visitorData, company: e.target.value})} className="h-12 text-lg" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="visiting-kiosk" className="text-lg">Who are you here to see?</Label>
+                             <Select value={visitorData.visiting} onValueChange={value => setVisitorData({...visitorData, visiting: value})}>
+                                <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Select an employee..." /></SelectTrigger>
+                                <SelectContent>
+                                    {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="visit-type" className="text-lg">Do you have an appointment?</Label>
+                            <Select value={visitorData.visitType} onValueChange={(v: Visitor['visitType']) => setVisitorData({...visitorData, visitType: v})}>
+                                <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Select an option..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Appointment">Yes, I have an appointment</SelectItem>
+                                    <SelectItem value="Walk-in">No, I am a walk-in</SelectItem>
+                                    <SelectItem value="Appointment">I need to make an appointment</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="reason-kiosk" className="text-lg">Reason for visit</Label>
+                            <Textarea id="reason-kiosk" value={visitorData.reason || ''} onChange={e => setVisitorData({...visitorData, reason: e.target.value})} className="text-lg" />
+                        </div>
+                        <Button onClick={handleNext} className="w-full h-14 text-xl">Next Step</Button>
+                    </div>
+                )}
+                 {step === 2 && (
+                    <div className="text-center space-y-4">
+                        <h3 className="text-xl font-semibold">Please Take a Photo</h3>
+                        <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden">
+                            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                        </div>
+                         <Button onClick={handleCapture} className="w-full h-14 text-xl"><Camera className="mr-2"/>Take Photo & Continue</Button>
+                         <Button variant="link" onClick={handleBack}>Go Back</Button>
+                    </div>
+                )}
+                {step === 3 && (
+                    <div className="text-center space-y-4">
+                        <h3 className="text-xl font-semibold">Confirm Your Information</h3>
+                        <div className="flex flex-col items-center gap-4">
+                            {visitorData.photoDataUri && <img src={visitorData.photoDataUri} alt="Visitor" className="w-32 h-32 rounded-full object-cover" />}
+                            <p><strong>Name:</strong> {visitorData.name}</p>
+                            <p><strong>Company:</strong> {visitorData.company}</p>
+                            <p><strong>Visiting:</strong> {visitorData.visiting}</p>
+                             <p><strong>Reason:</strong> {visitorData.reason}</p>
+                        </div>
+                         <Button onClick={handleCheckIn} className="w-full h-14 text-xl"><LogIn className="mr-2"/>Check In</Button>
+                         <Button variant="link" onClick={handleBack}>Go Back & Edit</Button>
+                    </div>
+                )}
+                {step === 4 && (
+                    <div className="text-center py-10">
+                        <h2 className="text-3xl font-bold font-headline">Thank You, {visitorData.name}!</h2>
+                        <p className="text-lg text-muted-foreground mt-2">
+                            {visitingEmployee?.name || 'Your party'} has been notified of your arrival.
+                        </p>
+                        <p className="mt-4">Please take your badge and have a seat in the lobby.</p>
+                        
+                        <div className="w-64 mx-auto mt-6 p-4 border rounded-lg bg-background text-left">
+                            <h4 className="font-bold text-center text-lg">VISITOR</h4>
+                            <div className="flex flex-col items-center gap-2 my-4">
+                                 {visitorData.photoDataUri && <img src={visitorData.photoDataUri} alt="Visitor" className="w-24 h-24 rounded-full object-cover" />}
+                                 <p className="font-bold text-xl">{visitorData.name}</p>
+                                 <p className="text-sm">{visitorData.company}</p>
+                            </div>
+                            <p className="text-xs"><strong>Visiting:</strong> {visitorData.visiting}</p>
+                             <p className="text-xs"><strong>Date:</strong> {format(new Date(), 'PPP')}</p>
+                        </div>
+                        
+                        <Button onClick={handleReset} className="mt-8">New Check-in</Button>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -399,4 +513,3 @@ export default function ReceptionistPage() {
     </div>
   );
 }
-

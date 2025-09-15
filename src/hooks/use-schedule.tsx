@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -467,7 +466,11 @@ export type Visitor = {
     reason?: string;
     checkInTime: Date;
     checkOutTime?: Date;
-}
+    visitType: 'Appointment' | 'Walk-in';
+    appointmentTime?: Date;
+    photoDataUri?: string | null;
+    status: 'Waiting for Host' | 'Accepted' | 'Declined';
+};
 
 type ScheduleContextType = {
   shifts: Shift[];
@@ -512,8 +515,9 @@ type ScheduleContextType = {
   deals: Deal[];
   notes: Note[];
   visitors: Visitor[];
-  addVisitor: (visitorData: Omit<Visitor, 'id' | 'checkInTime'>) => void;
+  addVisitor: (visitorData: Omit<Visitor, 'id' | 'checkInTime' | 'status'>) => Visitor;
   checkOutVisitor: (visitorId: string) => void;
+  updateVisitorStatus: (visitorId: string, status: Visitor['status']) => void;
   addNote: (note: Omit<Note, 'id' | 'date'>) => Note;
   updateNote: (noteId: string, updates: Partial<Omit<Note, 'id' | 'date'>>) => void;
   deleteNote: (noteId: string) => void;
@@ -803,9 +807,7 @@ const initialDeals: Deal[] = [
     { id: 'DEAL-003', title: 'West Coast Distribution', company: 'Stark Industries', value: 120000, stage: 'New', closeDate: new Date('2024-09-20'), ownerId: 'USR005' },
 ];
 
-const initialVisitors: Visitor[] = [
-    { id: 'VISIT-001', name: 'Laura Palmer', company: 'One-Eyed Jacks', visiting: 'Emily Jones', checkInTime: new Date(Date.now() - 30 * 60000), reason: 'Quarterly Review' },
-];
+const initialVisitors: Visitor[] = [];
 
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -853,22 +855,21 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [holidays, setHolidays] = useState<Holiday[]>(initialHolidays);
   const [currentUser, setCurrentUser] = useState<Employee | null>(mockEmployees.find(e => e.role === 'Admin') || null);
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
-  const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [visitors, setVisitors] = useState<Visitor[]>(initialVisitors);
 
-  React.useEffect(() => {
-    // Client-side only initialization for data with dates
-    setVisitors([
-        { id: 'VISIT-001', name: 'Laura Palmer', company: 'One-Eyed Jacks', visiting: 'Emily Jones', checkInTime: new Date(Date.now() - 30 * 60000), reason: 'Quarterly Review' },
-    ]);
-  }, []);
-
-  const addVisitor = (visitorData: Omit<Visitor, 'id' | 'checkInTime'>) => {
+  const addVisitor = (visitorData: Omit<Visitor, 'id' | 'checkInTime' | 'status'>) => {
     const newVisitor: Visitor = {
         ...visitorData,
         id: `VISITOR-${Date.now()}`,
         checkInTime: new Date(),
+        status: 'Waiting for Host',
     };
     setVisitors(prev => [newVisitor, ...prev]);
+    return newVisitor;
+  };
+
+  const updateVisitorStatus = (visitorId: string, status: Visitor['status']) => {
+    setVisitors(prev => prev.map(v => v.id === visitorId ? { ...v, status } : v));
   };
   
   const checkOutVisitor = (visitorId: string) => {
@@ -1603,7 +1604,7 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ScheduleContext.Provider value={{ 
-        shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, projects, tasks, crmTasks, crmContacts, companies, deals, notes, visitors, addVisitor, checkOutVisitor, addNote, updateNote, deleteNote, bulkAddNotes, addDeal, updateDealStage, addCompany, addCrmContact, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit
+        shifts, employees, currentUser, holidays, timeOffRequests, registrations, yardEvents, expenseReports, receipts, trainingPrograms, trainingAssignments, warehouseDoors, parkingLanes, deletionLogs, timeClockEvents, localLoadBoards, loadBoardHub, appointments, officeAppointments, lostAndFound, loads, files, equipment, jobPostings, applicants, bolHistory, bolTemplates, inventoryItems, customers, availableStatuses, qualityHolds, salesOrders, w4Templates, handbooks, projects, tasks, crmTasks, crmContacts, companies, deals, notes, visitors, addVisitor, checkOutVisitor, updateVisitorStatus, addNote, updateNote, deleteNote, bulkAddNotes, addDeal, updateDealStage, addCompany, addCrmContact, addCrmTask, updateCrmTaskStatus, addTask, updateTaskStatus, addTaskEvent, getHandbookById, updateHandbookSection, updateHandbookSectionDocument, addHandbookSection, addHandbook, deleteHandbook, updateHandbook, duplicateHandbook, addW4Template, updateW4Template, deleteW4Template, assignPickerToOrder, updateOrderItemStatus, completeOrderPicking, placeOnHold, releaseFromHold, scrapItem, addCustomer, updateCustomerStatus, addCustomStatus, addApplicant, updateApplicantStatus, addJobPosting, updateJobPostingStatus, deleteEquipment, addEquipment, addFile, deleteFile, permanentlyDeleteItem, shareHistoryLogs, logFileShare, moveTrailer, addOfficeAppointment, updateOfficeAppointmentStatus, addAppointment, updateAppointmentStatus, updateLoadBoardHubName, addLocalLoadBoard, deleteLocalLoadBoard, updateLocalLoadBoard, addShift, updateShift, deleteShift, addTimeOffRequest, approveTimeOffRequest, denyTimeOffRequest, registerUser, approveRegistration, denyRegistration, updateRegistration, getEmployeeById, updateEmployeeRole, updateEmployeeStatus, updateEmployee, deleteEmployee, addEmployee, bulkAddEmployees, updateEmployeeDocument, getEmployeeDocument, getYardEventById, addYardEvent, updateYardEventStatus, getExpenseReportById, setExpenseReports, receipts, setReceipts, getTrainingModuleById, assignTraining, unassignTraining, addWarehouseDoor, addParkingLane, restoreDeletedItem, addTimeClockEvent, updateTimeClockStatus, updateInventory, saveBol, saveBolTemplate, deleteBolTemplate, addOrUpdateDirectDeposit, deleteDirectDeposit
     }}>
       {children}
     </ScheduleContext.Provider>
@@ -1618,9 +1619,3 @@ export const useSchedule = () => {
     }
     return context;
   };
-
-
-
-
-
-
