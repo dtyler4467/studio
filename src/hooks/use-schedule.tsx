@@ -853,7 +853,14 @@ export const ScheduleProvider = ({ children }: { children: ReactNode }) => {
   const [holidays, setHolidays] = useState<Holiday[]>(initialHolidays);
   const [currentUser, setCurrentUser] = useState<Employee | null>(mockEmployees.find(e => e.role === 'Admin') || null);
   const [shareHistoryLogs, setShareHistoryLogs] = useState<ShareHistoryLog[]>(initialShareHistoryLogs);
-  const [visitors, setVisitors] = useState<Visitor[]>(initialVisitors);
+  const [visitors, setVisitors] = useState<Visitor[]>([]);
+
+  React.useEffect(() => {
+    // Client-side only initialization for data with dates
+    setVisitors([
+        { id: 'VISIT-001', name: 'Laura Palmer', company: 'One-Eyed Jacks', visiting: 'Emily Jones', checkInTime: new Date(Date.now() - 30 * 60000), reason: 'Quarterly Review' },
+    ]);
+  }, []);
 
   const addVisitor = (visitorData: Omit<Visitor, 'id' | 'checkInTime'>) => {
     const newVisitor: Visitor = {
@@ -1611,6 +1618,7 @@ export const useSchedule = () => {
     }
     return context;
   };
+
 
 
 
