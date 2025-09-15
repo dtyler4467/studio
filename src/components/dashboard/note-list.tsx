@@ -1,8 +1,7 @@
-
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { Note } from '@/hooks/use-schedule';
