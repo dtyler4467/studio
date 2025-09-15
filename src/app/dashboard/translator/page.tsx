@@ -38,7 +38,17 @@ export default function TranslatorPage() {
     const recognitionRef = useRef<any>(null);
     const { toast } = useToast();
     
-    const handleTranslate = async (text: string, source: string, target: string, setTextCallback: (text: string) => void) => {
+    const handleSpeak = (text: string, lang: string) => {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            toast({ variant: 'destructive', title: 'Not Supported', description: 'Your browser does not support text-to-speech.' });
+        }
+    };
+
+    const handleTranslate = async (text: string, source: string, target: string, setTextCallback: (text: string) => void, speakResult: boolean = false) => {
         if (!text.trim()) {
             return;
         }
@@ -47,6 +57,9 @@ export default function TranslatorPage() {
         try {
             const result = await translateText({ text, targetLang: languages.find(l => l.code === target)?.name || 'Spanish' });
             setTextCallback(result.translatedText);
+            if (speakResult) {
+                handleSpeak(result.translatedText, target);
+            }
         } catch (error) {
             console.error("Translation error:", error);
             toast({ variant: 'destructive', title: 'Translation Failed', description: 'Could not translate the text. Please try again.' });
@@ -99,10 +112,10 @@ export default function TranslatorPage() {
         const onResult = (transcript: string) => {
             if (side === 'source') {
                 setInputText(transcript);
-                handleTranslate(transcript, sourceLang, targetLang, setOutputText);
+                handleTranslate(transcript, sourceLang, targetLang, setOutputText, true);
             } else {
                 setOutputText(transcript);
-                handleTranslate(transcript, targetLang, sourceLang, setInputText);
+                handleTranslate(transcript, targetLang, sourceLang, setInputText, true);
             }
         };
 
@@ -128,16 +141,6 @@ export default function TranslatorPage() {
         const tempText = inputText;
         setInputText(outputText);
         setOutputText(tempText);
-    };
-    
-    const handleSpeak = (text: string, lang: string) => {
-        if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = lang;
-            window.speechSynthesis.speak(utterance);
-        } else {
-            toast({ variant: 'destructive', title: 'Not Supported', description: 'Your browser does not support text-to-speech.' });
-        }
     };
 
     return (
