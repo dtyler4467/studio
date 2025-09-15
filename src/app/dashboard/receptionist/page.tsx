@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Users, LogIn, LogOut } from 'lucide-react';
-import { useSchedule, Visitor } from '@/hooks/use-schedule';
+import { useSchedule, Visitor, OfficeAppointment, Note } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar';
+import { OfficeAppointmentDataTable } from '@/components/dashboard/office-appointment-data-table';
+import { NoteList } from '@/components/dashboard/note-list';
+import { Translator } from '@/components/dashboard/translator';
 
 const VisitorLogTable = () => {
     const { visitors } = useSchedule();
@@ -89,7 +93,6 @@ const LiveReceptionistView = () => {
             description: `${formData.name} from ${formData.company} has been checked in.`
         });
         
-        // Mock sending an email
         if(visitingEmployee?.email) {
             const subject = `Your Visitor Has Arrived: ${formData.name}`;
             const body = `${formData.name} from ${formData.company} is here to see you for: ${formData.reason || 'a meeting'}.\n\nThey are waiting in the lobby.`;
@@ -209,6 +212,120 @@ const SelfServiceKioskView = () => {
     );
 };
 
+const NotesTab = () => {
+    const { notes, addNote, updateNote, deleteNote, bulkAddNotes } = useSchedule();
+    const { toast } = useToast();
+    const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+    const [noteTitle, setNoteTitle] = useState('');
+    const [noteContent, setNoteContent] = useState('');
+
+     React.useEffect(() => {
+        if (selectedNote) {
+            setNoteTitle(selectedNote.title);
+            setNoteContent(selectedNote.content);
+        } else {
+            setNoteTitle('');
+            setNoteContent('');
+        }
+    }, [selectedNote]);
+
+    const handleSaveNote = () => {
+        if (!noteTitle.trim()) {
+            toast({ variant: 'destructive', title: 'Title is required.' });
+            return;
+        }
+        if (selectedNote) {
+            updateNote(selectedNote.id, { title: noteTitle, content: noteContent });
+            toast({ title: 'Note Updated' });
+        } else {
+            const newNote = addNote({ title: noteTitle, content: noteContent, tags: [] });
+            setSelectedNote(newNote);
+            toast({ title: 'Note Saved' });
+        }
+    };
+
+     const handleNewNote = () => {
+        setSelectedNote(null);
+        setNoteTitle('');
+        setNoteContent('');
+    };
+
+     const handleExport = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notes, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `logiflow_notes_${format(new Date(), 'yyyy-MM-dd')}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        toast({ title: 'Notes Exported' });
+    }
+    
+    const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedNotes = JSON.parse(e.target?.result as string);
+                if (Array.isArray(importedNotes)) {
+                    bulkAddNotes(importedNotes);
+                    toast({ title: 'Notes Imported', description: `${importedNotes.length} notes have been added.` });
+                } else {
+                    throw new Error("Invalid file format.");
+                }
+            } catch (err) {
+                 toast({ variant: 'destructive', title: 'Import Failed', description: 'The selected file is not a valid notes export.' });
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; // Reset file input
+    }
+    
+    return (
+        <div className="grid lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-1">
+                 <NoteList 
+                    notes={notes}
+                    selectedNote={selectedNote}
+                    onSelectNote={setSelectedNote}
+                    onNewNote={handleNewNote}
+                    onExport={handleExport}
+                    onImport={handleImport}
+                />
+            </div>
+            <div className="lg:col-span-2">
+                <Card>
+                    <CardHeader>
+                        <Input
+                            placeholder="Note Title"
+                            className="text-2xl font-bold border-none shadow-none focus-visible:ring-0 font-headline"
+                            value={noteTitle}
+                            onChange={(e) => setNoteTitle(e.target.value)}
+                        />
+                        <CardDescription>
+                            {selectedNote ? `Last updated: ${format(selectedNote.date, 'PPP p')}` : 'A new note'}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Textarea
+                            placeholder="Start writing..."
+                            className="h-96 resize-none border-none shadow-none focus-visible:ring-0"
+                            value={noteContent}
+                            onChange={(e) => setNoteContent(e.target.value)}
+                        />
+                    </CardContent>
+                    <CardContent className="flex justify-end">
+                        <Button onClick={handleSaveNote}>Save Note</Button>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    )
+}
+
+
 export default function ReceptionistPage() {
     const [mode, setMode] = useState<'live' | 'self-service'>('live');
 
@@ -216,16 +333,68 @@ export default function ReceptionistPage() {
     <div className="flex flex-col w-full">
       <Header pageTitle="Receptionist Dashboard" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold tracking-tight">Visitor Management</h2>
-            <div className="ml-auto flex items-center gap-2">
-                <Button variant={mode === 'live' ? 'default' : 'outline'} onClick={() => setMode('live')}><User className="mr-2"/> Live Interaction</Button>
-                <Button variant={mode === 'self-service' ? 'default' : 'outline'} onClick={() => setMode('self-service')}><Users className="mr-2"/> Self-Service Kiosk</Button>
-            </div>
-        </div>
-        
-        {mode === 'live' ? <LiveReceptionistView /> : <SelfServiceKioskView />}
-        
+        <Tabs defaultValue="visitors" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="visitors">Visitor Management</TabsTrigger>
+            <TabsTrigger value="appointments">Appointments</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="translator">Translator</TabsTrigger>
+            <TabsTrigger value="record">Record</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="visitors" className="mt-6">
+                <div className="flex items-center gap-4 mb-6">
+                    <h2 className="text-2xl font-bold tracking-tight">Visitor Management</h2>
+                    <div className="ml-auto flex items-center gap-2">
+                        <Button variant={mode === 'live' ? 'default' : 'outline'} onClick={() => setMode('live')}><User className="mr-2"/> Live Interaction</Button>
+                        <Button variant={mode === 'self-service' ? 'default' : 'outline'} onClick={() => setMode('self-service')}><Users className="mr-2"/> Self-Service Kiosk</Button>
+                    </div>
+                </div>
+                {mode === 'live' ? <LiveReceptionistView /> : <SelfServiceKioskView />}
+          </TabsContent>
+
+          <TabsContent value="appointments">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Company Calendar & Appointments</CardTitle>
+                    <CardDescription>View all company events and manage office appointments.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid lg:grid-cols-2 gap-6">
+                    <ScheduleCalendar />
+                    <OfficeAppointmentDataTable />
+                </CardContent>
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="notes">
+            <NotesTab />
+          </TabsContent>
+
+          <TabsContent value="translator">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Language Translator</CardTitle>
+                    <CardDescription>Translate text between languages.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Translator />
+                </CardContent>
+            </Card>
+          </TabsContent>
+           <TabsContent value="record">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Record</CardTitle>
+                    <CardDescription>Screen and voice recording functionality.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <div className="flex items-center justify-center rounded-md border border-dashed h-96">
+                        <p className="text-muted-foreground">Recording functionality coming soon.</p>
+                    </div>
+                </CardContent>
+             </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
