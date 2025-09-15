@@ -9,11 +9,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Recording = {
   id: string;
@@ -22,6 +22,23 @@ type Recording = {
   duration: string;
   date: Date;
 };
+
+const ClientFormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (date) {
+            setFormattedDate(format(date, 'PPP p'));
+        }
+    }, [date]);
+
+    if (!formattedDate) {
+        return <Skeleton className="h-4 w-[150px]" />;
+    }
+
+    return <>{formattedDate}</>;
+}
+
 
 const AudioPlayer = ({ url }: { url: string }) => {
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -269,4 +286,3 @@ export default function VoiceRecordPage() {
     </>
   );
 }
-
