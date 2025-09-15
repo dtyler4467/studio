@@ -179,6 +179,12 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
   },
   {
+    href: '/dashboard/notes',
+    icon: Pencil,
+    label: 'Notes',
+    roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+  },
+  {
     href: '/dashboard/translator',
     icon: Languages,
     label: 'Translator',
