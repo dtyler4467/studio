@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -140,6 +141,7 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { href: '/dashboard/network-tv-hub', icon: Tv, label: 'Network TV Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
   {
     href: '/dashboard/project-hub',
     icon: Package,
@@ -695,7 +697,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9' || href === '/dashboard/store' || href === '/dashboard/hr/policies' || href === '/dashboard/hr/policies/handbook' || href === '/dashboard/project-hub' || href === '/dashboard/calendar' || href === '/dashboard/calculator' || href === '/dashboard/public-relations' || href === '/dashboard/project-hub/issues' || href === '/dashboard/hr/contracts' || href === '/dashboard/crm' || href === '/dashboard/receptionist' || href === '/dashboard/record' || href === '/dashboard/blanket-hub') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9' || href === '/dashboard/store' || href === '/dashboard/hr/policies' || href === '/dashboard/hr/policies/handbook' || href === '/dashboard/project-hub' || href === '/dashboard/calendar' || href === '/dashboard/calculator' || href === '/dashboard/public-relations' || href === '/dashboard/project-hub/issues' || href === '/dashboard/hr/contracts' || href === '/dashboard/crm' || href === '/dashboard/receptionist' || href === '/dashboard/record' || href === '/dashboard/blanket-hub' || href === '/dashboard/network-tv-hub') {
         return pathname === href;
     }
     return pathname.startsWith(href);
