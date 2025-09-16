@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -14,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type MediaItemType = 'video' | 'image' | 'text' | 'queue';
 
@@ -72,36 +74,38 @@ const AddMediaDialog = ({ onAdd }: { onAdd: (item: Omit<MediaItem, 'id'>) => voi
                     <DialogTitle>Add New Media to Library</DialogTitle>
                     <DialogDescription>Select the type of media and provide the content.</DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">Type</Label>
-                        <div className="col-span-3 flex gap-2">
-                             {['image', 'video', 'text'].map((t) => (
-                                <Button key={t} variant={type === t ? 'default' : 'outline'} onClick={() => setType(t as MediaItemType)}>{t.charAt(0).toUpperCase() + t.slice(1)}</Button>
-                            ))}
+                 <ScrollArea className="max-h-[60vh] pr-4">
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Type</Label>
+                            <div className="col-span-3 flex gap-2">
+                                {['image', 'video', 'text'].map((t) => (
+                                    <Button key={t} variant={type === t ? 'default' : 'outline'} onClick={() => setType(t as MediaItemType)}>{t.charAt(0).toUpperCase() + t.slice(1)}</Button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="title" className="text-right">Title</Label>
+                            <Input id="title" value={title} onChange={e => setTitle(e.target.value)} className="col-span-3"/>
+                        </div>
+                        { (type === 'image' || type === 'video') && (
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label className="text-right pt-2">File</Label>
+                                <div className="col-span-3"><DocumentUpload onDocumentChange={setSrc} currentDocument={src} /></div>
+                            </div>
+                        )}
+                        { type === 'text' && (
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label htmlFor="content" className="text-right pt-2">Text</Label>
+                                <Textarea id="content" value={content} onChange={e => setContent(e.target.value)} className="col-span-3"/>
+                            </div>
+                        )}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="duration" className="text-right">Duration (s)</Label>
+                            <Input id="duration" type="number" value={duration} onChange={e => setDuration(Number(e.target.value) || 10)} className="col-span-3"/>
                         </div>
                     </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="title" className="text-right">Title</Label>
-                        <Input id="title" value={title} onChange={e => setTitle(e.target.value)} className="col-span-3"/>
-                    </div>
-                    { (type === 'image' || type === 'video') && (
-                        <div className="grid grid-cols-4 items-start gap-4">
-                             <Label className="text-right pt-2">File</Label>
-                            <div className="col-span-3"><DocumentUpload onDocumentChange={setSrc} currentDocument={src} /></div>
-                        </div>
-                    )}
-                    { type === 'text' && (
-                        <div className="grid grid-cols-4 items-start gap-4">
-                             <Label htmlFor="content" className="text-right pt-2">Text</Label>
-                            <Textarea id="content" value={content} onChange={e => setContent(e.target.value)} className="col-span-3"/>
-                        </div>
-                    )}
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="duration" className="text-right">Duration (s)</Label>
-                        <Input id="duration" type="number" value={duration} onChange={e => setDuration(Number(e.target.value) || 10)} className="col-span-3"/>
-                    </div>
-                </div>
+                 </ScrollArea>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                     <Button onClick={handleSave}>Add to Library</Button>
