@@ -64,6 +64,36 @@ const TimelineEditor = ({ duration = 0, onTrimChange }: { duration?: number; onT
 
 const MediaLibraryPanel = ({ onSelect }: { onSelect: (asset: MediaAsset) => void }) => {
     const [mediaAssets, setMediaAssets] = useState(initialMediaAssets);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const src = e.target?.result as string;
+            const fileType = file.type.split('/')[0] as MediaType;
+            
+            if (!['video', 'image', 'audio'].includes(fileType)) {
+                toast({ variant: 'destructive', title: 'Unsupported File Type' });
+                return;
+            }
+
+            const newAsset: MediaAsset = {
+                id: `media_${Date.now()}`,
+                name: file.name,
+                type: fileType,
+                src,
+                duration: fileType === 'image' ? 8 : 0, // Default duration for images
+            };
+
+            setMediaAssets(prev => [newAsset, ...prev]);
+            toast({ title: 'Upload Successful', description: `${file.name} added to library.` });
+        };
+        reader.readAsDataURL(file);
+    };
 
     return (
         <Card className="h-full flex flex-col">
@@ -89,7 +119,8 @@ const MediaLibraryPanel = ({ onSelect }: { onSelect: (asset: MediaAsset) => void
                 ))}
             </CardContent>
             <CardFooter>
-                 <Button variant="outline" className="w-full"><Upload className="mr-2"/> Upload Media</Button>
+                 <Input type="file" ref={fileInputRef} className="hidden" accept="video/*,image/*,audio/*" onChange={handleFileUpload} />
+                 <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2"/> Upload Media</Button>
             </CardFooter>
         </Card>
     );
@@ -186,5 +217,3 @@ export default function NetworkTvEditorPage() {
     </div>
   );
 }
-
-    
