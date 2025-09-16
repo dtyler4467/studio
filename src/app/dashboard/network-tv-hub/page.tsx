@@ -147,7 +147,15 @@ const MediaLibrary = ({ library, onAddToPlaylist, onDragStart, onDelete }: { lib
 const TvPlayer = ({ playlist, visitors }: { playlist: MediaItem[], visitors: Visitor[] }) => {
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
+    const [currentTime, setCurrentTime] = useState('');
     const videoRef = React.useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(format(new Date(), 'PPP p'))
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const currentItem = playlist[currentItemIndex];
 
@@ -213,7 +221,7 @@ const TvPlayer = ({ playlist, visitors }: { playlist: MediaItem[], visitors: Vis
                     </div>
                 </div>
              )}
-             <div className="absolute bottom-4 left-4 text-xs font-mono">{format(new Date(), 'PPP p')}</div>
+             <div className="absolute bottom-4 left-4 text-xs font-mono">{currentTime}</div>
              <div className="absolute top-4 right-4 flex items-center gap-2">
                  <Button variant="ghost" size="icon" onClick={() => setIsPlaying(!isPlaying)}>{isPlaying ? <Pause/> : <Play/>}</Button>
              </div>
