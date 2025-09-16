@@ -102,6 +102,14 @@ export default function NetworkTvEditorPage() {
     const [watermarkSrc, setWatermarkSrc] = useState<string | null>('https://picsum.photos/seed/logo/200/100');
     const [trim, setTrim] = useState({ start: 0, end: selectedAsset?.duration || 0 });
 
+    const handleTrimChange = (start: number, end: number) => {
+        setTrim({ start, end });
+    };
+
+    const displayDuration = selectedAsset?.type === 'video' 
+        ? (trim.end - trim.start).toFixed(1) 
+        : (selectedAsset?.duration || 10);
+
   return (
     <div className="flex flex-col w-full h-screen">
       <Header pageTitle="Network TV Editor" />
@@ -129,7 +137,7 @@ export default function NetworkTvEditorPage() {
                 </CardContent>
              </Card>
              {selectedAsset?.type === 'video' && (
-                <TimelineEditor duration={selectedAsset?.duration} onTrimChange={(start, end) => setTrim({ start, end })}/>
+                <TimelineEditor duration={selectedAsset?.duration} onTrimChange={handleTrimChange}/>
              )}
         </div>
         <div className="lg:col-span-1 h-full">
@@ -144,7 +152,7 @@ export default function NetworkTvEditorPage() {
                     </div>
                      <div className="space-y-2">
                         <Label>Duration (seconds)</Label>
-                        <Input type="number" value={selectedAsset?.duration || 10} readOnly />
+                        <Input type="number" value={displayDuration} readOnly />
                     </div>
                     <div className="flex items-center justify-between">
                         <Label htmlFor="watermark" className="flex items-center gap-2"><FolderSymlink /> Show Watermark</Label>
