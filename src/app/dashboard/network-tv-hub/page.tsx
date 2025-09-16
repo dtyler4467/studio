@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Tv, Film, Image as ImageIcon, Text, GripVertical, Trash2, Play, Pause, List, Tv2 } from 'lucide-react';
+import { PlusCircle, Tv, Film, Image as ImageIcon, Text, GripVertical, Trash2, Play, Pause, List, Tv2, Users } from 'lucide-react';
 import { useSchedule, Visitor } from '@/hooks/use-schedule';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
