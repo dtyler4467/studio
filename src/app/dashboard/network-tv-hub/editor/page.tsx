@@ -144,7 +144,7 @@ export default function NetworkTvEditorPage() {
                     </div>
                      <div className="space-y-2">
                         <Label>Duration (seconds)</Label>
-                        <Input type="number" value={selectedAsset?.duration || 10} />
+                        <Input type="number" value={selectedAsset?.duration || 10} readOnly />
                     </div>
                     <div className="flex items-center justify-between">
                         <Label htmlFor="watermark" className="flex items-center gap-2"><FolderSymlink /> Show Watermark</Label>
@@ -167,4 +167,3 @@ export default function NetworkTvEditorPage() {
     </div>
   );
 }
-
