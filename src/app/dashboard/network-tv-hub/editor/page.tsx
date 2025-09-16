@@ -27,8 +27,8 @@ type MediaAsset = {
 
 const initialMediaAssets: MediaAsset[] = [
     { id: 'vid_1', name: 'Company Promo.mp4', type: 'video', src: 'https://www.w3schools.com/html/mov_bbb.mp4', duration: 10 },
-    { id: 'img_1', name: 'Warehouse.jpg', type: 'image', src: 'https://picsum.photos/seed/warehouse/1920/1080' },
-    { id: 'aud_1', name: 'Corporate_uplifting.mp3', type: 'audio', src: '' },
+    { id: 'img_1', name: 'Warehouse.jpg', type: 'image', src: 'https://picsum.photos/seed/warehouse/1920/1080', duration: 8 },
+    { id: 'aud_1', name: 'Corporate_uplifting.mp3', type: 'audio', src: '', duration: 180 },
 ];
 
 
@@ -102,11 +102,15 @@ export default function NetworkTvEditorPage() {
     const [watermarkSrc, setWatermarkSrc] = useState<string | null>('https://picsum.photos/seed/logo/200/100');
     const [trim, setTrim] = useState({ start: 0, end: selectedAsset?.duration || 0 });
 
+    useEffect(() => {
+        setTrim({ start: 0, end: selectedAsset?.duration || 0 });
+    }, [selectedAsset]);
+
     const handleTrimChange = (start: number, end: number) => {
         setTrim({ start, end });
     };
 
-    const displayDuration = selectedAsset?.type === 'video' 
+    const displayDuration = selectedAsset?.type === 'video' || selectedAsset?.type === 'audio'
         ? (trim.end - trim.start).toFixed(1) 
         : (selectedAsset?.duration || 10);
 
@@ -129,6 +133,13 @@ export default function NetworkTvEditorPage() {
                     {selectedAsset?.type === 'image' && (
                          <Image src={selectedAsset.src} alt={selectedAsset.name} layout="fill" objectFit="contain" className="p-4"/>
                     )}
+                     {selectedAsset?.type === 'audio' && (
+                        <div className="text-center text-muted-foreground flex flex-col items-center gap-4">
+                            <Music className="w-24 h-24" />
+                            <p className="text-lg font-semibold">{selectedAsset.name}</p>
+                            <audio key={selectedAsset.src} src={selectedAsset.src} controls />
+                        </div>
+                    )}
                     {showWatermark && watermarkSrc && (
                         <div className="absolute top-4 left-4">
                             <Image src={watermarkSrc} alt="Watermark" width={80} height={40} data-ai-hint="logo" />
@@ -136,7 +147,7 @@ export default function NetworkTvEditorPage() {
                     )}
                 </CardContent>
              </Card>
-             {selectedAsset?.type === 'video' && (
+             {(selectedAsset?.type === 'video' || selectedAsset?.type === 'audio') && (
                 <TimelineEditor duration={selectedAsset?.duration} onTrimChange={handleTrimChange}/>
              )}
         </div>
@@ -175,3 +186,5 @@ export default function NetworkTvEditorPage() {
     </div>
   );
 }
+
+    
