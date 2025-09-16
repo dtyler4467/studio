@@ -141,7 +141,16 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-  { href: '/dashboard/network-tv-hub', icon: Tv, label: 'Network TV Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+  { 
+    href: '#', 
+    icon: Tv, 
+    label: 'Network TV Hub',
+    roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
+    subItems: [
+        { href: '/dashboard/network-tv-hub', icon: Columns, label: 'Management', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+        { href: '/dashboard/network-tv-hub/screen', icon: Tv, label: 'Screen', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
+    ]
+  },
   {
     href: '/dashboard/project-hub',
     icon: Package,
@@ -614,6 +623,7 @@ export function SidebarNav() {
   const [isProjectHubOpen, setIsProjectHubOpen] = useState(false);
   const [isPublicRelationsOpen, setIsPublicRelationsOpen] = useState(false);
   const [isRecordOpen, setIsRecordOpen] = useState(false);
+  const [isNetworkTvHubOpen, setIsNetworkTvHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -644,6 +654,7 @@ export function SidebarNav() {
     setIsProjectHubOpen(pathname.startsWith('/dashboard/project-hub'));
     setIsPublicRelationsOpen(pathname.startsWith('/dashboard/public-relations'));
     setIsRecordOpen(pathname.startsWith('/dashboard/record'));
+    setIsNetworkTvHubOpen(pathname.startsWith('/dashboard/network-tv-hub'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -881,6 +892,7 @@ export function SidebarNav() {
                         'Project Hub': isProjectHubOpen,
                         'Public Relations': isPublicRelationsOpen,
                         'Record': isRecordOpen,
+                        'Network TV Hub': isNetworkTvHubOpen,
                     };
                     const setIsOpenMap = {
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -897,6 +909,7 @@ export function SidebarNav() {
                         'Project Hub': setIsProjectHubOpen,
                         'Public Relations': setIsPublicRelationsOpen,
                         'Record': setIsRecordOpen,
+                        'Network TV Hub': setIsNetworkTvHubOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                     const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];

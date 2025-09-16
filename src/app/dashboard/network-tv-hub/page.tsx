@@ -3,11 +3,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Tv, Film, Image as ImageIcon, Text, GripVertical, Trash2, Play, Pause, List, Tv2, Users } from 'lucide-react';
+import { PlusCircle, Tv, Film, Image as ImageIcon, Text, GripVertical, Trash2, List } from 'lucide-react';
 import { useSchedule, Visitor } from '@/hooks/use-schedule';
-import Image from 'next/image';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,8 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
 
 type MediaItemType = 'video' | 'image' | 'text' | 'queue';
 
@@ -144,94 +141,7 @@ const MediaLibrary = ({ library, onAddToPlaylist, onDragStart, onDelete }: { lib
     )
 }
 
-const TvPlayer = ({ playlist, visitors }: { playlist: MediaItem[], visitors: Visitor[] }) => {
-    const [currentItemIndex, setCurrentItemIndex] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(true);
-    const [currentTime, setCurrentTime] = useState('');
-    const videoRef = React.useRef<HTMLVideoElement>(null);
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(format(new Date(), 'PPP p'))
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const currentItem = playlist[currentItemIndex];
-
-    useEffect(() => {
-        if (!currentItem || !isPlaying) return;
-
-        let timer: NodeJS.Timeout;
-        if (currentItem.type === 'video' && videoRef.current) {
-            const videoElement = videoRef.current;
-            const handleVideoEnd = () => {
-                setCurrentItemIndex(prev => (prev + 1) % playlist.length);
-            };
-            videoElement.addEventListener('ended', handleVideoEnd);
-            videoElement.play().catch(e => console.error("Video play error:", e));
-            
-            return () => videoElement.removeEventListener('ended', handleVideoEnd);
-
-        } else {
-             timer = setTimeout(() => {
-                setCurrentItemIndex(prev => (prev + 1) % playlist.length);
-            }, currentItem.duration * 1000);
-        }
-
-        return () => clearTimeout(timer);
-
-    }, [currentItemIndex, currentItem, playlist.length, isPlaying]);
-
-    const waitingVisitors = visitors.filter(v => v.status === 'Waiting for Host');
-    const nextVisitor = waitingVisitors[0];
-    const acceptedVisitor = visitors.find(v => v.status === 'Accepted' && !v.checkOutTime);
-
-
-    if (!currentItem) return <div className="bg-black text-white flex items-center justify-center h-full">No items in playlist.</div>;
-
-    return (
-        <div className="w-full aspect-video bg-black relative text-white overflow-hidden">
-             {currentItem.type === 'image' && <Image src={currentItem.src!} alt={currentItem.title} layout="fill" objectFit="cover" />}
-             {currentItem.type === 'video' && <video ref={videoRef} src={currentItem.src} className="w-full h-full object-cover" muted />}
-             {currentItem.type === 'text' && <div className="w-full h-full flex items-center justify-center p-12"><h2 className="text-4xl font-bold text-center">{currentItem.content}</h2></div>}
-             {currentItem.type === 'queue' && (
-                <div className="w-full h-full flex p-8">
-                    <div className="w-2/3 pr-8 border-r border-white/20">
-                        <h2 className="text-5xl font-bold font-headline mb-6">Visitor Queue</h2>
-                        <div className="space-y-4">
-                            {waitingVisitors.slice(0, 5).map(v => (
-                                <div key={v.id} className="p-4 bg-white/10 rounded-lg text-2xl font-medium">{v.name} to see {v.visiting}</div>
-                            ))}
-                            {waitingVisitors.length === 0 && <p className="text-2xl text-white/70">No visitors waiting.</p>}
-                        </div>
-                    </div>
-                    <div className="w-1/3 pl-8 flex flex-col items-center justify-center">
-                        <h3 className="text-3xl font-semibold mb-4">Now Seeing</h3>
-                        {acceptedVisitor ? (
-                            <div className="text-center">
-                                {acceptedVisitor.photoDataUri && <img src={acceptedVisitor.photoDataUri} alt={acceptedVisitor.name} className="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-green-400"/>}
-                                <p className="text-4xl font-bold">{acceptedVisitor.name}</p>
-                                <p className="text-xl text-white/80">is meeting with</p>
-                                <p className="text-3xl font-semibold mt-1">{acceptedVisitor.visiting}</p>
-                            </div>
-                        ) : (
-                            <p className="text-2xl text-white/70">N/A</p>
-                        )}
-                    </div>
-                </div>
-             )}
-             <div className="absolute bottom-4 left-4 text-xs font-mono">{currentTime}</div>
-             <div className="absolute top-4 right-4 flex items-center gap-2">
-                 <Button variant="ghost" size="icon" onClick={() => setIsPlaying(!isPlaying)}>{isPlaying ? <Pause/> : <Play/>}</Button>
-             </div>
-        </div>
-    );
-};
-
-
 export default function NetworkTvHubPage() {
-    const { visitors } = useSchedule();
     const { toast } = useToast();
     const [mediaLibrary, setMediaLibrary] = useState<MediaItem[]>(initialMediaLibrary);
     const [playlist, setPlaylist] = useState<MediaItem[]>(initialPlaylist);
@@ -256,13 +166,12 @@ export default function NetworkTvHubPage() {
         const itemJson = e.dataTransfer.getData('mediaItem');
         if (itemJson) {
             const item = JSON.parse(itemJson);
-            // Add a unique ID for the playlist instance
             setPlaylist(prev => [...prev, { ...item, id: `${item.id}-${Date.now()}` }]);
         }
     };
     
     const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault(); // This is necessary to allow dropping
+        e.preventDefault();
     };
 
     const handleDeleteFromPlaylist = (id: string) => {
@@ -271,46 +180,33 @@ export default function NetworkTvHubPage() {
 
   return (
     <div className="flex flex-col w-full">
-      <Header pageTitle="Network TV Hub" />
-      <main className="flex-1 grid lg:grid-cols-2 gap-4 p-4 md:gap-8 md:p-8">
-        <Card>
-            <CardHeader className="flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="font-headline flex items-center gap-2"><Tv2 /> Live TV Preview</CardTitle>
-                    <CardDescription>This is a preview of what's showing on your network.</CardDescription>
-                </div>
+      <Header pageTitle="Network TV Management" />
+      <main className="flex-1 grid lg:grid-cols-2 gap-4 p-4 md:gap-8 md:p-8 h-[calc(100vh-theme(spacing.16))]">
+        <MediaLibrary library={mediaLibrary} onAddToPlaylist={handleAddMedia} onDragStart={handleDragStart} onDelete={handleDeleteMedia} />
+        <Card className="h-full flex flex-col" onDrop={handleDropOnPlaylist} onDragOver={handleDragOver}>
+            <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2"><List/> Playlist</CardTitle>
+                <CardDescription>The current sequence of media being displayed.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <TvPlayer playlist={playlist} visitors={visitors}/>
+            <CardContent className="flex-1 space-y-3 overflow-y-auto">
+                {playlist.map(item => (
+                     <div key={item.id} className="p-3 border rounded-lg flex items-center gap-4 bg-background">
+                        <GripVertical className="text-muted-foreground cursor-move"/>
+                        <div className="text-muted-foreground">
+                            {item.type === 'image' && <ImageIcon/>}
+                            {item.type === 'video' && <Film/>}
+                            {item.type === 'text' && <Text/>}
+                            {item.type === 'queue' && <Users/>}
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold">{item.title}</p>
+                        </div>
+                         <Badge variant="outline">{item.duration}s</Badge>
+                         {item.type !== 'queue' && <Button variant="ghost" size="icon" className="text-destructive h-7 w-7" onClick={() => handleDeleteFromPlaylist(item.id)}><Trash2 className="h-4 w-4"/></Button>}
+                    </div>
+                ))}
             </CardContent>
         </Card>
-        <div className="grid grid-rows-2 gap-4">
-            <MediaLibrary library={mediaLibrary} onAddToPlaylist={handleAddMedia} onDragStart={handleDragStart} onDelete={handleDeleteMedia} />
-            <Card className="h-full flex flex-col" onDrop={handleDropOnPlaylist} onDragOver={handleDragOver}>
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2"><List/> Playlist</CardTitle>
-                    <CardDescription>The current sequence of media being displayed.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-3 overflow-y-auto">
-                    {playlist.map(item => (
-                         <div key={item.id} className="p-3 border rounded-lg flex items-center gap-4 bg-background">
-                            <GripVertical className="text-muted-foreground cursor-move"/>
-                            <div className="text-muted-foreground">
-                                {item.type === 'image' && <ImageIcon/>}
-                                {item.type === 'video' && <Film/>}
-                                {item.type === 'text' && <Text/>}
-                                {item.type === 'queue' && <Users/>}
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-semibold">{item.title}</p>
-                            </div>
-                             <Badge variant="outline">{item.duration}s</Badge>
-                             {item.type !== 'queue' && <Button variant="ghost" size="icon" className="text-destructive h-7 w-7" onClick={() => handleDeleteFromPlaylist(item.id)}><Trash2 className="h-4 w-4"/></Button>}
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-        </div>
       </main>
     </div>
   );
