@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Users, LogIn, LogOut, Camera, Check, X, MessageSquare } from 'lucide-react';
+import { User, Users, LogIn, LogOut, Camera, Check, X, MessageSquare, Monitor, Mic, Videotape } from 'lucide-react';
 import { useSchedule, Visitor, OfficeAppointment, Note } from '@/hooks/use-schedule';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -228,7 +228,7 @@ const SelfServiceKioskView = () => {
     const visitingEmployee = employees.find(e => e.name === visitorData.visiting);
 
     useEffect(() => {
-        if (step === 2 && videoRef.current) {
+        if (step === 3 && videoRef.current) { // Changed step to 3 for photo capture
             navigator.mediaDevices.getUserMedia({ video: true })
                 .then(stream => {
                     if(videoRef.current) videoRef.current.srcObject = stream;
@@ -247,6 +247,21 @@ const SelfServiceKioskView = () => {
             </CardHeader>
             <CardContent>
                 {step === 1 && (
+                     <div className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="visit-type" className="text-lg">Do you have an appointment?</Label>
+                            <Select value={visitorData.visitType} onValueChange={(v: Visitor['visitType']) => setVisitorData({...visitorData, visitType: v})}>
+                                <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Select an option..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Appointment">Yes, I have an appointment</SelectItem>
+                                    <SelectItem value="Walk-in">No, I am a walk-in</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button onClick={handleNext} className="w-full h-14 text-xl">Next Step</Button>
+                     </div>
+                )}
+                 {step === 2 && (
                     <div className="space-y-6">
                          <div className="space-y-2">
                             <Label htmlFor="visitor-name-kiosk" className="text-lg">Your Full Name</Label>
@@ -266,24 +281,14 @@ const SelfServiceKioskView = () => {
                             </Select>
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="visit-type" className="text-lg">Do you have an appointment?</Label>
-                            <Select value={visitorData.visitType} onValueChange={(v: Visitor['visitType']) => setVisitorData({...visitorData, visitType: v})}>
-                                <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Select an option..." /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Appointment">Yes, I have an appointment</SelectItem>
-                                    <SelectItem value="Walk-in">No, I am a walk-in</SelectItem>
-                                    <SelectItem value="Appointment">I need to make an appointment</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                         <div className="space-y-2">
                             <Label htmlFor="reason-kiosk" className="text-lg">Reason for visit</Label>
                             <Textarea id="reason-kiosk" value={visitorData.reason || ''} onChange={e => setVisitorData({...visitorData, reason: e.target.value})} className="text-lg" />
                         </div>
                         <Button onClick={handleNext} className="w-full h-14 text-xl">Next Step</Button>
+                         <Button variant="link" onClick={handleBack}>Go Back</Button>
                     </div>
                 )}
-                 {step === 2 && (
+                 {step === 3 && (
                     <div className="text-center space-y-4">
                         <h3 className="text-xl font-semibold">Please Take a Photo</h3>
                         <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden">
@@ -293,7 +298,7 @@ const SelfServiceKioskView = () => {
                          <Button variant="link" onClick={handleBack}>Go Back</Button>
                     </div>
                 )}
-                {step === 3 && (
+                {step === 4 && (
                     <div className="text-center space-y-4">
                         <h3 className="text-xl font-semibold">Confirm Your Information</h3>
                         <div className="flex flex-col items-center gap-4">
@@ -307,7 +312,7 @@ const SelfServiceKioskView = () => {
                          <Button variant="link" onClick={handleBack}>Go Back & Edit</Button>
                     </div>
                 )}
-                {step === 4 && (
+                {step === 5 && (
                     <div className="text-center py-10">
                         <h2 className="text-3xl font-bold font-headline">Thank You, {visitorData.name}!</h2>
                         <p className="text-lg text-muted-foreground mt-2">
@@ -447,6 +452,32 @@ const NotesTab = () => {
     )
 }
 
+const RecordTab = () => {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2">
+                    <Videotape />
+                    Recording
+                </CardTitle>
+                <CardDescription>
+                    Screen and voice recording functionality.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button variant="outline" size="lg">
+                        <Monitor className="mr-2" /> Start Screen Record
+                    </Button>
+                    <Button variant="outline" size="lg">
+                        <Mic className="mr-2" /> Start Voice Record
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 export default function ReceptionistPage() {
     const [mode, setMode] = useState<'live' | 'self-service'>('live');
@@ -476,7 +507,7 @@ export default function ReceptionistPage() {
                 {mode === 'live' ? <LiveReceptionistView /> : <SelfServiceKioskView />}
           </TabsContent>
 
-          <TabsContent value="intercom" className="h-full">
+          <TabsContent value="intercom" className="h-full mt-6">
             <Card className="h-full">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
@@ -487,14 +518,14 @@ export default function ReceptionistPage() {
                         Communicate with personnel in real-time.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="h-[calc(100vh-20rem)] p-0">
-                    <ChatLayout />
+                <CardContent className="h-[calc(100vh-25rem)] p-0">
+                    <ChatLayout hideOnMobile />
                 </CardContent>
             </Card>
           </TabsContent>
 
 
-          <TabsContent value="appointments">
+          <TabsContent value="appointments" className="mt-6">
              <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Company Calendar & Appointments</CardTitle>
@@ -507,11 +538,11 @@ export default function ReceptionistPage() {
              </Card>
           </TabsContent>
 
-          <TabsContent value="notes">
+          <TabsContent value="notes" className="mt-6">
             <NotesTab />
           </TabsContent>
 
-          <TabsContent value="translator">
+          <TabsContent value="translator" className="mt-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Language Translator</CardTitle>
@@ -522,18 +553,8 @@ export default function ReceptionistPage() {
                 </CardContent>
             </Card>
           </TabsContent>
-           <TabsContent value="record">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Record</CardTitle>
-                    <CardDescription>Screen and voice recording functionality.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                        <p className="text-muted-foreground">Recording functionality coming soon.</p>
-                    </div>
-                </CardContent>
-             </Card>
+           <TabsContent value="record" className="mt-6">
+             <RecordTab />
           </TabsContent>
         </Tabs>
       </main>

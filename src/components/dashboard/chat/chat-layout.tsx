@@ -8,7 +8,7 @@ import { ConversationView } from './conversation-view';
 import { NewConversationDialog } from './new-conversation-dialog';
 import { useSchedule } from '@/hooks/use-schedule';
 
-export function ChatLayout() {
+export function ChatLayout({ hideOnMobile }: { hideOnMobile?: boolean }) {
     const { employees, currentUser } = useSchedule();
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>('USR002');
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -21,13 +21,16 @@ export function ChatLayout() {
         <div className="flex h-full">
             <aside className={cn(
                 "w-full md:w-80 lg:w-96 border-r bg-background flex-shrink-0 transition-all duration-300",
-                isSidebarVisible ? 'block' : 'hidden',
-                !selectedConversation && 'w-full md:w-full'
+                isSidebarVisible ? 'block' : 'hidden md:block',
+                !selectedConversation && 'w-full md:w-full',
+                hideOnMobile && !isSidebarVisible && 'hidden'
             )}>
                 <ConversationList 
                     onSelectConversation={(id) => {
                         setSelectedConversationId(id);
-                        setIsSidebarVisible(false);
+                        if (hideOnMobile) {
+                            setIsSidebarVisible(false);
+                        }
                     }}
                     selectedConversationId={selectedConversationId}
                 />
