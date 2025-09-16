@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Tv, Film, Image as ImageIcon, Text, GripVertical, Trash2, List } from 'lucide-react';
+import { PlusCircle, Tv, Film, Image as ImageIcon, Text, GripVertical, Trash2, List, Users } from 'lucide-react';
 import { useSchedule, Visitor } from '@/hooks/use-schedule';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -111,7 +111,7 @@ const AddMediaDialog = ({ onAdd }: { onAdd: (item: Omit<MediaItem, 'id'>) => voi
     )
 }
 
-const MediaLibrary = ({ library, onAddToPlaylist, onDragStart, onDelete }: { library: MediaItem[], onAddToPlaylist: (item: MediaItem) => void, onDragStart: (e: React.DragEvent, item: MediaItem) => void, onDelete: (id: string) => void }) => {
+const MediaLibrary = ({ library, onAddToPlaylist, onDragStart, onDelete }: { library: MediaItem[], onAddToPlaylist: (item: Omit<MediaItem, 'id'>) => void, onDragStart: (e: React.DragEvent, item: MediaItem) => void, onDelete: (id: string) => void }) => {
     return (
         <Card className="h-full flex flex-col">
             <CardHeader className="flex-row items-center justify-between">
