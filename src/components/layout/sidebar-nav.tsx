@@ -111,6 +111,7 @@ import {
   Home,
   Scan,
   ShieldAlert,
+  CalendarClock,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from '@/components/ui/sidebar';
