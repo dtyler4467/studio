@@ -111,10 +111,9 @@ import {
   Home,
   Scan,
   ShieldAlert,
-  CalendarClock,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
-import { useSidebar } from '@/components/ui/sidebar';
+import { useSidebar, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
