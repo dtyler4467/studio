@@ -114,6 +114,14 @@ import {
   Repeat,
   PlusSquare,
   File,
+  Scale,
+  TrendingUp,
+  AreaChart,
+  GitCompare,
+  TrendingDown,
+  ChevronsDown,
+  Home,
+  Scan,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -396,6 +404,22 @@ const navItems: NavItem[] = [
         { href: '/dashboard/accountant', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/budget', icon: Banknote, label: 'Budget', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/mileage-tracker', icon: Gauge, label: 'Mileage Tracker', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/balance-sheet', icon: Scale, label: 'Balance Sheet', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/income-statement', icon: TrendingUp, label: 'Income Statement', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/cash-flow-statement', icon: AreaChart, label: 'Cash Flow Statement', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/trial-balance', icon: GitCompare, label: 'Trial Balance', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/general-ledger', icon: Book, label: 'General Ledger', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/accounts-receivable', icon: TrendingUp, label: 'Accounts Receivable', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/accounts-payable', icon: TrendingDown, label: 'Accounts Payable', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/depreciation', icon: ChevronsDown, label: 'Depreciation', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/amortization', icon: ChevronsDown, label: 'Amortization', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/equity', icon: Home, label: 'Equity', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/liabilities', icon: ShieldAlert, label: 'Liabilities', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/financial-ratios', icon: Percent, label: 'Financial Ratios', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/accounts', icon: Users, label: 'Accounts', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/auditing', icon: Scan, label: 'Auditing', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/quarterly-report', icon: CalendarClock, label: 'Quarterly Report', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/end-of-year-report', icon: CalendarCheck, label: 'End of Year Report', roles: ['Admin', 'Manager'] },
     ]
   },
    { 
