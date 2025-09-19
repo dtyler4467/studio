@@ -221,6 +221,12 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'],
   },
   {
+    href: '/dashboard/accountant/mileage-tracker',
+    icon: Gauge,
+    label: 'Mileage Tracker',
+    roles: ['Admin', 'Manager', 'Driver'],
+  },
+  {
     href: '/dashboard/notes',
     icon: Pencil,
     label: 'Notes',
@@ -393,7 +399,6 @@ const navItems: NavItem[] = [
     subItems: [
         { href: '/dashboard/accountant', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/budget', icon: Banknote, label: 'Budget', roles: ['Admin', 'Manager'] },
-        { href: '/dashboard/accountant/mileage-tracker', icon: Gauge, label: 'Mileage Tracker', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/balance-sheet', icon: Scale, label: 'Balance Sheet', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/income-statement', icon: TrendingUp, label: 'Income Statement', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/cash-flow-statement', icon: AreaChart, label: 'Cash Flow Statement', roles: ['Admin', 'Manager'] },
