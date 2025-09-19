@@ -12,6 +12,7 @@ import { FileText, Printer, Mail, User } from 'lucide-react';
 import React, { useState, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchedule } from '@/hooks/use-schedule';
+import { Label } from '@/components/ui/label';
 
 type Student = {
   id: string;
