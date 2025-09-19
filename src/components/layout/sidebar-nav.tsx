@@ -4,18 +4,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from '@/components/ui/sidebar';
-import {
   LayoutDashboard,
   Warehouse,
   Tv,
@@ -122,6 +110,7 @@ import {
   ChevronsDown,
   Home,
   Scan,
+  ShieldAlert,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -331,7 +320,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/lost-and-found', label: 'Lost & Found', icon: ArchiveRestore, roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/reports', icon: BarChart, label: 'Reports', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/trash', label: 'Trash', icon: Trash2, roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/trash', icon: Trash2, label: 'Trash', roles: ['Admin', 'Dispatcher'] },
     ]
   },
    {
