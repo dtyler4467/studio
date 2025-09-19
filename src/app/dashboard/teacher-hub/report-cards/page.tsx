@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Printer, Mail, User } from 'lucide-react';
+import { FileText, Printer, Mail, User, CalendarIcon } from 'lucide-react';
 import React, { useState, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchedule } from '@/hooks/use-schedule';
@@ -17,6 +17,9 @@ import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { DocumentUpload } from '@/components/dashboard/document-upload';
 import Image from 'next/image';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 type Student = {
   id: string;
@@ -61,6 +64,9 @@ export default function ReportCardsPage() {
   const reportCardRef = useRef<HTMLDivElement>(null);
   const [schoolName, setSchoolName] = useState('LogiFlow Academy');
   const [schoolLogo, setSchoolLogo] = useState<string | null>(null);
+  const [reportDate, setReportDate] = useState<Date | undefined>(new Date());
+  const [customField1, setCustomField1] = useState({ label: 'Grading Period', value: 'Q1' });
+  const [customField2, setCustomField2] = useState({ label: 'Principal', value: 'Dr. Evelyn Reed' });
 
   const selectedStudent = useMemo(() => {
     return initialStudents.find(s => s.id === selectedStudentId) || null;
@@ -123,6 +129,35 @@ export default function ReportCardsPage() {
                         <DocumentUpload onDocumentChange={setSchoolLogo} currentDocument={schoolLogo} />
                     </div>
                      <div className="space-y-2">
+                        <Label>Report Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn("w-full justify-start text-left font-normal", !reportDate && "text-muted-foreground")}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {reportDate ? format(reportDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={reportDate} onSelect={setReportDate} initialFocus/>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                            <Label>Custom Field 1</Label>
+                            <Input placeholder="Label" value={customField1.label} onChange={(e) => setCustomField1(f => ({...f, label: e.target.value}))}/>
+                            <Input placeholder="Value" value={customField1.value} onChange={(e) => setCustomField1(f => ({...f, value: e.target.value}))}/>
+                        </div>
+                         <div className="space-y-2">
+                            <Label>Custom Field 2</Label>
+                            <Input placeholder="Label" value={customField2.label} onChange={(e) => setCustomField2(f => ({...f, label: e.target.value}))}/>
+                            <Input placeholder="Value" value={customField2.value} onChange={(e) => setCustomField2(f => ({...f, value: e.target.value}))}/>
+                        </div>
+                    </div>
+                     <div className="space-y-2 pt-4">
                         <Label htmlFor="student-select">Select Student</Label>
                         <Select value={selectedStudentId || ''} onValueChange={setSelectedStudentId}>
                             <SelectTrigger id="student-select">
@@ -153,7 +188,7 @@ export default function ReportCardsPage() {
                     {selectedStudent ? (
                         <div ref={reportCardRef}>
                         <Card className="border-2 border-primary/50">
-                            <CardHeader className="bg-muted/50">
+                            <CardHeader className="bg-muted/50 p-4">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-4">
                                         {schoolLogo && <Image src={schoolLogo} alt={`${schoolName} Logo`} width={64} height={64} className="rounded-full" />}
@@ -161,6 +196,11 @@ export default function ReportCardsPage() {
                                             <CardTitle className="font-headline text-2xl">{schoolName}</CardTitle>
                                             <CardDescription>2024-2025 School Year Report Card</CardDescription>
                                         </div>
+                                    </div>
+                                    <div className="text-right text-xs">
+                                        {reportDate && <p><strong>Date:</strong> {format(reportDate, 'PPP')}</p>}
+                                        {customField1.label && <p><strong>{customField1.label}:</strong> {customField1.value}</p>}
+                                        {customField2.label && <p><strong>{customField2.label}:</strong> {customField2.value}</p>}
                                     </div>
                                 </div>
                             </CardHeader>
@@ -224,3 +264,5 @@ export default function ReportCardsPage() {
     </div>
   );
 }
+
+    
