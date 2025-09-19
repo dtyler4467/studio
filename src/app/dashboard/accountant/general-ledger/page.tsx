@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Book, PlusCircle, Download, ListFilter, Trash2 } from 'lucide-react';
-import React, { useState, useMemo, useEffect } from 'react';
+import { Book, PlusCircle, Download, ListFilter, Trash2, Upload } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -158,6 +158,7 @@ export default function GeneralLedgerPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [accountFilter, setAccountFilter] = useState<string>('all');
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const flattenedLedger = useMemo(() => {
         let runningBalances: Record<string, number> = {};
@@ -211,6 +212,57 @@ export default function GeneralLedgerPage() {
         XLSX.writeFile(workbook, `General_Ledger_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
     };
 
+    const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json<any>(worksheet);
+
+                // Group by Description and Date to reconstruct entries
+                const entryMap = new Map<string, Omit<JournalEntry, 'id'>>();
+
+                json.forEach(row => {
+                    const key = `${row.Date}-${row.Description}`;
+                    if (!entryMap.has(key)) {
+                        entryMap.set(key, {
+                            date: new Date(row.Date),
+                            description: row.Description,
+                            lines: [],
+                        });
+                    }
+                    const entry = entryMap.get(key)!;
+                    if (row.Debit) {
+                        entry.lines.push({ accountId: String(row['Account ID']), type: 'debit', amount: Number(row.Debit) });
+                    }
+                    if (row.Credit) {
+                         entry.lines.push({ accountId: String(row['Account ID']), type: 'credit', amount: Number(row.Credit) });
+                    }
+                });
+                
+                const newEntries: JournalEntry[] = Array.from(entryMap.values()).map(e => ({ ...e, id: `JE-IMP-${Date.now()}` }));
+
+                setJournalEntries(prev => [...prev, ...newEntries]);
+                toast({ title: "Import Successful", description: `${newEntries.length} journal entries were imported.` });
+
+            } catch (error) {
+                console.error("Import error:", error);
+                toast({ variant: 'destructive', title: "Import Failed", description: "Please check the file format." });
+            } finally {
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
     return (
         <div className="flex flex-col w-full">
             <Header pageTitle="General Ledger" />
@@ -238,6 +290,8 @@ export default function GeneralLedgerPage() {
                                 </SelectContent>
                             </Select>
                             <div className="ml-auto flex gap-2">
+                                <input type="file" ref={fileInputRef} className="hidden" onChange={handleImport} accept=".xlsx, .xls" />
+                                <Button variant="outline" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2" />Import</Button>
                                  <AddJournalEntryDialog onSave={handleAddEntry} accounts={accounts} />
                                 <Button variant="outline" onClick={handleExport}><Download className="mr-2"/>Export</Button>
                             </div>
