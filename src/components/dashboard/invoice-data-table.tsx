@@ -105,6 +105,19 @@ export function InvoiceDataTable() {
       accessorKey: "date",
       header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Date <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
       cell: ({ row }) => format(row.original.date, "PPP"),
+      filterFn: (row, columnId, filterValue) => {
+        if (typeof filterValue === 'number') { // Quarter filter
+            const rowDate = new Date(row.getValue(columnId));
+            return getQuarter(rowDate) === filterValue;
+        }
+        if (typeof filterValue === 'object' && filterValue !== null && 'from' in filterValue) { // DateRange filter
+            const { from, to } = filterValue as DateRange;
+            if (!from) return true;
+            const rowDate = new Date(row.getValue(columnId));
+            return isWithinInterval(rowDate, { start: from, end: to || from });
+        }
+        return true;
+      },
     },
     {
       accessorKey: "dueDate",
@@ -181,21 +194,6 @@ export function InvoiceDataTable() {
     }
     setColumnFilters(filters);
   }, [statusFilter, typeFilter, dateRange, quarterFilter]);
-
-  React.useEffect(() => {
-    table.getColumn('date')?.setFilterFn((row, columnId, filterValue) => {
-        if (typeof filterValue === 'number') { // Quarter filter
-            const rowDate = new Date(row.getValue(columnId));
-            return getQuarter(rowDate) === filterValue;
-        }
-        if (typeof filterValue === 'object' && filterValue !== null && 'from' in filterValue) { // DateRange filter
-            const { from, to } = filterValue as DateRange;
-            const rowDate = new Date(row.getValue(columnId));
-            return isWithinInterval(rowDate, { start: from!, end: to || from! });
-        }
-        return true;
-    });
-  }, [table]);
 
 
   return (
