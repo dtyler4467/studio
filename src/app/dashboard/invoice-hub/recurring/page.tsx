@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, PlusCircle, Edit, Trash2, Play, Pause, Repeat, DollarSign, Users, CalendarClock } from 'lucide-react';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,23 +56,36 @@ const initialRecurringInvoices: RecurringInvoice[] = [
   { id: 'REC-003', customerId: 'CUST-001', startDate: new Date('2023-10-01'), frequency: 'Annually', status: 'Paused', lineItems: [{id: 1, description: "Annual Support Contract", quantity: 1, rate: 2500}] },
 ];
 
-const getNextInvoiceDate = (startDate: Date, frequency: Frequency): Date => {
-    const now = new Date();
-    let nextDate = new Date(startDate);
-    
-    const addInterval = (date: Date): Date => {
-        switch(frequency) {
-            case 'Monthly': return addMonths(date, 1);
-            case 'Quarterly': return addQuarters(date, 1);
-            case 'Annually': return addYears(date, 1);
-        }
+const NextInvoiceDateCell = ({ startDate, frequency }: { startDate: Date, frequency: Frequency }) => {
+    const [nextDate, setNextDate] = useState<Date | null>(null);
+
+    useEffect(() => {
+        const getNextInvoiceDate = (start: Date, freq: Frequency): Date => {
+            const now = new Date();
+            let next = new Date(start);
+            
+            const addInterval = (date: Date): Date => {
+                switch(freq) {
+                    case 'Monthly': return addMonths(date, 1);
+                    case 'Quarterly': return addQuarters(date, 1);
+                    case 'Annually': return addYears(date, 1);
+                }
+            }
+
+            while (next < now) {
+                next = addInterval(next);
+            }
+            return next;
+        };
+        setNextDate(getNextInvoiceDate(startDate, frequency));
+    }, [startDate, frequency]);
+
+    if (!nextDate) {
+        return null; // Or a loading skeleton
     }
 
-    while (nextDate < now) {
-        nextDate = addInterval(nextDate);
-    }
-    return nextDate;
-};
+    return <>{format(nextDate, 'PPP')}</>;
+}
 
 
 function AddEditRecurringDialog({ onSave, isOpen, onOpenChange, customers, invoiceToEdit }: { onSave: (data: Omit<RecurringInvoice, 'id' | 'status'>) => void; isOpen: boolean; onOpenChange: (open: boolean) => void; customers: Customer[]; invoiceToEdit?: RecurringInvoice | null }) {
@@ -271,13 +284,14 @@ export default function RecurringInvoicesPage() {
                         {recurringInvoices.map(invoice => {
                             const customer = customers.find(c => c.id === invoice.customerId);
                             const amount = invoice.lineItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-                            const nextDate = getNextInvoiceDate(invoice.startDate, invoice.frequency);
                             return (
                                 <TableRow key={invoice.id}>
                                     <TableCell className="font-medium">{customer?.name || 'Unknown Customer'}</TableCell>
                                     <TableCell>${amount.toFixed(2)}</TableCell>
                                     <TableCell>{invoice.frequency}</TableCell>
-                                    <TableCell>{format(nextDate, 'PPP')}</TableCell>
+                                    <TableCell>
+                                        <NextInvoiceDateCell startDate={invoice.startDate} frequency={invoice.frequency} />
+                                    </TableCell>
                                     <TableCell><Badge variant={invoice.status === 'Active' ? 'default' : 'secondary'}>{invoice.status}</Badge></TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
