@@ -121,6 +121,8 @@ const initialData: BalanceSheetData = {
 export default function BalanceSheetPage() {
     const { toast } = useToast();
     const [balanceSheetDate, setBalanceSheetDate] = useState<Date>(new Date());
+    const [companyName, setCompanyName] = useState('LogiFlow Inc.');
+    const [companySlogan, setCompanySlogan] = useState('Streamlining Your Success');
     const [data, setData] = useState<BalanceSheetData>(initialData);
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -231,6 +233,8 @@ export default function BalanceSheetPage() {
                 <style>
                     body { font-family: sans-serif; }
                     .balance-sheet-print { max-width: 800px; margin: auto; }
+                    h1 { text-align: center; margin-bottom: 0.5rem; }
+                    .slogan-print { text-align: center; margin-top: 0; margin-bottom: 1rem; color: #555; }
                     h2 { text-align: center; }
                     .grid-print { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
                     h3 { font-size: 1.2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; margin-bottom: 1rem; }
@@ -280,6 +284,18 @@ export default function BalanceSheetPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
+                    <div className="border rounded-lg p-4 mb-6">
+                        <h3 className="font-semibold text-lg mb-2">Company Details</h3>
+                         <div className="grid md:grid-cols-2 gap-4">
+                            <Input placeholder="Company Name" value={companyName} onChange={e => setCompanyName(e.target.value)} />
+                            <Input placeholder="Company Slogan / Tagline (Optional)" value={companySlogan} onChange={e => setCompanySlogan(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="text-center mb-6">
+                        <h2 className="text-2xl font-bold">{companyName}</h2>
+                        {companySlogan && <p className="text-muted-foreground">{companySlogan}</p>}
+                        <p className="text-sm text-muted-foreground">Balance Sheet as of {format(balanceSheetDate, 'PPP')}</p>
+                    </div>
                     <div className="grid md:grid-cols-2 gap-8">
                         {/* Assets Column */}
                         <div className="space-y-6 p-4 border rounded-lg">
@@ -331,6 +347,8 @@ export default function BalanceSheetPage() {
         {/* Hidden div for printing */}
         <div className="hidden">
             <div ref={printRef} className="balance-sheet-print">
+                <h1>{companyName}</h1>
+                {companySlogan && <p className="slogan-print">{companySlogan}</p>}
                 <h2>Balance Sheet as of {format(balanceSheetDate, 'PPP')}</h2>
                 <div className="grid-print">
                     <div>
