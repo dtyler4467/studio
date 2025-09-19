@@ -1,6 +1,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { InvoiceDataTable } from '@/components/dashboard/invoice-data-table';
 
 export default function AllInvoicesPage() {
   return (
@@ -11,13 +12,11 @@ export default function AllInvoicesPage() {
           <CardHeader>
             <CardTitle className="font-headline">All Invoices</CardTitle>
             <CardDescription>
-              View, search, and manage all invoices.
+              View, search, and manage all incoming and outgoing invoices.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                <p className="text-muted-foreground">Invoice data table coming soon.</p>
-            </div>
+            <InvoiceDataTable />
           </CardContent>
         </Card>
       </main>
