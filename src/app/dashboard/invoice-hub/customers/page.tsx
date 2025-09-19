@@ -1,6 +1,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { CustomerDataTable } from '@/components/dashboard/customer-data-table';
 
 export default function InvoiceCustomersPage() {
   return (
@@ -15,9 +16,7 @@ export default function InvoiceCustomersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                <p className="text-muted-foreground">Customer management for invoicing coming soon.</p>
-            </div>
+            <CustomerDataTable />
           </CardContent>
         </Card>
       </main>
