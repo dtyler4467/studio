@@ -13,6 +13,10 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchedule } from '@/hooks/use-schedule';
 import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { DocumentUpload } from '@/components/dashboard/document-upload';
+import Image from 'next/image';
 
 type Student = {
   id: string;
@@ -55,6 +59,8 @@ export default function ReportCardsPage() {
   const [teacherComments, setTeacherComments] = useState('');
   const { toast } = useToast();
   const reportCardRef = useRef<HTMLDivElement>(null);
+  const [schoolName, setSchoolName] = useState('LogiFlow Academy');
+  const [schoolLogo, setSchoolLogo] = useState<string | null>(null);
 
   const selectedStudent = useMemo(() => {
     return initialStudents.find(s => s.id === selectedStudentId) || null;
@@ -99,94 +105,121 @@ export default function ReportCardsPage() {
     <div className="flex flex-col w-full">
       <Header pageTitle="Report Cards" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
-                <FileText />
-                Report Card Generator
-            </CardTitle>
-            <CardDescription>
-              Select a student to generate their report card.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-             <div className="flex flex-col sm:flex-row gap-4 max-w-lg">
-                <div className="flex-1 space-y-2">
-                    <Label htmlFor="student-select">Select Student</Label>
-                    <Select value={selectedStudentId || ''} onValueChange={setSelectedStudentId}>
-                        <SelectTrigger id="student-select">
-                            <SelectValue placeholder="Select a student..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {initialStudents.map(student => (
-                                <SelectItem key={student.id} value={student.id}>{student.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-1">
+                <CardHeader>
+                    <CardTitle className="font-headline">Report Card Setup</CardTitle>
+                    <CardDescription>
+                        Configure the information for the report card.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="school-name">School Name</Label>
+                        <Input id="school-name" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label>School Logo</Label>
+                        <DocumentUpload onDocumentChange={setSchoolLogo} currentDocument={schoolLogo} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="student-select">Select Student</Label>
+                        <Select value={selectedStudentId || ''} onValueChange={setSelectedStudentId}>
+                            <SelectTrigger id="student-select">
+                                <SelectValue placeholder="Select a student..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {initialStudents.map(student => (
+                                    <SelectItem key={student.id} value={student.id}>{student.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardContent>
+            </Card>
 
-            {selectedStudent ? (
-                <div ref={reportCardRef}>
-                <Card className="border-2 border-primary/50">
-                    <CardHeader className="bg-muted/50 text-center">
-                        <CardTitle className="font-headline text-2xl">Official Report Card</CardTitle>
-                        <CardDescription>2024-2025 School Year</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-6">
-                        <div className="flex justify-between items-center">
-                             <div>
-                                <p className="font-semibold">{selectedStudent.name}</p>
-                                <p className="text-sm text-muted-foreground">Student ID: {selectedStudent.id}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="font-bold text-2xl">{overallGpa.toFixed(2)} GPA</p>
-                                <p className="text-sm text-muted-foreground">Overall</p>
-                            </div>
+            <div className="lg:col-span-2">
+                <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2">
+                        <FileText />
+                        Report Card Generator
+                    </CardTitle>
+                    <CardDescription>
+                    Select a student to generate their report card.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {selectedStudent ? (
+                        <div ref={reportCardRef}>
+                        <Card className="border-2 border-primary/50">
+                            <CardHeader className="bg-muted/50">
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-4">
+                                        {schoolLogo && <Image src={schoolLogo} alt={`${schoolName} Logo`} width={64} height={64} className="rounded-full" />}
+                                        <div>
+                                            <CardTitle className="font-headline text-2xl">{schoolName}</CardTitle>
+                                            <CardDescription>2024-2025 School Year Report Card</CardDescription>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold">{selectedStudent.name}</p>
+                                        <p className="text-sm text-muted-foreground">Student ID: {selectedStudent.id}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-bold text-2xl">{overallGpa.toFixed(2)} GPA</p>
+                                        <p className="text-sm text-muted-foreground">Overall</p>
+                                    </div>
+                                </div>
+                                <Separator />
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Assignment/Subject</TableHead>
+                                                <TableHead className="text-center">Score</TableHead>
+                                                <TableHead className="text-center">Percentage</TableHead>
+                                                <TableHead className="text-right">Grade</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {gradesData.map(grade => (
+                                                <TableRow key={grade.id}>
+                                                    <TableCell className="font-medium">{grade.title}</TableCell>
+                                                    <TableCell className="text-center">{grade.score}/{grade.totalPoints}</TableCell>
+                                                    <TableCell className="text-center">{grade.percentage.toFixed(1)}%</TableCell>
+                                                    <TableCell className="text-right font-semibold">{grade.letter}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="comments">Teacher Comments</Label>
+                                    <Textarea id="comments" placeholder="Add comments here..." value={teacherComments} onChange={e => setTeacherComments(e.target.value)} />
+                                </div>
+                            </CardContent>
+                        </Card>
                         </div>
-                        <Separator />
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Assignment/Subject</TableHead>
-                                        <TableHead className="text-center">Score</TableHead>
-                                        <TableHead className="text-center">Percentage</TableHead>
-                                        <TableHead className="text-right">Grade</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {gradesData.map(grade => (
-                                        <TableRow key={grade.id}>
-                                            <TableCell className="font-medium">{grade.title}</TableCell>
-                                            <TableCell className="text-center">{grade.score}/{grade.totalPoints}</TableCell>
-                                            <TableCell className="text-center">{grade.percentage.toFixed(1)}%</TableCell>
-                                            <TableCell className="text-right font-semibold">{grade.letter}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                    ) : (
+                        <div className="flex items-center justify-center rounded-md border border-dashed h-96">
+                            <p className="text-muted-foreground">Select a student to generate their report card.</p>
                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="comments">Teacher Comments</Label>
-                            <Textarea id="comments" placeholder="Add comments here..." value={teacherComments} onChange={e => setTeacherComments(e.target.value)} />
-                        </div>
-                    </CardContent>
+                    )}
+                </CardContent>
+                {selectedStudent && (
+                    <CardFooter className="gap-2">
+                        <Button onClick={handlePrint}><Printer className="mr-2"/> Print Report Card</Button>
+                        <Button variant="outline"><Mail className="mr-2"/> Email to Guardian</Button>
+                    </CardFooter>
+                )}
                 </Card>
-                </div>
-            ) : (
-                <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                    <p className="text-muted-foreground">Select a student to generate their report card.</p>
-                </div>
-            )}
-          </CardContent>
-           {selectedStudent && (
-            <CardFooter className="gap-2">
-                <Button onClick={handlePrint}><Printer className="mr-2"/> Print Report Card</Button>
-                <Button variant="outline"><Mail className="mr-2"/> Email to Guardian</Button>
-            </CardFooter>
-           )}
-        </Card>
+            </div>
+        </div>
       </main>
     </div>
   );
