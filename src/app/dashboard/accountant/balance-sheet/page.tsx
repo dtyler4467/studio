@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,23 @@ type LineItem = {
     name: string;
     amount: number;
 };
+
+type BalanceSheetSection = {
+    title: string;
+    items: LineItem[];
+};
+
+type BalanceSheetData = {
+    assets: {
+        current: BalanceSheetSection;
+        nonCurrent: BalanceSheetSection;
+    },
+    liabilities: {
+        current: BalanceSheetSection;
+        nonCurrent: BalanceSheetSection;
+    },
+    equity: BalanceSheetSection;
+}
 
 const Section = ({ title, items, onAddItem, onUpdateItem, onRemoveItem }: { title: string; items: LineItem[]; onAddItem: () => void; onUpdateItem: (id: number, name: string, amount: number) => void; onRemoveItem: (id: number) => void; }) => (
     <div className="space-y-2">
@@ -61,61 +78,103 @@ const TotalRow = ({ label, amount }: { label: string; amount: number; }) => (
     </div>
 );
 
+const initialData: BalanceSheetData = {
+    assets: {
+        current: {
+            title: 'Current Assets',
+            items: [
+                { id: 1, name: 'Cash', amount: 50000 },
+                { id: 2, name: 'Accounts Receivable', amount: 25000 },
+                { id: 3, name: 'Inventory', amount: 35000 },
+            ],
+        },
+        nonCurrent: {
+            title: 'Non-Current Assets',
+            items: [
+                { id: 1, name: 'Vehicles', amount: 150000 },
+                { id: 2, name: 'Equipment', amount: 75000 },
+            ],
+        },
+    },
+    liabilities: {
+        current: {
+            title: 'Current Liabilities',
+            items: [
+                { id: 1, name: 'Accounts Payable', amount: 20000 },
+                { id: 2, name: 'Short-term Loans', amount: 15000 },
+            ],
+        },
+        nonCurrent: {
+             title: 'Non-Current Liabilities',
+            items: [{ id: 1, name: 'Long-term Debt', amount: 100000 }],
+        },
+    },
+    equity: {
+        title: "Owner's Equity",
+        items: [
+            { id: 1, name: 'Owner\'s Capital', amount: 180000 },
+            { id: 2, name: 'Retained Earnings', amount: 20000 },
+        ],
+    }
+};
 
 export default function BalanceSheetPage() {
     const { toast } = useToast();
     const [balanceSheetDate, setBalanceSheetDate] = useState<Date>(new Date());
-    
-    // Assets
-    const [currentAssets, setCurrentAssets] = useState<LineItem[]>([
-        { id: 1, name: 'Cash', amount: 50000 },
-        { id: 2, name: 'Accounts Receivable', amount: 25000 },
-        { id: 3, name: 'Inventory', amount: 35000 },
-    ]);
-    const [nonCurrentAssets, setNonCurrentAssets] = useState<LineItem[]>([
-        { id: 1, name: 'Vehicles', amount: 150000 },
-        { id: 2, name: 'Equipment', amount: 75000 },
-    ]);
+    const [data, setData] = useState<BalanceSheetData>(initialData);
+    const printRef = useRef<HTMLDivElement>(null);
 
-    // Liabilities
-    const [currentLiabilities, setCurrentLiabilities] = useState<LineItem[]>([
-        { id: 1, name: 'Accounts Payable', amount: 20000 },
-        { id: 2, name: 'Short-term Loans', amount: 15000 },
-    ]);
-    const [nonCurrentLiabilities, setNonCurrentLiabilities] = useState<LineItem[]>([
-        { id: 1, name: 'Long-term Debt', amount: 100000 },
-    ]);
+    const updateSectionFactory = (sectionPath: string) => {
+        const pathParts = sectionPath.split('.');
+        return {
+            add: () => setData(prev => {
+                const newData = JSON.parse(JSON.stringify(prev)); // Deep copy
+                let target = newData;
+                pathParts.forEach(part => target = target[part]);
+                target.items.push({ id: Date.now(), name: '', amount: 0 });
+                return newData;
+            }),
+            update: (id: number, name: string, amount: number) => setData(prev => {
+                const newData = JSON.parse(JSON.stringify(prev));
+                let target = newData;
+                pathParts.forEach(part => target = target[part]);
+                target.items = target.items.map((item: LineItem) => item.id === id ? { ...item, name, amount } : item);
+                return newData;
+            }),
+            remove: (id: number) => setData(prev => {
+                const newData = JSON.parse(JSON.stringify(prev));
+                let target = newData;
+                pathParts.forEach(part => target = target[part]);
+                target.items = target.items.filter((item: LineItem) => item.id !== id);
+                return newData;
+            }),
+        };
+    };
 
-    // Equity
-    const [equity, setEquity] = useState<LineItem[]>([
-        { id: 1, name: 'Owner\'s Capital', amount: 180000 },
-        { id: 2, name: 'Retained Earnings', amount: 20000 },
-    ]);
-
-    const updateFactory = (setter: React.Dispatch<React.SetStateAction<LineItem[]>>) => ({
-        add: () => setter(prev => [...prev, { id: Date.now(), name: '', amount: 0 }]),
-        update: (id: number, name: string, amount: number) => setter(prev => prev.map(item => item.id === id ? { ...item, name, amount } : item)),
-        remove: (id: number) => setter(prev => prev.filter(item => item.id !== id)),
-    });
-
-    const currentAssetsHandler = updateFactory(setCurrentAssets);
-    const nonCurrentAssetsHandler = updateFactory(setNonCurrentAssets);
-    const currentLiabilitiesHandler = updateFactory(setCurrentLiabilities);
-    const nonCurrentLiabilitiesHandler = updateFactory(setNonCurrentLiabilities);
-    const equityHandler = updateFactory(setEquity);
+    const handlers = {
+        assets: {
+            current: updateSectionFactory('assets.current'),
+            nonCurrent: updateSectionFactory('assets.nonCurrent'),
+        },
+        liabilities: {
+            current: updateSectionFactory('liabilities.current'),
+            nonCurrent: updateSectionFactory('liabilities.nonCurrent'),
+        },
+        equity: updateSectionFactory('equity'),
+    };
 
     const totals = useMemo(() => {
         const sum = (items: LineItem[]) => items.reduce((acc, item) => acc + item.amount, 0);
         
-        const totalCurrentAssets = sum(currentAssets);
-        const totalNonCurrentAssets = sum(nonCurrentAssets);
+        const totalCurrentAssets = sum(data.assets.current.items);
+        const totalNonCurrentAssets = sum(data.assets.nonCurrent.items);
         const totalAssets = totalCurrentAssets + totalNonCurrentAssets;
 
-        const totalCurrentLiabilities = sum(currentLiabilities);
-        const totalNonCurrentLiabilities = sum(nonCurrentLiabilities);
+        const totalCurrentLiabilities = sum(data.liabilities.current.items);
+        const totalNonCurrentLiabilities = sum(data.liabilities.nonCurrent.items);
         const totalLiabilities = totalCurrentLiabilities + totalNonCurrentLiabilities;
         
-        const totalEquity = sum(equity);
+        const totalEquity = sum(data.equity.items);
         
         const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
 
@@ -124,42 +183,68 @@ export default function BalanceSheetPage() {
             totalCurrentLiabilities, totalNonCurrentLiabilities, totalLiabilities,
             totalEquity, totalLiabilitiesAndEquity
         };
-    }, [currentAssets, nonCurrentAssets, currentLiabilities, nonCurrentLiabilities, equity]);
+    }, [data]);
 
     const handleExport = () => {
-        const data = [
+        const exportData = [
             ['Assets'],
-            ['Current Assets'],
-            ...currentAssets.map(item => [item.name, item.amount]),
+            [data.assets.current.title],
+            ...data.assets.current.items.map(item => [item.name, item.amount]),
             ['Total Current Assets', totals.totalCurrentAssets],
             [],
-            ['Non-Current Assets'],
-            ...nonCurrentAssets.map(item => [item.name, item.amount]),
+            [data.assets.nonCurrent.title],
+            ...data.assets.nonCurrent.items.map(item => [item.name, item.amount]),
             ['Total Non-Current Assets', totals.totalNonCurrentAssets],
             ['Total Assets', totals.totalAssets],
             [],
             ['Liabilities'],
-             ['Current Liabilities'],
-            ...currentLiabilities.map(item => [item.name, item.amount]),
+            [data.liabilities.current.title],
+            ...data.liabilities.current.items.map(item => [item.name, item.amount]),
             ['Total Current Liabilities', totals.totalCurrentLiabilities],
             [],
-            ['Non-Current Liabilities'],
-            ...nonCurrentLiabilities.map(item => [item.name, item.amount]),
+            [data.liabilities.nonCurrent.title],
+            ...data.liabilities.nonCurrent.items.map(item => [item.name, item.amount]),
             ['Total Non-Current Liabilities', totals.totalNonCurrentLiabilities],
             ['Total Liabilities', totals.totalLiabilities],
             [],
-            ['Equity'],
-            ...equity.map(item => [item.name, item.amount]),
+            [data.equity.title],
+            ...data.equity.items.map(item => [item.name, item.amount]),
             ['Total Equity', totals.totalEquity],
             [],
             ['Total Liabilities & Equity', totals.totalLiabilitiesAndEquity]
         ];
 
-        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const worksheet = XLSX.utils.aoa_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Balance Sheet");
         XLSX.writeFile(workbook, `Balance_Sheet_${format(balanceSheetDate, 'yyyy-MM-dd')}.xlsx`);
     };
+
+    const handlePrint = () => {
+        if (!printRef.current) return;
+        const content = printRef.current.innerHTML;
+        const printWindow = window.open('', '_blank');
+        printWindow?.document.write(`
+        <html>
+            <head>
+                <title>Print Balance Sheet</title>
+                <style>
+                    body { font-family: sans-serif; }
+                    .balance-sheet-print { max-width: 800px; margin: auto; }
+                    h2 { text-align: center; }
+                    .grid-print { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+                    h3 { font-size: 1.2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+                    .section-print div { display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px dotted #eee; }
+                    .total-row-print { display: flex; justify-content: space-between; font-weight: bold; padding-top: 0.5rem; border-top: 1px solid #333; margin-top: 0.5rem; }
+                    .summary-print { border-top: 2px solid #000; margin-top: 2rem; padding-top: 1rem; }
+                </style>
+            </head>
+            <body>${content}</body>
+        </html>`);
+        printWindow?.document.close();
+        printWindow?.print();
+    }
+
 
     return (
         <div className="flex flex-col w-full">
@@ -189,6 +274,7 @@ export default function BalanceSheetPage() {
                                     <Calendar mode="single" selected={balanceSheetDate} onSelect={(date) => date && setBalanceSheetDate(date)} initialFocus />
                                 </PopoverContent>
                             </Popover>
+                            <Button variant="outline" onClick={handlePrint}><Printer className="mr-2"/>Print Preview</Button>
                             <Button variant="outline" onClick={handleExport}><Download className="mr-2"/>Export</Button>
                         </div>
                     </div>
@@ -198,10 +284,10 @@ export default function BalanceSheetPage() {
                         {/* Assets Column */}
                         <div className="space-y-6 p-4 border rounded-lg">
                              <h3 className="text-xl font-bold text-center">Assets</h3>
-                             <Section title="Current Assets" items={currentAssets} onAddItem={currentAssetsHandler.add} onUpdateItem={currentAssetsHandler.update} onRemoveItem={currentAssetsHandler.remove} />
+                             <Section title={data.assets.current.title} items={data.assets.current.items} onAddItem={handlers.assets.current.add} onUpdateItem={handlers.assets.current.update} onRemoveItem={handlers.assets.current.remove} />
                              <TotalRow label="Total Current Assets" amount={totals.totalCurrentAssets} />
                              <Separator />
-                             <Section title="Non-Current Assets" items={nonCurrentAssets} onAddItem={nonCurrentAssetsHandler.add} onUpdateItem={nonCurrentAssetsHandler.update} onRemoveItem={nonCurrentAssetsHandler.remove} />
+                             <Section title={data.assets.nonCurrent.title} items={data.assets.nonCurrent.items} onAddItem={handlers.assets.nonCurrent.add} onUpdateItem={handlers.assets.nonCurrent.update} onRemoveItem={handlers.assets.nonCurrent.remove} />
                              <TotalRow label="Total Non-Current Assets" amount={totals.totalNonCurrentAssets} />
                              <Separator />
                              <TotalRow label="TOTAL ASSETS" amount={totals.totalAssets} />
@@ -209,15 +295,15 @@ export default function BalanceSheetPage() {
                         {/* Liabilities & Equity Column */}
                         <div className="space-y-6 p-4 border rounded-lg">
                             <h3 className="text-xl font-bold text-center">Liabilities & Owner's Equity</h3>
-                            <Section title="Current Liabilities" items={currentLiabilities} onAddItem={currentLiabilitiesHandler.add} onUpdateItem={currentLiabilitiesHandler.update} onRemoveItem={currentLiabilitiesHandler.remove} />
+                            <Section title={data.liabilities.current.title} items={data.liabilities.current.items} onAddItem={handlers.liabilities.current.add} onUpdateItem={handlers.liabilities.current.update} onRemoveItem={handlers.liabilities.current.remove} />
                              <TotalRow label="Total Current Liabilities" amount={totals.totalCurrentLiabilities} />
                             <Separator />
-                             <Section title="Non-Current Liabilities" items={nonCurrentLiabilities} onAddItem={nonCurrentLiabilitiesHandler.add} onUpdateItem={nonCurrentLiabilitiesHandler.update} onRemoveItem={nonCurrentLiabilitiesHandler.remove} />
+                             <Section title={data.liabilities.nonCurrent.title} items={data.liabilities.nonCurrent.items} onAddItem={handlers.liabilities.nonCurrent.add} onUpdateItem={handlers.liabilities.nonCurrent.update} onRemoveItem={handlers.liabilities.nonCurrent.remove} />
                              <TotalRow label="Total Non-Current Liabilities" amount={totals.totalNonCurrentLiabilities} />
                              <Separator />
                             <TotalRow label="TOTAL LIABILITIES" amount={totals.totalLiabilities} />
                             <Separator className="my-6 border-dashed" />
-                            <Section title="Owner's Equity" items={equity} onAddItem={equityHandler.add} onUpdateItem={equityHandler.update} onRemoveItem={equityHandler.remove} />
+                            <Section title={data.equity.title} items={data.equity.items} onAddItem={handlers.equity.add} onUpdateItem={handlers.equity.update} onRemoveItem={handlers.equity.remove} />
                             <TotalRow label="TOTAL EQUITY" amount={totals.totalEquity} />
                              <Separator />
                              <TotalRow label="TOTAL LIABILITIES & EQUITY" amount={totals.totalLiabilitiesAndEquity} />
@@ -242,6 +328,48 @@ export default function BalanceSheetPage() {
                 </CardFooter>
             </Card>
         </main>
+        {/* Hidden div for printing */}
+        <div className="hidden">
+            <div ref={printRef} className="balance-sheet-print">
+                <h2>Balance Sheet as of {format(balanceSheetDate, 'PPP')}</h2>
+                <div className="grid-print">
+                    <div>
+                        <h3>Assets</h3>
+                        <div className="section-print">
+                            <h4>{data.assets.current.title}</h4>
+                            {data.assets.current.items.map(i => <div key={i.id}><span>{i.name}</span><span>${i.amount.toLocaleString()}</span></div>)}
+                            <div className="total-row-print"><span>Total Current Assets</span><span>${totals.totalCurrentAssets.toLocaleString()}</span></div>
+                        </div>
+                        <div className="section-print">
+                            <h4>{data.assets.nonCurrent.title}</h4>
+                            {data.assets.nonCurrent.items.map(i => <div key={i.id}><span>{i.name}</span><span>${i.amount.toLocaleString()}</span></div>)}
+                            <div className="total-row-print"><span>Total Non-Current Assets</span><span>${totals.totalNonCurrentAssets.toLocaleString()}</span></div>
+                        </div>
+                         <div className="total-row-print summary-print"><span>TOTAL ASSETS</span><span>${totals.totalAssets.toLocaleString()}</span></div>
+                    </div>
+                     <div>
+                        <h3>Liabilities & Equity</h3>
+                         <div className="section-print">
+                            <h4>{data.liabilities.current.title}</h4>
+                            {data.liabilities.current.items.map(i => <div key={i.id}><span>{i.name}</span><span>${i.amount.toLocaleString()}</span></div>)}
+                            <div className="total-row-print"><span>Total Current Liabilities</span><span>${totals.totalCurrentLiabilities.toLocaleString()}</span></div>
+                        </div>
+                         <div className="section-print">
+                             <h4>{data.liabilities.nonCurrent.title}</h4>
+                            {data.liabilities.nonCurrent.items.map(i => <div key={i.id}><span>{i.name}</span><span>${i.amount.toLocaleString()}</span></div>)}
+                            <div className="total-row-print"><span>Total Non-Current Liabilities</span><span>${totals.totalNonCurrentLiabilities.toLocaleString()}</span></div>
+                        </div>
+                        <div className="total-row-print"><span>TOTAL LIABILITIES</span><span>${totals.totalLiabilities.toLocaleString()}</span></div>
+                        <div className="section-print" style={{marginTop: '2rem'}}>
+                             <h4>{data.equity.title}</h4>
+                             {data.equity.items.map(i => <div key={i.id}><span>{i.name}</span><span>${i.amount.toLocaleString()}</span></div>)}
+                            <div className="total-row-print"><span>TOTAL EQUITY</span><span>${totals.totalEquity.toLocaleString()}</span></div>
+                        </div>
+                         <div className="total-row-print summary-print"><span>TOTAL LIABILITIES & EQUITY</span><span>${totals.totalLiabilitiesAndEquity.toLocaleString()}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
     );
 }
