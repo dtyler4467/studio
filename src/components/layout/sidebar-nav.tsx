@@ -109,6 +109,11 @@ import {
   CheckSquare,
   Award,
   BookCopy,
+  FileClock,
+  ListRestart,
+  Repeat,
+  PlusSquare,
+  File,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -476,6 +481,22 @@ const navItems: NavItem[] = [
     ]
   },
   { 
+    href: '#', 
+    icon: FileText, 
+    label: 'Invoice Hub', 
+    roles: ['Admin', 'Manager'],
+    subItems: [
+        { href: '/dashboard/invoice-hub/overview', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/invoice-hub/invoices', icon: FileText, label: 'All Invoices', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/invoice-hub/create', icon: PlusSquare, label: 'Create Invoice', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/invoice-hub/recurring', icon: Repeat, label: 'Recurring', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/invoice-hub/customers', icon: Users, label: 'Customers', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/invoice-hub/products', icon: Package, label: 'Products & Services', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/invoice-hub/reports', icon: BarChart, label: 'Reports', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/invoice-hub/settings', icon: Settings, label: 'Settings', roles: ['Admin', 'Manager'] },
+    ]
+  },
+  { 
     href: '/dashboard/store',
     icon: Store, 
     label: 'Store', 
@@ -499,12 +520,6 @@ const navItems: NavItem[] = [
       { href: '/dashboard/public-relations/announcements', icon: Siren, label: 'Announcements', roles: ['Admin', 'Manager'] },
       { href: '/dashboard/public-relations/media-kit', icon: Briefcase, label: 'Media Kit', roles: ['Admin', 'Manager'] },
     ]
-  },
-  { 
-    href: '/dashboard/invoice-hub', 
-    icon: FileText, 
-    label: 'Invoice Hub', 
-    roles: ['Admin', 'Manager'],
   },
 ];
 
@@ -650,6 +665,7 @@ export function SidebarNav() {
   const [isRecordOpen, setIsRecordOpen] = useState(false);
   const [isNetworkTvHubOpen, setIsNetworkTvHubOpen] = useState(false);
   const [isTeacherHubOpen, setIsTeacherHubOpen] = useState(false);
+  const [isInvoiceHubOpen, setIsInvoiceHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -682,6 +698,7 @@ export function SidebarNav() {
     setIsRecordOpen(pathname.startsWith('/dashboard/record'));
     setIsNetworkTvHubOpen(pathname.startsWith('/dashboard/network-tv-hub'));
     setIsTeacherHubOpen(pathname.startsWith('/dashboard/teacher-hub'));
+    setIsInvoiceHubOpen(pathname.startsWith('/dashboard/invoice-hub'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -921,6 +938,7 @@ export function SidebarNav() {
                         'Record': isRecordOpen,
                         'Network TV Hub': isNetworkTvHubOpen,
                         'Teacher Hub': isTeacherHubOpen,
+                        'Invoice Hub': isInvoiceHubOpen,
                     };
                     const setIsOpenMap = {
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -939,6 +957,7 @@ export function SidebarNav() {
                         'Record': setIsRecordOpen,
                         'Network TV Hub': setIsNetworkTvHubOpen,
                         'Teacher Hub': setIsTeacherHubOpen,
+                        'Invoice Hub': setIsInvoiceHubOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                     const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
