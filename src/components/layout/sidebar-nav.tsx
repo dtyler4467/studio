@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -197,7 +196,7 @@ const navItems: NavItem[] = [
     label: 'Receptionist',
     roles: ['Admin', 'Dispatcher', 'Manager', 'Employee'],
   },
-  {
+  { 
     href: '#', 
     icon: GraduationCap, 
     label: 'Teacher Hub', 
@@ -208,6 +207,8 @@ const navItems: NavItem[] = [
         { href: '/dashboard/teacher-hub/lesson-planner', icon: ClipboardList, label: 'Lesson Planner', roles: ['Admin', 'Manager', 'Employee'] },
         { href: '/dashboard/teacher-hub/report-cards', icon: FileText, label: 'Report Cards', roles: ['Admin', 'Manager', 'Employee'] },
         { href: '/dashboard/teacher-hub/certificates', icon: Award, label: 'Certificates', roles: ['Admin', 'Manager', 'Employee'] },
+        { href: '/dashboard/teacher-hub/syllabus-creator', icon: BookOpen, label: 'Syllabus Creator', roles: ['Admin', 'Manager', 'Employee'] },
+        { href: '/dashboard/teacher-hub/test-quiz-creator', icon: CheckSquare, label: 'Test/Quiz Creator', roles: ['Admin', 'Manager', 'Employee'] },
     ]
   },
   {
@@ -728,7 +729,7 @@ export function SidebarNav() {
   // Function to determine if a sub-item is active
   const isSubItemActive = (href: string) => {
     // Exact match for overview pages to prevent matching parent layout routes
-    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9' || href === '/dashboard/store' || href === '/dashboard/hr/policies' || href === '/dashboard/hr/policies/handbook' || href === '/dashboard/project-hub' || href === '/dashboard/calendar' || href === '/dashboard/calculator' || href === '/dashboard/public-relations' || href === '/dashboard/project-hub/issues' || href === '/dashboard/hr/contracts' || href === '/dashboard/crm' || href === '/dashboard/receptionist' || href === '/dashboard/record' || href === '/dashboard/blanket-hub' || href === '/dashboard/network-tv-hub' || href === '/dashboard/network-tv-hub/editor' || href === '/dashboard/network-tv-hub/history' || href === '/dashboard/network-tv-hub/trash' || href === '/dashboard/teacher-hub') {
+    if (href === '/dashboard/yard-management' || href === '/dashboard/administration' || href === '/dashboard/load-board-hub' || href === '/dashboard/yard-management/appointment' || href === '/dashboard/ai-assistant' || href === '/dashboard/warehouse-hub-manager' || href === '/dashboard/accountant' || href === '/dashboard/fleet-management' || href === '/dashboard/driver-hub' || href === '/dashboard/administration/files' || href === '/dashboard/warehouse-hub-manager/bol' || href === '/dashboard/time-tracker-hub' || href === '/dashboard/warehouse-hub-manager/quality-control' || href === '/dashboard/warehouse-hub-manager/associates' || href === '/dashboard/recruitment-hub' || href === '/dashboard/hr' || href === '/dashboard/hr/w4/overview' || href === '/dashboard/hr/w4' || href === '/dashboard/hr/i-9/overview' || href === '/dashboard/hr/i-9' || href === '/dashboard/store' || href === '/dashboard/hr/policies' || href === '/dashboard/hr/policies/handbook' || href === '/dashboard/project-hub' || href === '/dashboard/calendar' || href === '/dashboard/calculator' || href === '/dashboard/public-relations' || href === '/dashboard/project-hub/issues' || href === '/dashboard/hr/contracts' || href === '/dashboard/crm' || href === '/dashboard/receptionist' || href === '/dashboard/record' || href === '/dashboard/blanket-hub' || href === '/dashboard/network-tv-hub' || href === '/dashboard/network-tv-hub/editor' || href === '/dashboard/network-tv-hub/history' || href === '/dashboard/network-tv-hub/trash' || href === '/dashboard/teacher-hub' || href === '/dashboard/teacher-hub/syllabus-creator' || href === '/dashboard/teacher-hub/test-quiz-creator') {
         return pathname === href;
     }
     return pathname.startsWith(href);
