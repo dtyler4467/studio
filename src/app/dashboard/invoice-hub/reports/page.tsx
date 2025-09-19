@@ -3,7 +3,7 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { BarChart as BarChartIcon, DollarSign, Clock, AlertTriangle } from 'lucide-react';
+import { BarChart as BarChartIcon, DollarSign, Clock, AlertTriangle, PieChart as PieChartIcon } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
