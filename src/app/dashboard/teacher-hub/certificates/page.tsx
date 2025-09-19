@@ -34,7 +34,8 @@ const CertificatePreview = React.forwardRef<HTMLDivElement, {
     issuerName: string;
     issueDate?: Date;
     template: string;
-}>(({ schoolName, schoolLogo, title, recipientName, description, issuerName, issueDate, template }, ref) => {
+    orientation: 'landscape' | 'portrait';
+}>(({ schoolName, schoolLogo, title, recipientName, description, issuerName, issueDate, template, orientation }, ref) => {
     
     const templateStyles = {
         classic: 'border-blue-800 bg-blue-50/50 text-blue-900',
@@ -42,8 +43,17 @@ const CertificatePreview = React.forwardRef<HTMLDivElement, {
         playful: 'border-purple-600 bg-purple-50 text-purple-900',
     };
 
+    const orientationStyles = {
+        landscape: 'aspect-[11/8.5]',
+        portrait: 'aspect-[8.5/11]',
+    }
+
     return (
-        <div ref={ref} className={cn("p-8 border-4 aspect-[11/8.5] w-full flex flex-col items-center justify-center text-center", templateStyles[template as keyof typeof templateStyles] || templateStyles.classic)}>
+        <div ref={ref} className={cn(
+            "p-8 border-4 w-full flex flex-col items-center justify-center text-center", 
+            templateStyles[template as keyof typeof templateStyles] || templateStyles.classic,
+            orientationStyles[orientation]
+            )}>
              {schoolLogo && <Image src={schoolLogo} alt="School Logo" width={80} height={80} className="mb-4" />}
             <h1 className="text-xl font-semibold">{schoolName}</h1>
             <h2 className="text-3xl font-bold mt-8 font-headline tracking-wider">{title}</h2>
@@ -77,6 +87,7 @@ export default function CertificatesPage() {
     const [issuerName, setIssuerName] = useState('');
     const [issueDate, setIssueDate] = useState<Date | undefined>();
     const [template, setTemplate] = useState('classic');
+    const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape');
 
     useEffect(() => {
         setIssueDate(new Date());
@@ -95,7 +106,7 @@ export default function CertificatesPage() {
             const styles = Array.from(document.styleSheets)
                 .map(s => s.href ? `<link rel="stylesheet" href="${s.href}">` : `<style>${Array.from(s.cssRules).map(r => r.cssText).join('')}</style>`)
                 .join('\n');
-            printWindow?.document.write(`<head>${styles}</head>`);
+            printWindow?.document.write(`<head>${styles}<style>@media print { @page { size: ${orientation}; margin: 0; } body { margin: 0; } }</style></head>`);
             printWindow?.document.write('<body style="-webkit-print-color-adjust: exact;">');
             printWindow?.document.write(content.innerHTML);
             printWindow?.document.write('</body></html>');
@@ -132,16 +143,28 @@ export default function CertificatesPage() {
                                 <Label>School Logo</Label>
                                 <DocumentUpload onDocumentChange={setSchoolLogo} currentDocument={schoolLogo} />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Template Style</Label>
-                                <Select value={template} onValueChange={setTemplate}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="classic">Classic Blue</SelectItem>
-                                        <SelectItem value="modern">Modern Gray</SelectItem>
-                                        <SelectItem value="playful">Playful Purple</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Template Style</Label>
+                                    <Select value={template} onValueChange={setTemplate}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="classic">Classic Blue</SelectItem>
+                                            <SelectItem value="modern">Modern Gray</SelectItem>
+                                            <SelectItem value="playful">Playful Purple</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Orientation</Label>
+                                    <Select value={orientation} onValueChange={(v: 'landscape' | 'portrait') => setOrientation(v)}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="landscape">Landscape</SelectItem>
+                                            <SelectItem value="portrait">Portrait</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -200,6 +223,7 @@ export default function CertificatesPage() {
                                 issuerName={issuerName}
                                 issueDate={issueDate}
                                 template={template}
+                                orientation={orientation}
                             />
                         </CardContent>
                         <CardFooter>
