@@ -3,9 +3,9 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { BarChart, PieChart as PieChartIcon, DollarSign, Clock, AlertTriangle } from 'lucide-react';
+import { BarChart as BarChartIcon, DollarSign, Clock, AlertTriangle } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, CartesianGrid, XAxis, YAxis, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -86,7 +86,7 @@ export default function InvoiceReportsPage() {
             <Card className="lg:col-span-3">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
-                        <BarChart />
+                        <BarChartIcon />
                         Monthly Revenue
                     </CardTitle>
                     <CardDescription>
