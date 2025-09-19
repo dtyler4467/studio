@@ -153,8 +153,8 @@ export default function IncomeStatementPage() {
     };
 
     const handlePrint = () => {
-        // This is a simplified print handler. A real app might use a dedicated library.
-        const content = printRef.current?.innerHTML;
+        if (!printRef.current) return;
+        const content = printRef.current.innerHTML;
         const printWindow = window.open('', '_blank');
         printWindow?.document.write(`
             <html><head><title>Print Income Statement</title>
