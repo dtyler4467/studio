@@ -151,7 +151,7 @@ export default function StorePage() {
                             <div>
                                 <CardTitle className="font-headline flex items-center gap-2">
                                     <ShoppingCart />
-                                    Company Merchandise & Equipment
+                                    Company Merchandise &amp; Equipment
                                 </CardTitle>
                                 <CardDescription>
                                     Browse and purchase company-branded gear and essential equipment.
@@ -221,3 +221,5 @@ export default function StorePage() {
         </div>
     );
 }
+
+    

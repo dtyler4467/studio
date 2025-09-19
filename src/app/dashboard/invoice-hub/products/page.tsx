@@ -1,26 +1,15 @@
 
-import { Header } from '@/components/layout/header';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+"use client";
+
+import React from 'react';
+// This can be a re-export or a direct import if you move the component
+import StorePage from '../../store/products/page';
 
 export default function InvoiceProductsPage() {
-  return (
-    <div className="flex flex-col w-full">
-      <Header pageTitle="Products & Services" />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Products & Services</CardTitle>
-            <CardDescription>
-              Manage reusable items and services for your invoices.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center rounded-md border border-dashed h-96">
-                <p className="text-muted-foreground">Product and service management coming soon.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
-  );
+    // We are re-using the StorePage component for a consistent product management experience.
+    // In a real-world scenario, you might have different logic or components,
+    // but for this prototype, re-use is efficient.
+    return <StorePage />;
 }
+
+    
