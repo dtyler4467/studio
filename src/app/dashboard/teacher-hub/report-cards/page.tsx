@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { FileText, Printer, Mail, User, CalendarIcon } from 'lucide-react';
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchedule } from '@/hooks/use-schedule';
 import { Label } from '@/components/ui/label';
@@ -58,15 +58,19 @@ const getGradeInfo = (score: number | null, totalPoints: number): { percentage: 
 
 
 export default function ReportCardsPage() {
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [teacherComments, setTeacherComments] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = React.useState<string | null>(null);
+  const [teacherComments, setTeacherComments] = React.useState('');
   const { toast } = useToast();
-  const reportCardRef = useRef<HTMLDivElement>(null);
-  const [schoolName, setSchoolName] = useState('LogiFlow Academy');
-  const [schoolLogo, setSchoolLogo] = useState<string | null>(null);
-  const [reportDate, setReportDate] = useState<Date | undefined>(new Date());
-  const [customField1, setCustomField1] = useState({ label: 'Grading Period', value: 'Q1' });
-  const [customField2, setCustomField2] = useState({ label: 'Principal', value: 'Dr. Evelyn Reed' });
+  const reportCardRef = React.useRef<HTMLDivElement>(null);
+  const [schoolName, setSchoolName] = React.useState('LogiFlow Academy');
+  const [schoolLogo, setSchoolLogo] = React.useState<string | null>(null);
+  const [reportDate, setReportDate] = React.useState<Date | undefined>(undefined);
+  const [customField1, setCustomField1] = React.useState({ label: 'Grading Period', value: 'Q1' });
+  const [customField2, setCustomField2] = React.useState({ label: 'Principal', value: 'Dr. Evelyn Reed' });
+
+  useEffect(() => {
+    setReportDate(new Date());
+  }, []);
 
   const selectedStudent = useMemo(() => {
     return initialStudents.find(s => s.id === selectedStudentId) || null;
@@ -264,5 +268,3 @@ export default function ReportCardsPage() {
     </div>
   );
 }
-
-    
