@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Printer, Mail, User, CalendarIcon } from 'lucide-react';
+import { FileText, Printer, Mail, User, CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchedule } from '@/hooks/use-schedule';
@@ -32,6 +32,12 @@ type Assignment = {
   title: string;
   totalPoints: number;
 };
+
+type CustomField = {
+    id: number;
+    label: string;
+    value: string;
+}
 
 const initialAssignments: Assignment[] = [
   { id: 'hw1', title: 'Homework 1', totalPoints: 20 },
@@ -65,12 +71,29 @@ export default function ReportCardsPage() {
   const [schoolName, setSchoolName] = React.useState('LogiFlow Academy');
   const [schoolLogo, setSchoolLogo] = React.useState<string | null>(null);
   const [reportDate, setReportDate] = React.useState<Date | undefined>(undefined);
-  const [customField1, setCustomField1] = React.useState({ label: 'Grading Period', value: 'Q1' });
-  const [customField2, setCustomField2] = React.useState({ label: 'Principal', value: 'Dr. Evelyn Reed' });
+  const [customFields, setCustomFields] = useState<CustomField[]>([
+    { id: 1, label: 'Grading Period', value: 'Q1' },
+    { id: 2, label: 'Principal', value: 'Dr. Evelyn Reed' },
+  ]);
 
   useEffect(() => {
     setReportDate(new Date());
   }, []);
+
+  const handleAddField = () => {
+    setCustomFields([...customFields, { id: Date.now(), label: '', value: '' }]);
+  };
+  
+  const handleRemoveField = (id: number) => {
+    setCustomFields(customFields.filter(field => field.id !== id));
+  };
+  
+  const handleFieldChange = (id: number, field: 'label' | 'value', text: string) => {
+    setCustomFields(
+      customFields.map(f => (f.id === id ? { ...f, [field]: text } : f))
+    );
+  };
+
 
   const selectedStudent = useMemo(() => {
     return initialStudents.find(s => s.id === selectedStudentId) || null;
@@ -149,17 +172,22 @@ export default function ReportCardsPage() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                     <div className="space-y-2">
+                        <Label>Custom Fields</Label>
                         <div className="space-y-2">
-                            <Label>Custom Field 1</Label>
-                            <Input placeholder="Label" value={customField1.label} onChange={(e) => setCustomField1(f => ({...f, label: e.target.value}))}/>
-                            <Input placeholder="Value" value={customField1.value} onChange={(e) => setCustomField1(f => ({...f, value: e.target.value}))}/>
+                            {customFields.map((field, index) => (
+                                <div key={field.id} className="flex items-center gap-2">
+                                     <Input placeholder={`Label ${index + 1}`} value={field.label} onChange={(e) => handleFieldChange(field.id, 'label', e.target.value)} />
+                                     <Input placeholder={`Value ${index + 1}`} value={field.value} onChange={(e) => handleFieldChange(field.id, 'value', e.target.value)} />
+                                     <Button variant="ghost" size="icon" onClick={() => handleRemoveField(field.id)} className="shrink-0">
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                     </Button>
+                                </div>
+                            ))}
                         </div>
-                         <div className="space-y-2">
-                            <Label>Custom Field 2</Label>
-                            <Input placeholder="Label" value={customField2.label} onChange={(e) => setCustomField2(f => ({...f, label: e.target.value}))}/>
-                            <Input placeholder="Value" value={customField2.value} onChange={(e) => setCustomField2(f => ({...f, value: e.target.value}))}/>
-                        </div>
+                        <Button variant="outline" size="sm" onClick={handleAddField} className="mt-2">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Field
+                        </Button>
                     </div>
                      <div className="space-y-2 pt-4">
                         <Label htmlFor="student-select">Select Student</Label>
@@ -203,8 +231,9 @@ export default function ReportCardsPage() {
                                     </div>
                                     <div className="text-right text-xs">
                                         {reportDate && <p><strong>Date:</strong> {format(reportDate, 'PPP')}</p>}
-                                        {customField1.label && <p><strong>{customField1.label}:</strong> {customField1.value}</p>}
-                                        {customField2.label && <p><strong>{customField2.label}:</strong> {customField2.value}</p>}
+                                        {customFields.map(field => field.label && field.value && (
+                                            <p key={field.id}><strong>{field.label}:</strong> {field.value}</p>
+                                        ))}
                                     </div>
                                 </div>
                             </CardHeader>
