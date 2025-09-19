@@ -108,6 +108,8 @@ import {
   Monitor,
   Mic,
   CheckSquare,
+  Award,
+  BookCopy,
 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -196,10 +198,17 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Dispatcher', 'Manager', 'Employee'],
   },
   {
-    href: '/dashboard/teacher-hub', 
+    href: '#', 
     icon: GraduationCap, 
     label: 'Teacher Hub', 
-    roles: ['Admin', 'Manager', 'Employee'] 
+    roles: ['Admin', 'Manager', 'Employee'],
+    subItems: [
+        { href: '/dashboard/teacher-hub', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Manager', 'Employee'] },
+        { href: '/dashboard/teacher-hub/gradebook', icon: BookCopy, label: 'Gradebook', roles: ['Admin', 'Manager', 'Employee'] },
+        { href: '/dashboard/teacher-hub/lesson-planner', icon: ClipboardList, label: 'Lesson Planner', roles: ['Admin', 'Manager', 'Employee'] },
+        { href: '/dashboard/teacher-hub/report-cards', icon: FileText, label: 'Report Cards', roles: ['Admin', 'Manager', 'Employee'] },
+        { href: '/dashboard/teacher-hub/certificates', icon: Award, label: 'Certificates', roles: ['Admin', 'Manager', 'Employee'] },
+    ]
   },
   {
     href: '/dashboard/calculator',
@@ -633,6 +642,7 @@ export function SidebarNav() {
   const [isPublicRelationsOpen, setIsPublicRelationsOpen] = useState(false);
   const [isRecordOpen, setIsRecordOpen] = useState(false);
   const [isNetworkTvHubOpen, setIsNetworkTvHubOpen] = useState(false);
+  const [isTeacherHubOpen, setIsTeacherHubOpen] = useState(false);
   const [openAdminSubMenus, setOpenAdminSubMenus] = useState<Record<string, boolean>>({});
   const [openYardSubMenus, setOpenYardSubMenus] = useState<Record<string, boolean>>({});
   const [openWarehouseSubMenus, setOpenWarehouseSubMenus] = useState<Record<string, boolean>>({});
@@ -664,6 +674,7 @@ export function SidebarNav() {
     setIsPublicRelationsOpen(pathname.startsWith('/dashboard/public-relations'));
     setIsRecordOpen(pathname.startsWith('/dashboard/record'));
     setIsNetworkTvHubOpen(pathname.startsWith('/dashboard/network-tv-hub'));
+    setIsTeacherHubOpen(pathname.startsWith('/dashboard/teacher-hub'));
     setIsWorkspaceOpen(
         pathname.startsWith('/dashboard/schedule') ||
         pathname.startsWith('/dashboard/time-off') ||
@@ -902,6 +913,7 @@ export function SidebarNav() {
                         'Public Relations': isPublicRelationsOpen,
                         'Record': isRecordOpen,
                         'Network TV Hub': isNetworkTvHubOpen,
+                        'Teacher Hub': isTeacherHubOpen,
                     };
                     const setIsOpenMap = {
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
@@ -919,6 +931,7 @@ export function SidebarNav() {
                         'Public Relations': setIsPublicRelationsOpen,
                         'Record': setIsRecordOpen,
                         'Network TV Hub': setIsNetworkTvHubOpen,
+                        'Teacher Hub': setIsTeacherHubOpen,
                     }
                     const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
                     const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
