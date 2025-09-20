@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ type Transaction = {
 };
 
 // Mock data that would be extracted from an uploaded statement
-const mockTransactions: Transaction[] = [
+const generateMockTransactions = (): Transaction[] => [
   { id: 'TXN001', date: new Date(new Date().setDate(new Date().getDate() - 1)), description: 'ACH Pymt - Globex Corp', amount: 1500.00, status: 'Uncategorized' },
   { id: 'TXN002', date: new Date(new Date().setDate(new Date().getDate() - 2)), description: 'Shell Oil #5421', amount: -125.50, status: 'Uncategorized' },
   { id: 'TXN003', date: new Date(new Date().setDate(new Date().getDate() - 2)), description: 'Online Transfer from Savings', amount: 5000.00, status: 'Reviewed', category: 'Transfer' },
@@ -80,8 +80,12 @@ function UploadStatementDialog() {
 }
 
 export default function BankStatementsPage() {
-    const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const { toast } = useToast();
+
+    useEffect(() => {
+        setTransactions(generateMockTransactions());
+    }, []);
 
     const handleCategoryChange = (id: string, category: TransactionCategory) => {
         setTransactions(prev => prev.map(t => t.id === id ? {...t, category, status: 'Reviewed'} : t));
