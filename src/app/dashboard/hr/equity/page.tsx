@@ -15,6 +15,8 @@ import { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import * as XLSX from 'xlsx';
 import { Label } from '@/components/ui/label';
+import { DocumentUpload } from '@/components/dashboard/document-upload';
+import Image from 'next/image';
 
 type EquityTransaction = {
     id: number;
@@ -26,10 +28,13 @@ type EquityTransaction = {
 export default function EquityPage() {
     const { toast } = useToast();
     const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
-        from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-        to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
+        from: new Date(new Date().getFullYear(), 0, 1),
+        to: new Date(new Date().getFullYear(), 11, 31),
     });
     
+    const [companyName, setCompanyName] = useState('LogiFlow Inc.');
+    const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+
     const [beginningEquity, setBeginningEquity] = useState(180000);
     const [netIncome, setNetIncome] = useState(25000);
     const [contributions, setContributions] = useState<EquityTransaction[]>([
@@ -73,7 +78,7 @@ export default function EquityPage() {
         if (printRef.current) {
             const content = printRef.current.innerHTML;
             const printWindow = window.open('', '_blank');
-            printWindow?.document.write(`<html><head><title>Print Statement of Equity</title><style>body{font-family:sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px}h1,h2,h3{text-align:center}.summary{margin-top:20px;padding-top:10px;border-top:2px solid #333}.summary-item{display:flex;justify-content:space-between;padding:4px 0}</style></head><body>${content}</body></html>`);
+            printWindow?.document.write(`<html><head><title>Print Statement of Equity</title><style>body{font-family:sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px}h1,h2,h3{text-align:center}.summary{margin-top:20px;padding-top:10px;border-top:2px solid #333}.summary-item{display:flex;justify-content:space-between;padding:4px 0}img{max-width:100px; max-height: 50px; margin: 0 auto 10px; display: block;}</style></head><body>${content}</body></html>`);
             printWindow?.document.close();
             printWindow?.print();
         }
@@ -132,7 +137,18 @@ export default function EquityPage() {
             <CardContent>
                 <div ref={printRef}>
                 <div className="max-w-4xl mx-auto space-y-6">
-                     <h2 className="text-center text-2xl font-bold">LogiFlow Inc.</h2>
+                    <div className="p-4 border rounded-lg mb-6 space-y-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="companyName">Company Name</Label>
+                            <Input id="companyName" value={companyName} onChange={e => setCompanyName(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Company Logo</Label>
+                            <DocumentUpload onDocumentChange={setCompanyLogo} currentDocument={companyLogo} />
+                        </div>
+                    </div>
+                    {companyLogo && <Image src={companyLogo} alt="Company Logo" width="120" height="50" className="mx-auto mb-2" />}
+                     <h2 className="text-center text-2xl font-bold">{companyName}</h2>
                      <h3 className="text-center text-lg text-muted-foreground">Statement of Owner's Equity</h3>
                      <p className="text-center text-sm text-muted-foreground">For the Period Ended {dateRange?.to ? format(dateRange.to, 'PPP') : '...'}</p>
                     
