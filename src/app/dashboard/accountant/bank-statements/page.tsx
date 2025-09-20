@@ -26,7 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 
 type TransactionStatus = 'Uncategorized' | 'Reviewed' | 'Posted';
