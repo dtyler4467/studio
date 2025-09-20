@@ -228,7 +228,12 @@ export default function ApplicationsPage() {
                                     <FormItem><FormLabel>Relevant Skills</FormLabel><FormControl><Textarea placeholder="List skills separated by commas..." {...field} /></FormControl><FormMessage /></FormItem>
                                  )}/>
                                   <FormField control={form.control} name="resumeUri" render={({ field }) => (
-                                     <FormItem><FormLabel>Resume/CV</FormLabel><FormControl><DocumentUpload onDocumentChange={field.onChange} currentDocument={field.value} /></FormControl><FormMessage /></FormItem>
+                                     <FormItem>
+                                        <FormLabel>Resume/CV</FormLabel>
+                                        <FormDescription>Please upload your resume. (PDF, DOCX)</FormDescription>
+                                        <FormControl><DocumentUpload onDocumentChange={field.onChange} currentDocument={field.value} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
                                  )}/>
                                   <FormField control={form.control} name="coverLetter" render={({ field }) => (
                                      <FormItem><FormLabel>Cover Letter (Optional)</FormLabel><FormControl><Textarea className="h-32" {...field} /></FormControl><FormMessage /></FormItem>

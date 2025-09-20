@@ -21,7 +21,7 @@ export function ApplicantCard({ applicant, onDragStart }: ApplicantCardProps) {
         <Card 
             draggable 
             onDragStart={(e) => onDragStart(e, applicant.id)}
-            className="cursor-grab active:cursor-grabbing"
+            className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
         >
             <CardHeader className="p-4 flex-row items-start justify-between">
                 <div className="flex items-center gap-3">
