@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ type Liability = {
   status: 'Outstanding' | 'Paid';
 };
 
-const initialLiabilities: Liability[] = [
+const generateInitialLiabilities = (): Liability[] => [
   { id: 'LIAB-001', name: 'Short-term Bank Loan', type: 'Current', amount: 15000, dueDate: new Date(new Date().setDate(new Date().getDate() + 80)), status: 'Outstanding' },
   { id: 'LIAB-002', name: 'Accounts Payable', type: 'Current', amount: 20000, dueDate: new Date(new Date().setDate(new Date().getDate() + 25)), status: 'Outstanding' },
   { id: 'LIAB-003', name: 'Long-term Debt (Mortgage)', type: 'Long-Term', amount: 100000, dueDate: new Date(new Date().getFullYear() + 5, 0, 1), status: 'Outstanding' },
@@ -111,8 +112,12 @@ function AddLiabilityDialog({ onSave }: { onSave: (liability: Omit<Liability, 'i
 }
 
 export default function LiabilitiesPage() {
-    const [liabilities, setLiabilities] = useState<Liability[]>(initialLiabilities);
+    const [liabilities, setLiabilities] = useState<Liability[]>([]);
     const { toast } = useToast();
+
+    useEffect(() => {
+        setLiabilities(generateInitialLiabilities());
+    }, []);
 
     const stats = useMemo(() => {
         const total = liabilities.reduce((acc, l) => acc + l.amount, 0);
@@ -241,3 +246,4 @@ export default function LiabilitiesPage() {
     </div>
   );
 }
+
