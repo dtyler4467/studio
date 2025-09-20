@@ -9,7 +9,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, TrendingUp, DollarSign, Percent } from 'lucide-react';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -49,19 +49,23 @@ const generateMockData = (): Record<string, QuarterData> => {
     return data;
 };
 
-const mockData = generateMockData();
-
 export default function QuarterlyReportPage() {
     const { toast } = useToast();
+    const [mockData, setMockData] = useState<Record<string, QuarterData>>({});
     const [selectedQuarter, setSelectedQuarter] = useState<string>(`${new Date().getFullYear()}-Q${Math.floor(new Date().getMonth() / 3) + 1}`);
 
-    const quarterOptions = useMemo(() => Object.keys(mockData).sort().reverse(), []);
+    useEffect(() => {
+        setMockData(generateMockData());
+    }, []);
+
+    const quarterOptions = useMemo(() => Object.keys(mockData).sort().reverse(), [mockData]);
 
     const selectedData = mockData[selectedQuarter];
     
     const historicalData = useMemo(() => {
+        if (Object.keys(mockData).length === 0) return [];
         return quarterOptions.slice(0, 5).reverse().map(q => ({ name: q, revenue: mockData[q].revenue }));
-    }, [quarterOptions]);
+    }, [quarterOptions, mockData]);
 
     const handleExport = () => {
         if (!selectedData) return;
