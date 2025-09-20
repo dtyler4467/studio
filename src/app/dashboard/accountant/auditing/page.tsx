@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,7 @@ type Audit = {
   status: AuditStatus;
 };
 
-const initialAudits: Audit[] = [
+const generateInitialAudits = (): Audit[] => [
   { id: 'AUD-001', title: 'Q3 Financial Statement Review', area: 'General Ledger', auditorId: 'USR004', startDate: new Date(), endDate: new Date(new Date().setDate(new Date().getDate() + 14)), status: 'In Progress' },
   { id: 'AUD-002', title: 'A/P Process Audit', area: 'Accounts Payable', auditorId: 'USR004', startDate: new Date(new Date().setDate(new Date().getDate() - 30)), endDate: new Date(new Date().setDate(new Date().getDate() - 15)), status: 'Completed' },
 ];
@@ -122,9 +122,13 @@ function AddAuditDialog({ onSave, employees }: { onSave: (audit: Omit<Audit, 'id
 
 
 export default function AuditingPage() {
-    const [audits, setAudits] = useState<Audit[]>(initialAudits);
+    const [audits, setAudits] = useState<Audit[]>([]);
     const { toast } = useToast();
     const { employees } = useSchedule();
+
+    useEffect(() => {
+        setAudits(generateInitialAudits());
+    }, []);
     
     const handleAddAudit = (auditData: Omit<Audit, 'id' | 'status'>) => {
         const newAudit: Audit = {
