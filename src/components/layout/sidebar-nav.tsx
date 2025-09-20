@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -415,6 +416,7 @@ const navItems: NavItem[] = [
         { href: '/dashboard/accountant/auditing', icon: Scan, label: 'Auditing', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/quarterly-report', icon: CalendarClock, label: 'Quarterly Report', roles: ['Admin', 'Manager'] },
         { href: '/dashboard/accountant/end-of-year-report', icon: CalendarCheck, label: 'End of Year Report', roles: ['Admin', 'Manager'] },
+        { href: '/dashboard/accountant/bank-statements', icon: Landmark, label: 'Bank Statements', roles: ['Admin', 'Manager'] },
     ]
   },
    { 
