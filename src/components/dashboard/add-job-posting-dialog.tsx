@@ -45,7 +45,9 @@ export function AddJobPostingDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline"><PlusCircle className="mr-2" /> New Job Posting</Button>
+        <Button variant="outline" size="sm">
+          <PlusCircle className="mr-2 h-4 w-4" /> New Job Posting
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

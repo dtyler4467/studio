@@ -18,6 +18,7 @@ import { DocumentUpload } from '@/components/dashboard/document-upload';
 import { User, Briefcase, GraduationCap, Sparkles, PlusCircle, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { AddJobPostingDialog } from '@/components/dashboard/add-job-posting-dialog';
 
 const workHistorySchema = z.object({
   jobTitle: z.string().min(1, "Job title is required."),
@@ -151,18 +152,21 @@ export default function ApplicationsPage() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Position Applying For</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a job opening..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {openJobs.map(job => (
-                                                    <SelectItem key={job.id} value={job.id}>{job.title} - {job.location}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex items-center gap-2">
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a job opening..." />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {openJobs.map(job => (
+                                                        <SelectItem key={job.id} value={job.id}>{job.title} - {job.location}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <AddJobPostingDialog />
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )}
