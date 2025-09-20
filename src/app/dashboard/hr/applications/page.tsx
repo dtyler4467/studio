@@ -69,6 +69,9 @@ export default function ApplicationsPage() {
     const { jobPostings, addApplicant } = useSchedule();
     const { toast } = useToast();
     const router = useRouter();
+    const [companyName, setCompanyName] = useState('LogiFlow');
+    const [pageDescription, setPageDescription] = useState('Complete the form below to apply for an open position.');
+
 
     const openJobs = useMemo(() => jobPostings.filter(j => j.status === 'Open'), [jobPostings]);
 
@@ -124,9 +127,20 @@ export default function ApplicationsPage() {
             <Card className="max-w-4xl mx-auto w-full">
                 <CardHeader>
                     <CardTitle className="font-headline text-3xl">Apply for a Position</CardTitle>
-                    <CardDescription>
-                        Complete the form below to apply for an open position at LogiFlow.
-                    </CardDescription>
+                    <div className="text-sm text-muted-foreground">
+                        <Input 
+                            id="page-description-input" 
+                            value={pageDescription}
+                            onChange={(e) => setPageDescription(e.target.value)}
+                            className="text-sm text-muted-foreground border-none shadow-none focus-visible:ring-0 p-0 h-auto"
+                        />
+                         at <Input 
+                            id="company-name-input"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="inline-block w-auto p-0 h-auto font-medium text-sm text-muted-foreground border-none shadow-none focus-visible:ring-0"
+                         />
+                    </div>
                 </CardHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
