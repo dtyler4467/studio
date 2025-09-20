@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import * as XLSX from 'xlsx';
+import { Label } from '@/components/ui/label';
 
 type EquityTransaction = {
     id: number;
