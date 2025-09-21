@@ -4,10 +4,11 @@ import Image from 'next/image';
 export function Logo(props: SVGProps<SVGSVGElement>) {
   return (
     <Image 
-        src="/propantheon-logo.png" 
+        src="https://picsum.photos/seed/propantheon/160/32" 
         alt="ProPantheon Logo" 
-        width={160} 
-        height={32}
+        width={120} 
+        height={24}
+        className="h-auto"
         {...props}
     />
   );

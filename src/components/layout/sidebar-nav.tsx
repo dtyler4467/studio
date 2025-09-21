@@ -114,7 +114,7 @@ import {
   ShieldAlert,
   CalendarClock,
 } from 'lucide-react';
-import { ProPantheonLogo } from '@/components/icons/propantheon-logo';
+import { Logo } from '@/components/icons/logo';
 import { useSidebar, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -856,7 +856,7 @@ export function SidebarNav() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center justify-center p-2">
-            <ProPantheonLogo />
+            <Logo />
         </div>
       </SidebarHeader>
       <SidebarContent>

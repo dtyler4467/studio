@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ProPantheonLogo } from '@/components/icons/propantheon-logo';
+import { Logo } from '@/components/icons/logo';
 import { useToast } from '@/hooks/use-toast';
 import { useSchedule, EmployeeRole } from '@/hooks/use-schedule';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -65,7 +65,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center items-center mb-4">
-            <ProPantheonLogo />
+            <Logo />
           </div>
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
