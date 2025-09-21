@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -13,7 +14,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getAssistantResponse } from '@/ai/flows/assistant-flow';
 import { Send, User, Sparkles, Mic } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
-import { Logo } from '../icons/logo';
+import { ProPantheonLogo } from '../icons/propantheon-logo';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -158,7 +159,7 @@ export function AiAssistantChat() {
             <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
               {message.role === 'assistant' && (
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground"><Logo className="w-5 h-5"/></AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground"><ProPantheonLogo /></AvatarFallback>
                 </Avatar>
               )}
               <div className={`rounded-lg p-3 max-w-lg ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}>
@@ -184,7 +185,7 @@ export function AiAssistantChat() {
           {isLoading && (
             <div className="flex items-start gap-4">
                <Avatar className="h-8 w-8">
-                   <AvatarFallback className="bg-primary text-primary-foreground"><Logo className="w-5 h-5"/></AvatarFallback>
+                   <AvatarFallback className="bg-primary text-primary-foreground"><ProPantheonLogo /></AvatarFallback>
                 </Avatar>
                 <div className="rounded-lg p-3 max-w-lg bg-background space-y-2">
                     <Skeleton className="h-4 w-48" />

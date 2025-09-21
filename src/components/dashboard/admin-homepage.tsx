@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { ArrowRight, CalendarCheck, CalendarCog, Printer, UserPlus } from "lucid
 import { useSchedule } from "@/hooks/use-schedule";
 import Link from "next/link";
 import Image from "next/image";
-import { Logo } from "@/components/icons/logo";
+import { ProPantheonLogo } from "@/components/icons/propantheon-logo";
 
 export function AdminHomepage() {
     const { timeOffRequests, registrations } = useSchedule();
@@ -30,7 +31,7 @@ export function AdminHomepage() {
                             Welcome, Admin. Here you can manage schedules, approve requests, and print reports.
                         </CardDescription>
                     </div>
-                    <Logo className="h-10 w-10 text-primary" />
+                    <ProPantheonLogo />
                 </div>
             </CardHeader>
             <CardContent className="grid gap-6">
