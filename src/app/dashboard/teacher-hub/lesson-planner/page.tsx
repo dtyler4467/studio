@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ type Lesson = {
     assessment: string;
 };
 
-const initialLessons: Lesson[] = [
+const getInitialLessons = (): Lesson[] => [
     {
         id: 'L1',
         date: new Date(),
@@ -161,10 +161,15 @@ function AddLessonDialog({ onSave, onOpenChange, isOpen, initialDate }: { onSave
 
 
 export default function LessonPlannerPage() {
-    const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
     const { toast } = useToast();
+
+    useEffect(() => {
+        setLessons(getInitialLessons());
+        setSelectedDate(new Date());
+    }, []);
 
     const handleAddLesson = (lesson: Omit<Lesson, 'id'>) => {
         const newLesson = { ...lesson, id: `L${Date.now()}` };
@@ -198,6 +203,10 @@ export default function LessonPlannerPage() {
     const lessonDates = Object.keys(lessonsByDate);
     const modifiers = { scheduled: lessonDates.map(dateStr => new Date(dateStr + 'T00:00:00')) };
     const modifiersStyles = { scheduled: { border: "2px solid hsl(var(--primary))", borderRadius: 'var(--radius)' }};
+
+    if (!selectedDate) {
+        return null; // or a loading skeleton
+    }
 
     return (
         <div className="flex flex-col w-full">
