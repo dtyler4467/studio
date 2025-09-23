@@ -160,6 +160,19 @@ const navItems: NavItem[] = [
     ]
   },
   {
+    href: '#', 
+    icon: Truck, 
+    label: 'Dispatch', 
+    roles: ['Admin', 'Dispatcher'],
+    subItems: [
+        { href: '/dashboard/load-board-hub', icon: Library, label: 'Load Board Hub', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management', icon: Fence, label: 'Yard Management', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/fleet-management', icon: Wrench, label: 'Fleet Management', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/driver-hub/chat', icon: MessageSquare, label: 'Chat', roles: ['Admin', 'Dispatcher'] },
+    ]
+  },
+  {
     href: '/dashboard/project-hub',
     icon: Package,
     label: 'Project Hub',
@@ -302,48 +315,6 @@ const navItems: NavItem[] = [
         { href: '/dashboard/warehouse-hub-manager/carriers', icon: Truck, label: 'Carriers', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
-  { 
-    href: '/dashboard/yard-management', 
-    icon: Fence, 
-    label: 'Yard Management',
-    roles: ['Admin', 'Dispatcher'],
-    subItems: [
-        { href: '/dashboard/yard-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher'] },
-        { 
-            href: '/dashboard/yard-management/appointment', 
-            label: 'Appointment', 
-            icon: CalendarPlus, 
-            roles: ['Admin', 'Dispatcher'],
-            subItems: [
-                { href: '/dashboard/yard-management/appointment/office', label: 'Office', icon: Briefcase, roles: ['Admin', 'Dispatcher'] },
-                { href: '/dashboard/yard-management/appointment/gate', label: 'Gate', icon: Truck, roles: ['Admin', 'Dispatcher'] },
-                { href: '/dashboard/yard-management/appointment/trash', label: 'Trash', icon: Trash2, roles: ['Admin', 'Dispatcher'] },
-            ]
-        },
-        { href: '/dashboard/yard-management/search', label: 'Load Search', icon: Search, roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/check-in', label: 'Inbound', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/outbound', label: 'Outbound', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/dock-doors', label: 'Dock Doors', icon: Warehouse, roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/parking-lanes', label: 'Parking Lanes', icon: ParkingCircle, roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/history', label: 'Yard History', icon: History, roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/lost-and-found', label: 'Lost & Found', icon: ArchiveRestore, roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/reports', icon: BarChart, label: 'Reports', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management/trash', icon: Trash2, label: 'Trash', roles: ['Admin', 'Dispatcher'] },
-    ]
-  },
-   {
-    href: '#',
-    icon: Truck,
-    label: 'Fleet Management',
-    roles: ['Admin', 'Dispatcher', 'Manager'],
-    subItems: [
-        { href: '/dashboard/fleet-management', icon: Wrench, label: 'Maintenance', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/vendor', icon: Building2, label: 'Vendor', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/customer', icon: Contact, label: 'Customer', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/equipment-assignment', icon: ClipboardPaste, label: 'Equipment Assignment', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/location', icon: Map, label: 'Location', roles: ['Admin', 'Dispatcher', 'Manager'] },
-    ]
-  },
   { href: '/dashboard/safety-hub', icon: ShieldCheck, label: 'Safety Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager'] },
   { 
     href: '/dashboard/driver-hub', 
@@ -365,9 +336,7 @@ const navItems: NavItem[] = [
     ]
   },
   { href: '/dashboard/blanket-hub', icon: BookOpen, label: 'Blanket Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
-  { href: '/dashboard/load-board-hub', icon: Library, label: 'Load board hub', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/loads', icon: ClipboardList, label: 'Loads Board', roles: ['Driver'] },
-  { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { 
     href: '#', 
     icon: Clock, 
@@ -670,15 +639,13 @@ export function SidebarNav() {
   const { state } = useSidebar();
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isCrmOpen, setIsCrmOpen] = useState(false);
+  const [isDispatchOpen, setIsDispatchOpen] = useState(false);
   const [isWarehouseHubOpen, setIsWarehouseHubOpen] = useState(false);
-  const [isYardManagementOpen, setIsYardManagementOpen] = useState(false);
-  const [isFleetManagementOpen, setIsFleetManagementOpen] = useState(false);
   const [isDriverHubOpen, setIsDriverHubOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAccountantOpen, setIsAccountantOpen] = useState(false);
   const [isHrOpen, setIsHrOpen] = useState(false);
-  const [isLoadBoardHubOpen, setIsLoadBoardHubOpen] = useState(false);
   const [isTimeTrackerHubOpen, setIsTimeTrackerHubOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isProjectHubOpen, setIsProjectHubOpen] = useState(false);
@@ -704,11 +671,16 @@ export function SidebarNav() {
   useEffect(() => {
     setIsAiOpen(pathname.startsWith('/dashboard/ai-'));
     setIsCrmOpen(pathname.startsWith('/dashboard/crm'));
+    setIsDispatchOpen(
+        pathname.startsWith('/dashboard/dispatch') ||
+        pathname.startsWith('/dashboard/yard-management') ||
+        pathname.startsWith('/dashboard/fleet-management') ||
+        pathname.startsWith('/dashboard/load-board-hub') ||
+        pathname.startsWith('/dashboard/local-loads') ||
+        pathname.startsWith('/dashboard/tracking')
+    );
     setIsWarehouseHubOpen(pathname.startsWith('/dashboard/warehouse-hub-manager'));
-    setIsYardManagementOpen(pathname.startsWith('/dashboard/yard-management'));
-    setIsFleetManagementOpen(pathname.startsWith('/dashboard/fleet-management') || pathname.startsWith('/dashboard/repair-shop'));
     setIsDriverHubOpen(pathname.startsWith('/dashboard/driver-hub'));
-    setIsLoadBoardHubOpen(pathname.startsWith('/dashboard/dispatch') || pathname.startsWith('/dashboard/local-loads'));
     setIsTimeTrackerHubOpen(pathname.startsWith('/dashboard/time-tracker-hub') || pathname.startsWith('/dashboard/time-clock'));
     setIsAdminOpen(pathname.startsWith('/dashboard/administration'));
     setIsAccountantOpen(pathname.startsWith('/dashboard/accountant'));
@@ -736,7 +708,7 @@ export function SidebarNav() {
      setOpenAdminSubMenus(newOpenAdminSubMenus);
 
      const newOpenYardSubMenus: Record<string, boolean> = {};
-        navItems.find(i => i.href === '/dashboard/yard-management')?.subItems?.forEach(item => {
+        navItems.find(i => i.label === 'Dispatch')?.subItems?.find(i => i.href === '/dashboard/yard-management')?.subItems?.forEach(item => {
             if (item.subItems) {
                 const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
                 newOpenYardSubMenus[item.label] = isActive;
@@ -866,85 +838,10 @@ export function SidebarNav() {
                 const filteredSubItems = item.subItems?.filter(sub => sub.roles.includes(role));
                 const isOverview = item.label === 'Dashboard' || item.label === 'Overview';
 
-                if (item.href === '/dashboard/load-board-hub') {
-                    const hubSubItems = loadBoardHubSubItems.filter(sub => sub.roles.includes(role));
-                    return (
-                        <Collapsible key={item.label} asChild open={isLoadBoardHubOpen} onOpenChange={setIsLoadBoardHubOpen}>
-                            <SidebarMenuItem>
-                                <div className="flex items-center w-full">
-                                <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton
-                                        isActive={isSubItemActive(item.href)}
-                                        tooltip={loadBoardHub.name}
-                                        className="justify-start w-full group flex-grow"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <item.icon />
-                                            <span>{loadBoardHub.name}</span>
-                                        </div>
-                                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isLoadBoardHubOpen && "rotate-180")} />
-                                    </SidebarMenuButton>
-                                </CollapsibleTrigger>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 mr-1 group-data-[collapsible=icon]:hidden shrink-0" onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleOpenEditDialog(loadBoardHub)}}>
-                                        <Pencil className="h-4 w-4" />
-                                </Button>
-                                </div>
-                                <CollapsibleContent>
-                                    <SidebarMenuSub>
-                                        {hubSubItems.map((subItem) => (
-                                            <SidebarMenuSubItem key={subItem.label}>
-                                                <SidebarMenuSubButton asChild isActive={isSubItemActive(subItem.href)}>
-                                                    <Link href={subItem.href}>
-                                                        {subItem.icon && <subItem.icon />}
-                                                        <span>{subItem.label}</span>
-                                                    </Link>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                        ))}
-                                        {canManageLocalLoadBoards && localLoadBoards.map(board => (
-                                            <SidebarMenuSubItem key={board.id}>
-                                                <div className="flex items-center gap-1 w-full">
-                                                    <SidebarMenuSubButton
-                                                        asChild
-                                                        isActive={pathname === `/dashboard/local-loads/${board.id}`}
-                                                        className="justify-start group flex-grow"
-                                                    >
-                                                        <Link href={`/dashboard/local-loads/${board.id}`}>
-                                                            <ClipboardList />
-                                                            <span>{`${board.name} ${board.number}`}</span>
-                                                        </Link>
-                                                    </SidebarMenuSubButton>
-                                                    <div className="flex group-data-[collapsible=icon]:hidden">
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(board)}}>
-                                                            <Pencil className="h-3 h-3" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => {e.stopPropagation(); deleteLocalLoadBoard(board.id)}} disabled={localLoadBoards.length <= 1}>
-                                                            <MinusCircle className="h-3 h-3" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </SidebarMenuSubItem>
-                                        ))}
-                                        {canManageLocalLoadBoards && (
-                                            <SidebarMenuSubItem>
-                                                <Button variant="outline" size="sm" className="w-full justify-center group-data-[collapsible=icon]:justify-start mt-1" onClick={() => addLocalLoadBoard()}>
-                                                    <PlusCircle className="group-data-[collapsible=icon]:mx-auto h-4 w-4" />
-                                                    <span className="group-data-[collapsible=icon]:hidden ml-2">Add Board</span>
-                                                </Button>
-                                            </SidebarMenuSubItem>
-                                        )}
-                                    </SidebarMenuSub>
-                                </CollapsibleContent>
-                            </SidebarMenuItem>
-                        </Collapsible>
-                    );
-                }
-
                 if (item.subItems && filteredSubItems && filteredSubItems.length > 0) {
-                    const isOpenMap = {
+                    const isOpenMap: Record<string, boolean | undefined> = {
+                        'Dispatch': isDispatchOpen,
                         'Warehouse Hub Manager': isWarehouseHubOpen,
-                        'Yard Management': isYardManagementOpen,
-                        'Fleet Management': isFleetManagementOpen,
                         'Driver Hub': isDriverHubOpen,
                         'My Workspace': isWorkspaceOpen,
                         'AI': isAiOpen,
@@ -960,10 +857,9 @@ export function SidebarNav() {
                         'Teacher Hub': isTeacherHubOpen,
                         'Invoice Hub': isInvoiceHubOpen,
                     };
-                    const setIsOpenMap = {
+                    const setIsOpenMap: Record<string, React.Dispatch<React.SetStateAction<boolean>> | undefined> = {
+                        'Dispatch': setIsDispatchOpen,
                         'Warehouse Hub Manager': setIsWarehouseHubOpen,
-                        'Yard Management': setIsYardManagementOpen,
-                        'Fleet Management': setIsFleetManagementOpen,
                         'Driver Hub': setIsDriverHubOpen,
                         'My Workspace': setIsWorkspaceOpen,
                         'AI': setIsAiOpen,
@@ -979,8 +875,8 @@ export function SidebarNav() {
                         'Teacher Hub': setIsTeacherHubOpen,
                         'Invoice Hub': setIsInvoiceHubOpen,
                     }
-                    const isOpen = isOpenMap[item.label as keyof typeof isOpenMap];
-                    const setIsOpen = setIsOpenMap[item.label as keyof typeof setIsOpenMap];
+                    const isOpen = isOpenMap[item.label];
+                    const setIsOpen = setIsOpenMap[item.label];
 
                     if(isOpen === undefined || setIsOpen === undefined) {
                         // Fallback for items not in the map
