@@ -160,19 +160,6 @@ const navItems: NavItem[] = [
     ]
   },
   {
-    href: '#', 
-    icon: Truck, 
-    label: 'Dispatch', 
-    roles: ['Admin', 'Dispatcher'],
-    subItems: [
-        { href: '/dashboard/load-board-hub', icon: Library, label: 'Load Board Hub', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/yard-management', icon: Fence, label: 'Yard Management', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/fleet-management', icon: Wrench, label: 'Fleet Management', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
-        { href: '/dashboard/driver-hub/chat', icon: MessageSquare, label: 'Chat', roles: ['Admin', 'Dispatcher'] },
-    ]
-  },
-  {
     href: '/dashboard/project-hub',
     icon: Package,
     label: 'Project Hub',
@@ -263,28 +250,14 @@ const navItems: NavItem[] = [
         { href: '/dashboard/record/voice-record', icon: Mic, label: 'Voice Record', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager', 'Employee', 'Forklift', 'Laborer'] },
     ]
   },
+  { href: '/dashboard/load-board-hub', icon: Library, label: 'Load Board Hub', roles: ['Admin', 'Dispatcher'] },
   { 
-    href: '#', 
+    href: '/dashboard/warehouse-hub-manager', 
     icon: Warehouse, 
     label: 'Warehouse Hub Manager', 
     roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
     subItems: [
-        { 
-            href: '#', 
-            icon: Warehouse, 
-            label: 'Dock Hub', 
-            roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
-            subItems: [
-                { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                { href: '/dashboard/yard-management/dock-doors', icon: Warehouse, label: 'Dock Doors', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
-                { 
-                    href: '/dashboard/warehouse-hub-manager/associates/my-pick', 
-                    icon: Users, 
-                    label: 'Warehouse Associates', 
-                    roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer']
-                },
-            ]
-        },
+        { href: '/dashboard/warehouse-hub-manager', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/inventory', icon: Boxes, label: 'Inventory', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/receiving', icon: ArrowDownToLine, label: 'Receiving', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
         { href: '/dashboard/warehouse-hub-manager/shipping', icon: ArrowUpFromLine, label: 'Shipping', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
@@ -313,8 +286,65 @@ const navItems: NavItem[] = [
         },
         { href: '/dashboard/warehouse-hub-manager/customers', icon: Users, label: 'Customers', roles: ['Admin', 'Dispatcher', 'Manager'] },
         { href: '/dashboard/warehouse-hub-manager/carriers', icon: Truck, label: 'Carriers', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { 
+            href: '/dashboard/warehouse-hub-manager/associates', 
+            icon: Users, 
+            label: 'Warehouse Associates', 
+            roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'],
+            subItems: [
+                 { href: '/dashboard/warehouse-hub-manager/associates/my-pick', icon: UserCheckIcon, label: 'My Active Pick', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+                 { href: '/dashboard/warehouse-hub-manager/associates/order-queue', icon: Package, label: 'Order Queue', roles: ['Admin', 'Dispatcher', 'Manager', 'Forklift', 'Laborer'] },
+                 { href: '/dashboard/warehouse-hub-manager/associates/picker-assigner', icon: Contact, label: 'Picker Assigner', roles: ['Admin', 'Dispatcher', 'Manager'] },
+                 { href: '/dashboard/warehouse-hub-manager/associates/productivity', icon: BarChart, label: 'Productivity', roles: ['Admin', 'Dispatcher', 'Manager'] },
+            ]
+        },
     ]
   },
+  { 
+    href: '/dashboard/yard-management', 
+    icon: Fence, 
+    label: 'Yard Management', 
+    roles: ['Admin', 'Dispatcher'],
+    subItems: [
+        { href: '/dashboard/yard-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/check-in', icon: PlusCircle, label: 'Inbound', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/outbound', icon: MinusCircle, label: 'Outbound', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/search', icon: Search, label: 'Load Search', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/dock-doors', icon: Warehouse, label: 'Dock Doors', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/parking-lanes', icon: ParkingCircle, label: 'Parking Lanes', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/lane-manager', icon: Map, label: 'Lane Manager', roles: ['Admin', 'Dispatcher'] },
+        { 
+            href: '#',
+            icon: Calendar,
+            label: 'Appointment',
+            roles: ['Admin', 'Dispatcher'],
+            subItems: [
+                { href: '/dashboard/yard-management/appointment', icon: Calendar, label: 'Scheduler', roles: ['Admin', 'Dispatcher'] },
+                { href: '/dashboard/yard-management/appointment/gate', icon: CalendarPlus, label: 'Gate', roles: ['Admin', 'Dispatcher'] },
+                { href: '/dashboard/yard-management/appointment/office', icon: Briefcase, label: 'Office', roles: ['Admin', 'Dispatcher'] },
+                { href: '/dashboard/yard-management/appointment/trash', icon: Trash2, label: 'Trash', roles: ['Admin', 'Dispatcher'] },
+            ]
+        },
+        { href: '/dashboard/yard-management/history', icon: History, label: 'History', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/reports', icon: FileText, label: 'Reports', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/lost-and-found', icon: ArchiveRestore, label: 'Lost & Found', roles: ['Admin', 'Dispatcher'] },
+        { href: '/dashboard/yard-management/trash', icon: Trash2, label: 'Trash', roles: ['Admin', 'Dispatcher'] },
+    ]
+  },
+  { 
+    href: '/dashboard/fleet-management', 
+    icon: Wrench, 
+    label: 'Fleet Management', 
+    roles: ['Admin', 'Dispatcher', 'Manager'],
+    subItems: [
+        { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/equipment-assignment', icon: PlusCircle, label: 'Equipment Assignment', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/vendor', icon: Users, label: 'Vendor', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/location', icon: MapPin, label: 'Location', roles: ['Admin', 'Dispatcher', 'Manager'] },
+        { href: '/dashboard/fleet-management/customer', icon: Contact, label: 'Customer', roles: ['Admin', 'Dispatcher', 'Manager'] },
+    ]
+  },
+  { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
   { href: '/dashboard/safety-hub', icon: ShieldCheck, label: 'Safety Hub', roles: ['Admin', 'Dispatcher', 'Driver', 'Manager'] },
   { 
     href: '/dashboard/driver-hub', 
@@ -708,7 +738,7 @@ export function SidebarNav() {
      setOpenAdminSubMenus(newOpenAdminSubMenus);
 
      const newOpenYardSubMenus: Record<string, boolean> = {};
-        navItems.find(i => i.label === 'Dispatch')?.subItems?.find(i => i.href === '/dashboard/yard-management')?.subItems?.forEach(item => {
+        navItems.find(i => i.label === 'Yard Management')?.subItems?.forEach(item => {
             if (item.subItems) {
                 const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
                 newOpenYardSubMenus[item.label] = isActive;
@@ -717,7 +747,7 @@ export function SidebarNav() {
     setOpenYardSubMenus(newOpenYardSubMenus);
 
     const newOpenWarehouseSubMenus: Record<string, boolean> = {};
-        navItems.find(i => i.href === '#')?.subItems?.find(i => i.href === '#')?.subItems?.forEach(item => {
+        navItems.find(i => i.label === 'Warehouse Hub Manager')?.subItems?.forEach(item => {
             if (item.subItems) {
                 const isActive = item.subItems.some(sub => pathname.startsWith(sub.href));
                 newOpenWarehouseSubMenus[item.label] = isActive;
