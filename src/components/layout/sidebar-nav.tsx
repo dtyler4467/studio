@@ -300,6 +300,8 @@ const navItems: NavItem[] = [
         },
     ]
   },
+  { href: '/dashboard/dispatch', icon: ClipboardList, label: 'Dispatch', roles: ['Admin', 'Dispatcher'] },
+  { href: '/dashboard/fleet-management', icon: Wrench, label: 'Fleet Management', roles: ['Admin', 'Dispatcher'] },
   { 
     href: '/dashboard/yard-management', 
     icon: Fence, 
@@ -329,19 +331,6 @@ const navItems: NavItem[] = [
         { href: '/dashboard/yard-management/reports', icon: FileText, label: 'Reports', roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/lost-and-found', icon: ArchiveRestore, label: 'Lost & Found', roles: ['Admin', 'Dispatcher'] },
         { href: '/dashboard/yard-management/trash', icon: Trash2, label: 'Trash', roles: ['Admin', 'Dispatcher'] },
-    ]
-  },
-  { 
-    href: '/dashboard/fleet-management', 
-    icon: Wrench, 
-    label: 'Fleet Management', 
-    roles: ['Admin', 'Dispatcher', 'Manager'],
-    subItems: [
-        { href: '/dashboard/fleet-management', icon: LayoutDashboard, label: 'Overview', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/equipment-assignment', icon: PlusCircle, label: 'Equipment Assignment', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/vendor', icon: Users, label: 'Vendor', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/location', icon: MapPin, label: 'Location', roles: ['Admin', 'Dispatcher', 'Manager'] },
-        { href: '/dashboard/fleet-management/customer', icon: Contact, label: 'Customer', roles: ['Admin', 'Dispatcher', 'Manager'] },
     ]
   },
   { href: '/dashboard/tracking', icon: MapPin, label: 'Tracking', roles: ['Admin', 'Dispatcher'] },
@@ -886,6 +875,7 @@ export function SidebarNav() {
                         'Network TV Hub': isNetworkTvHubOpen,
                         'Teacher Hub': isTeacherHubOpen,
                         'Invoice Hub': isInvoiceHubOpen,
+                        'Yard Management': isDispatchOpen,
                     };
                     const setIsOpenMap: Record<string, React.Dispatch<React.SetStateAction<boolean>> | undefined> = {
                         'Dispatch': setIsDispatchOpen,
@@ -904,6 +894,7 @@ export function SidebarNav() {
                         'Network TV Hub': setIsNetworkTvHubOpen,
                         'Teacher Hub': setIsTeacherHubOpen,
                         'Invoice Hub': setIsInvoiceHubOpen,
+                        'Yard Management': setIsDispatchOpen,
                     }
                     const isOpen = isOpenMap[item.label];
                     const setIsOpen = setIsOpenMap[item.label];
