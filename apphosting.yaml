@@ -5,3 +5,7 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# This is the command that starts your web server.
+# For Next.js, this is the standard command.
+entrypoint: npm start
