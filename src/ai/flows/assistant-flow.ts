@@ -33,7 +33,6 @@ const prompt = ai.definePrompt({
   name: 'assistantPrompt',
   input: {schema: AssistantInputSchema},
   output: {schema: AssistantOutputSchema},
-  tools: await getTools(),
   system: `You are an intelligent AI assistant for a logistics company called LogiFlow.
 Your goal is to provide helpful, accurate, and concise answers to user questions.
 The user is interacting with you through a chat interface in their dashboard.
@@ -103,6 +102,8 @@ const assistantFlow = ai.defineFlow(
     outputSchema: AssistantOutputSchema,
   },
   async input => {
+    // Set the tools dynamically within the flow
+    prompt.tools = await getTools();
     const shouldGenerateImage = await imageGenPrompt({ query: input.query });
 
     let imagePromise: Promise<{ media: { url: string; }; }> | undefined;
@@ -118,7 +119,7 @@ const assistantFlow = ai.defineFlow(
       imagePromise,
     ]);
 
-    const output = llmResponse.output || { answer: "im not that smart please ask another quiestion" };
+    const output = llmResponse.output || { answer: "I'm not that smart, please ask another question." };
     if (imageResponse) {
       output.imageUrl = imageResponse.media.url;
     }
