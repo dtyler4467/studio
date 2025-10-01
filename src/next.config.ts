@@ -1,3 +1,5 @@
+next clean
+
 
 import type {NextConfig} from 'next';
 
